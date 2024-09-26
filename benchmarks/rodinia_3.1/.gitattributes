@@ -1,0 +1,8 @@
+openmp/leukocyte/testfile.avi filter=lfs diff=lfs merge=lfs -text
+openmp/kmeans/kdd_cup filter=lfs diff=lfs merge=lfs -text
+openmp/heartwall/test.avi filter=lfs diff=lfs merge=lfs -text
+openmp/hotspot3D/temp_512x8 filter=lfs diff=lfs merge=lfs -text
+openmp/hotspot3D/power_512x8 filter=lfs diff=lfs merge=lfs -text
+openmp/hotspot/output.out filter=lfs diff=lfs merge=lfs -text
+openmp/hotspot/temp_1024 filter=lfs diff=lfs merge=lfs -text
+openmp/hotspot/power_1024 filter=lfs diff=lfs merge=lfs -text

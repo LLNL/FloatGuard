@@ -1,0 +1,14 @@
+#----------------------------------------
+HIPCC    = hipcc
+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
+HIPFLAGS = -g -O0
+LINKFLAGS = -fgpu-rdc --hip-link 
+#----------------------------------------
+
+InstStub.o:
+	${HIPCC} ${HIPFLAGS} -DRANDINT=${RANDINT} -D__HIP_PLATFORM_AMD__ -c InstStub.cpp
+
+.PHONY: clean
+
+clean:
+	rm -f *.o

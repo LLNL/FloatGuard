@@ -1,0 +1,142 @@
+#---------------------------------------------------------------------------
+#
+#                SITE- AND/OR PLATFORM-SPECIFIC DEFINITIONS. 
+#
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# Items in this file will need to be changed for each platform.
+# (Note these definitions are inconsistent with NPB2.1.)
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# Parallel C:
+#
+# CC         - C compiler 
+# CFLAGS     - C compilation arguments
+# C_INC      - any -I arguments required for compiling C 
+# CLINK      - C linker
+# CLINKFLAGS - C linker flags
+# C_LIB      - any -L and -l arguments required for linking C 
+#
+# compilations are done with $(CC) $(C_INC) $(CFLAGS) or
+#                            $(CC) $(CFLAGS)
+# linking is done with       $(CLINK) $(C_LIB) $(CLINKFLAGS)
+#---------------------------------------------------------------------------
+
+ifndef $(INJECT_CODE_LLVM)
+INJECT_CODE_LLVM = 0
+endif
+
+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
+
+ifeq ($(INJECT_CODE_LLVM), 1)
+INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
+			 -DEXP_FLAG_TOTAL=0x4D2F0
+else
+INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
+			 -DEXP_FLAG_TOTAL=0x4D2F0
+endif
+
+ifdef $(NO_BRANCH)
+INST_FLAGS += -DNO_BRANCH=1
+endif
+
+ifndef $(INJECT_CODE_CLANG)
+INJECT_CODE_CLANG = 0
+endif
+
+ifeq ($(INJECT_CODE_CLANG), 1)
+INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang hipec-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
+endif
+
+
+#---------------------------------------------------------------------------
+# This is the C compiler used for OpenMP programs
+#---------------------------------------------------------------------------
+COMPUTE_CAPABILITY=
+# ${COMPUTE_CAPABILITY}
+
+OPENMP_ENABLE=
+# ${OPENMP_ENABLE}
+
+EXTRA_STUFF=-O3 -ffast-math
+# ${EXTRA_STUFF}
+
+CC = hipcc ${COMPUTE_CAPABILITY} ${OPENMP_ENABLE} ${EXTRA_STUFF} ${INST_FLAGS}
+
+#backup old command
+#CC = nvcc -rdc=true -std=c++14 -gencode arch=compute_61,code=sm_61 -Xcompiler -fopenmp -lgomp -Xcompiler -mcmodel=medium
+
+# This links C programs; usually the same as ${CC}
+CLINK	= $(CC)
+
+#---------------------------------------------------------------------------
+# These macros are passed to the linker 
+#---------------------------------------------------------------------------
+C_LIB  = ${HOME}/hipec/inst_pass/Inst/InstStub.o -lm 
+
+#---------------------------------------------------------------------------
+# These macros are passed to the compiler 
+#---------------------------------------------------------------------------
+C_INC = -I../common 
+
+#---------------------------------------------------------------------------
+# Global *compile time* flags for C programs
+#---------------------------------------------------------------------------
+CFLAGS	= -O3
+# CFLAGS = -g
+
+#---------------------------------------------------------------------------
+# Global *link time* flags. Flags for increasing maximum executable 
+# size usually go here. 
+#---------------------------------------------------------------------------
+CLINKFLAGS = -O3 -fgpu-rdc --hip-link 
+
+
+#---------------------------------------------------------------------------
+# Utilities C:
+#
+# This is the C compiler used to compile C utilities.  Flags required by 
+# this compiler go here also; typically there are few flags required; hence 
+# there are no separate macros provided for such flags.
+#---------------------------------------------------------------------------
+UCC	= cc
+
+
+#---------------------------------------------------------------------------
+# Destination of executables, relative to subdirs of the main directory. . 
+#---------------------------------------------------------------------------
+BINDIR	= ../bin
+
+
+#---------------------------------------------------------------------------
+# The variable RAND controls which random number generator 
+# is used. It is described in detail in Doc/README.install. 
+# Use "randi8" unless there is a reason to use another one. 
+# Other allowed values are "randi8_safe", "randdp" and "randdpvec"
+#---------------------------------------------------------------------------
+# RAND   = randi8
+# The following is highly reliable but may be slow:
+RAND   = randdp
+
+
+#---------------------------------------------------------------------------
+# The variable WTIME is the name of the wtime source code module in the
+# NPB2.x/common directory.  
+# For most machines,       use wtime.c
+# For SGI power challenge: use wtime_sgi64.c
+#---------------------------------------------------------------------------
+WTIME  = wtime.cpp
+
+
+#---------------------------------------------------------------------------
+# Enable if either Cray or IBM: 
+# (no such flag for most machines: see common/wtime.h)
+# This is used by the C compiler to pass the machine name to common/wtime.h,
+# where the C/Fortran binding interface format is determined
+#---------------------------------------------------------------------------
+# MACHINE	=	-DCRAY
+# MACHINE	=	-DIBM
+
+

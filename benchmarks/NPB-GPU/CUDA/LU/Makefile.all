@@ -1,0 +1,15 @@
+SHELL=/bin/sh
+BENCHMARK=lu
+BENCHMARKU=LU
+
+all:
+	$(MAKE) CLASS=S
+	$(MAKE) clean
+	$(MAKE) CLASS=W
+	$(MAKE) clean
+	$(MAKE) CLASS=A
+	$(MAKE) clean
+	$(MAKE) CLASS=B
+	$(MAKE) clean    
+
+clang:
