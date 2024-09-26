@@ -13,3 +13,8 @@ cd PolyBench-ACC-0.1
 rm -r HMPP/ OpenACC/ OpenCL/ OpenMP/
 cd ..
 patch -p0 < PolyBench-patch.txt
+
+# Rodinia
+
+cd ~/hipec/benchmarks
+source setup_rodinia.sh
