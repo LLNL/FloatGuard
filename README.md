@@ -1,34 +1,103 @@
-# HIPEC - HIP Exception Capture (tentative)
+# HIPEC - HIP Exception Capture
+
+## Overview
 
 HIPEC is a tool that captures floating-point exceptions in your AMD HIP kernels.
+It is as of now the only publicly available tool that detects and captures
+runtime floating-point exception information in AMD HIP programs running on AMD
+GPUs. HIPEC does this by injecting code that controls exception capture
+registers, and a novel algorithm that adapts to the hardware properties of AMD
+GPUs, in order to detect as many source code locations that cause floating-point
+exceptions as possible. 
 
-Usage:
+## Installation, Setup, and Running Example Programs
 
-1. Clone this repository to your home directory.
+### Prerequisites
+
+1. Linux system. We have tested on Ubuntu 22.04.
+2. AMD GPU with ROCm installed. When you run `rocminfo` in command line, it
+shows system and GPU attributes normally. Follow
+https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
+information on how to install AMD ROCm.
+3. 10 GiB free disk space recommended.
+4. Docker is installed on your system, and it is verified that you can call
+   `docker pull` with non-root user without using `sudo`.
+5. Clone this GitHub repository to a local directory of your choice.
 
 ```
-cd ~
-git clone https://github.com/doloresmiao/hip_llvm hipec/
+git clone https://github.com/LLNL/HIPEC [HIPEC directory]
 ```
 
-2. Run this script to compile Clang plugin and LLVM pass used by HIPEC.
+### Setup Docker container with code repository
+
+We have two options to set up the reproduction environment.
+
+#### Option 1: pull and run Docker container from DockerHub
+
+In the Linux terminal, execute the following commands to pull the Docker
+container and run it. After entering the root user bash prompt inside the Docker
+container. The shell script will detect if you already have the container. If
+not, it will run it; otherwise, it simply resumes running.
 
 ```
-cd ~/hipec
+cd [HIPEC directory]
+./run_docker.sh
+```
+
+#### Option 2: build your own Docker container on local machine
+
+Build the Docker image using the Dockerfile inside the code repository, then run
+the Docker container. Please note that the RAM + swap area of your local PC must
+be no less than 32GiB in order to finish building without errors. It takes
+several hours to finish building the docker image.
+
+```
+cd [HIPEC directory]
+docker build . -t ucdavisplse/hipec:latest
+./run_docker.sh
+```
+
+### Setup environment and build tools
+
+Run the initial setup script (`setup.sh`) to install third-party software,
+download benchmark programs, compile Clang plugin, and compile LLVM pass
+required by HIPEC to run.
+
+```
+cd root/hipec
+source setup.sh
 ./build_single_plugin.sh
 ```
 
-3. Add calls to either Clang plugin or LLVM pass in your build scripts.
+### Run an individual experiment
 
-4. Add a `setup.ini` file in your code repo, which contains instructions for HIPEC.
-An example can be found below.
+Run the following command in the directory of the benchmark program:
 
 ```
-[DEFAULT]
-compile = make
-run = ./sc_gpu 10 20 256 65536 65536 1000 none output.txt 1
-use_clang_plugin = false
-clang_convert = make INJECT_CODE_CLANG=1
-llvm_pass = make INJECT_CODE_LLVM=1
-clean = make clean
+python3 ~/hipec/gdb_test/time_measure.py
 ```
+
+The benchmarks are all inside the `benchmarks` folder, which was downloaded when
+`setup.sh` is run. All directories that can run the Python command has a
+`setup.ini` file, which contains instructions for HIPEC.
+
+Log files containing details on the floating-point exceptions found are
+outputted as `[experiment]_output.txt` file in the HIPEC code repo directory.
+Also `result.csv` updates the running time statistics and the number of
+exceptions found.
+
+### Run all experiments
+
+Run the following command in the code repository directory:
+
+```
+python3 run_all.py
+```
+
+## License
+
+HIPEC is distributed under the terms of the MIT License.
+
+See LICENSE and NOTICE for details.
+
+LLNL-CODE-xxxxxx
