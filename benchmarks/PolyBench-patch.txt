@@ -1485,8 +1485,8 @@ diff -ruN PolyBench-ACC-0.1/CUDA/linear-algebra/solvers/lu/setup.ini PolyBench-b
 +[DEFAULT]
 +compile = make
 +run = ./lu.exe_mini;./lu.exe_small;./lu.exe_standard;./lu.exe_large;./lu.exe_extralarge
-+use_clang_plugin = false
-+llvm_pass = make INJECT_CODE_LLVM=1
++use_clang_plugin = true
++clang_convert = make INJECT_CODE_CLANG=1
 +clean = make clean
 \ No newline at end of file
 diff -ruN PolyBench-ACC-0.1/CUDA/stencils/adi/adi.cu PolyBench-backup/CUDA/stencils/adi/adi.cu
