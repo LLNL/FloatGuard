@@ -8037,10 +8037,10 @@ index bdc3180..5ad6500 100644
 -REGISTERS = 
 +ifeq ($(INJECT_CODE_LLVM), 1)
 +INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
-+			 -DEXP_FLAG_TOTAL=0x4D2F0
++			 -DEXP_FLAG_TOTAL=0x5F2F0
 +else
 +INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
-+			 -DEXP_FLAG_TOTAL=0x4D2F0
++			 -DEXP_FLAG_TOTAL=0x5F2F0
 +endif
  
 -####-maxrregcount 50

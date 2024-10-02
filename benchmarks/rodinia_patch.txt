@@ -16,9 +16,9 @@ diff -ruN rodinia_3.1/common/make.config rodinia_backup/common/make.config
 +endif
 +
 +ifeq ($(INJECT_CODE_CLANG), 1)
-+INST_FLAGS = -g -c -emit-llvm -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x4D2F0 -Xclang -load -Xclang ${HOME}/hipec/clang-examples/hipec-plugin/hipec-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
++INST_FLAGS = -g -c -emit-llvm -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x5F2F0 -Xclang -load -Xclang ${HOME}/hipec/clang-examples/hipec-plugin/hipec-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
 +else
-+INST_FLAGS = -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x4D2F0 #-fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so
++INST_FLAGS = -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x5F2F0 #-fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so
 +endif
 +
 +ifndef $(INJECT_CODE_LLVM)
@@ -9177,7 +9177,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/main.cu rodinia_backup/cuda/myocyte/main.cu
  // Myocyte application models cardiac myocyte (heart muscle cell) and simulates its behavior according to the work by Saucerman and Bers [8]. The model integrates 
  // cardiac myocyte electrical activity with the calcineurin pathway, which is a key aspect of the development of heart failure. The model spans large number of temporal 
  // scales to reflect how changes in heart rate as observed during exercise or stress contribute to calcineurin pathway activation, which ultimately leads to the expression 
--// of numerous genes that remodel the heart’s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
+-// of numerous genes that remodel the heartï¿½s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
 +// of numerous genes that remodel the heartï¿½s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
  // Biochemical reactions, ion transport and electrical activity in the cell are modeled with 91 ordinary differential equations (ODEs) that are determined by more than 200 
  // experimentally validated parameters. The model is simulated by solving this group of ODEs for a specified time interval. The process of ODE solving is based on the 
