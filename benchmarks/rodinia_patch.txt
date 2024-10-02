@@ -1,6 +1,6 @@
-diff -ruN rodinia_3.1/common/make.config rodinia_backup/common/make.config
---- rodinia_3.1/common/make.config	2015-12-11 07:46:19.000000000 -0800
-+++ rodinia_backup/common/make.config	2024-09-26 12:55:55.235230740 -0700
+diff -ruN rodinia_3.1/common/make.config rodinia_3.1_new/common/make.config
+--- rodinia_3.1/common/make.config	2015-12-11 15:46:19.000000000 +0000
++++ rodinia_3.1_new/common/make.config	2024-10-02 18:22:59.010854757 +0000
 @@ -30,4 +30,24 @@
  #     ifeq ($(shell if test -d $(OPENCL_DIR)/lib/x86_64/; then echo T; else echo F; fi), T)
  #     	OPENCL_LIB = $(OPENCL_DIR)/lib/x86_64/
@@ -29,10 +29,36 @@ diff -ruN rodinia_3.1/common/make.config rodinia_backup/common/make.config
 +INST_FLAGS += -fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so
 +endif
 \ No newline at end of file
-Binary files rodinia_3.1/cuda/backprop/backprop and rodinia_backup/cuda/backprop/backprop differ
-diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda.cu rodinia_backup/cuda/backprop/backprop_cuda.cu
---- rodinia_3.1/cuda/backprop/backprop_cuda.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/backprop/backprop_cuda.cu	2024-09-26 12:55:55.235230740 -0700
+diff -ruN rodinia_3.1/cuda/backprop/Makefile rodinia_3.1_new/cuda/backprop/Makefile
+--- rodinia_3.1/cuda/backprop/Makefile	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/backprop/Makefile	2024-10-01 18:53:23.892277339 +0000
+@@ -5,8 +5,8 @@
+ CC_FLAGS = -g  -O2
+ 
+ # CUDA compiler
+-NVCC = $(CUDA_DIR)/bin/nvcc
+-NVCC_FLAGS = -I$(CUDA_DIR)/include
++NVCC = hipcc
++NVCC_FLAGS = $(INST_FLAGS)
+ 
+ # 'make dbg=1' enables NVCC debugging
+ ifeq ($(dbg),1)
+@@ -20,9 +20,8 @@
+ 	NVCC_FLAGS += -deviceemu
+ endif
+ 
+-
+ backprop: backprop.o facetrain.o imagenet.o backprop_cuda.o 
+-	$(CC) $(CC_FLAGS) backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
++	$(NVCC) $(CC_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
+ 
+ %.o: %.[ch]
+ 	$(CC) $(CC_FLAGS) $< -c
+Binary files rodinia_3.1/cuda/backprop/backprop and rodinia_3.1_new/cuda/backprop/backprop differ
+Binary files rodinia_3.1/cuda/backprop/backprop.o and rodinia_3.1_new/cuda/backprop/backprop.o differ
+diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda.cu rodinia_3.1_new/cuda/backprop/backprop_cuda.cu
+--- rodinia_3.1/cuda/backprop/backprop_cuda.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/backprop/backprop_cuda.cu	2024-10-01 18:53:23.892277339 +0000
 @@ -5,7 +5,7 @@
  #include <stdio.h>
  #include <string.h>
@@ -131,9 +157,10 @@ diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda.cu rodinia_backup/cuda/backpro
    
    free(partial_sum);
    free(input_weights_one_dim);
-diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu rodinia_backup/cuda/backprop/backprop_cuda_kernel.cu
---- rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/backprop/backprop_cuda_kernel.cu	2024-09-26 12:55:55.235230740 -0700
+Binary files rodinia_3.1/cuda/backprop/backprop_cuda.o and rodinia_3.1_new/cuda/backprop/backprop_cuda.o differ
+diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu rodinia_3.1_new/cuda/backprop/backprop_cuda_kernel.cu
+--- rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/backprop/backprop_cuda_kernel.cu	2024-10-01 18:53:23.892277339 +0000
 @@ -6,7 +6,7 @@
  #include <stdio.h>
  #include "backprop.h"
@@ -143,38 +170,17 @@ diff -ruN rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu rodinia_backup/cuda/
  
  
  __global__ void
-Binary files rodinia_3.1/cuda/backprop/backprop_cuda.o and rodinia_backup/cuda/backprop/backprop_cuda.o differ
-Binary files rodinia_3.1/cuda/backprop/backprop.o and rodinia_backup/cuda/backprop/backprop.o differ
-Binary files rodinia_3.1/cuda/backprop/facetrain.o and rodinia_backup/cuda/backprop/facetrain.o differ
-Binary files rodinia_3.1/cuda/backprop/imagenet.o and rodinia_backup/cuda/backprop/imagenet.o differ
-diff -ruN rodinia_3.1/cuda/backprop/Makefile rodinia_backup/cuda/backprop/Makefile
---- rodinia_3.1/cuda/backprop/Makefile	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/backprop/Makefile	2024-09-26 12:55:55.235230740 -0700
-@@ -5,8 +5,8 @@
- CC_FLAGS = -g  -O2
- 
- # CUDA compiler
--NVCC = $(CUDA_DIR)/bin/nvcc
--NVCC_FLAGS = -I$(CUDA_DIR)/include
-+NVCC = hipcc
-+NVCC_FLAGS = $(INST_FLAGS)
- 
- # 'make dbg=1' enables NVCC debugging
- ifeq ($(dbg),1)
-@@ -20,9 +20,8 @@
- 	NVCC_FLAGS += -deviceemu
- endif
- 
--
- backprop: backprop.o facetrain.o imagenet.o backprop_cuda.o 
--	$(CC) $(CC_FLAGS) backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
-+	$(NVCC) $(CC_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
- 
- %.o: %.[ch]
- 	$(CC) $(CC_FLAGS) $< -c
-diff -ruN rodinia_3.1/cuda/backprop/setup.ini rodinia_backup/cuda/backprop/setup.ini
---- rodinia_3.1/cuda/backprop/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/backprop/setup.ini	2024-09-26 12:55:55.236230789 -0700
+Binary files rodinia_3.1/cuda/backprop/facetrain.o and rodinia_3.1_new/cuda/backprop/facetrain.o differ
+Binary files rodinia_3.1/cuda/backprop/imagenet.o and rodinia_3.1_new/cuda/backprop/imagenet.o differ
+diff -ruN rodinia_3.1/cuda/backprop/seq.txt rodinia_3.1_new/cuda/backprop/seq.txt
+--- rodinia_3.1/cuda/backprop/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/backprop/seq.txt	2024-10-01 19:57:11.544598220 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/backprop/setup.ini rodinia_3.1_new/cuda/backprop/setup.ini
+--- rodinia_3.1/cuda/backprop/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/backprop/setup.ini	2024-10-01 18:53:23.892277339 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -184,9 +190,40 @@ diff -ruN rodinia_3.1/cuda/backprop/setup.ini rodinia_backup/cuda/backprop/setup
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
---- rodinia_3.1/cuda/cfd/euler3d.cu	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/cfd/euler3d.cu	2024-09-26 12:55:55.236230789 -0700
+diff -ruN rodinia_3.1/cuda/cfd/Makefile rodinia_3.1_new/cuda/cfd/Makefile
+--- rodinia_3.1/cuda/cfd/Makefile	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/Makefile	2024-10-02 23:24:55.559697496 +0000
+@@ -11,21 +11,20 @@
+ endif
+ 
+ 
+-all: euler3d euler3d_double  pre_euler3d  pre_euler3d_double 
++all: euler3d_double #euler3d  pre_euler3d  pre_euler3d_double 
+ 
+ euler3d: euler3d.cu
+-	nvcc $(KERNEL_DIM) -O2 -Xptxas -v --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d.cu -o euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
++	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
+ 
+ euler3d_double: euler3d_double.cu
+-	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d_double.cu -o euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
+-
++	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o -g -O3 euler3d_double.cu -o euler3d_double 
+ 
+ pre_euler3d: pre_euler3d.cu
+-	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d.cu -o pre_euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
++	hipcc $(INST_FLAGS) -O3 pre_euler3d.cu -o pre_euler3d 
+ 
+ pre_euler3d_double: pre_euler3d_double.cu
+-	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d_double.cu -o pre_euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
++	hipcc $(INST_FLAGS) -O3 pre_euler3d_double.cu -o pre_euler3d_double 
+ 
+ 
+ clean:
+-	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo
++	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo *.o *.bc density density_energy momentum
+diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_3.1_new/cuda/cfd/euler3d.cu
+--- rodinia_3.1/cuda/cfd/euler3d.cu	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/euler3d.cu	2024-10-01 18:57:03.544078828 +0000
 @@ -2,8 +2,10 @@
  // This code is from the AIAA-2009-4001 paper
  
@@ -238,7 +275,84 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
  }
  
  void dump(float* variables, int nel, int nelr)
-@@ -427,12 +429,12 @@
+@@ -172,14 +174,16 @@
+ 
+ __global__ void cuda_initialize_variables(int nelr, float* variables)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 	for(int j = 0; j < NVAR; j++)
+ 		variables[i + j*nelr] = ff_variable[j];
+ }
+ void initialize_variables(int nelr, float* variables)
+ {
+ 	dim3 Dg(nelr / BLOCK_SIZE_1), Db(BLOCK_SIZE_1);
+-	cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
++	set_fp_exception_enabled("__device_stub__cuda_initialize_variables()");
++cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
+ 	getLastCudaError("initialize_variables failed");
+ }
+ 
+@@ -228,7 +232,8 @@
+ 
+ __global__ void cuda_compute_step_factor(int nelr, float* variables, float* areas, float* step_factors)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 
+ 	float density = variables[i + VAR_DENSITY*nelr];
+ 	float3 momentum;
+@@ -249,7 +254,8 @@
+ void compute_step_factor(int nelr, float* variables, float* areas, float* step_factors)
+ {
+ 	dim3 Dg(nelr / BLOCK_SIZE_2), Db(BLOCK_SIZE_2);
+-	cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);		
++	set_fp_exception_enabled("__device_stub__cuda_compute_step_factor()");
++cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);		
+ 	getLastCudaError("compute_step_factor failed");
+ }
+ 
+@@ -259,7 +265,8 @@
+ */
+ __global__ void cuda_compute_flux(int nelr, int* elements_surrounding_elements, float* normals, float* variables, float* fluxes)
+ {
+-	const float smoothing_coefficient = float(0.2f);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const float smoothing_coefficient = float(0.2f);
+ 	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 	
+ 	int j, nb;
+@@ -390,13 +397,15 @@
+ void compute_flux(int nelr, int* elements_surrounding_elements, float* normals, float* variables, float* fluxes)
+ {
+ 	dim3 Dg(nelr / BLOCK_SIZE_3), Db(BLOCK_SIZE_3);
+-	cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
++	set_fp_exception_enabled("__device_stub__cuda_compute_flux()");
++cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
+ 	getLastCudaError("compute_flux failed");
+ }
+ 
+ __global__ void cuda_time_step(int j, int nelr, float* old_variables, float* variables, float* step_factors, float* fluxes)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 
+ 	float factor = step_factors[i]/float(RK+1-j);
+ 
+@@ -409,7 +418,8 @@
+ void time_step(int j, int nelr, float* old_variables, float* variables, float* step_factors, float* fluxes)
+ {
+ 	dim3 Dg(nelr / BLOCK_SIZE_4), Db(BLOCK_SIZE_4);
+-	cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
++	set_fp_exception_enabled("__device_stub__cuda_time_step()");
++cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
+ 	getLastCudaError("update failed");
+ }
+ 
+@@ -427,12 +437,12 @@
  	}
  	const char* data_file_name = argv[1];
  	
@@ -255,7 +369,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
  	
  	printf("Name:                     %s\n", prop.name);
  
-@@ -469,12 +471,12 @@
+@@ -469,12 +479,12 @@
  		compute_flux_contribution(h_ff_variable[VAR_DENSITY], h_ff_momentum, h_ff_variable[VAR_DENSITY_ENERGY], ff_pressure, ff_velocity, h_ff_flux_contribution_momentum_x, h_ff_flux_contribution_momentum_y, h_ff_flux_contribution_momentum_z, h_ff_flux_contribution_density_energy);
  
  		// copy far field conditions to the gpu
@@ -273,7 +387,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
  	}
  	int nel;
  	int nelr;
-@@ -550,9 +552,9 @@
+@@ -550,9 +560,9 @@
  	// make sure all memory is floatly allocated before we start timing
  	initialize_variables(nelr, old_variables);
  	initialize_variables(nelr, fluxes);
@@ -285,7 +399,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
  
  	// these need to be computed the first time in order to compute time step
  	std::cout << "Starting..." << std::endl;
-@@ -582,7 +584,7 @@
+@@ -582,7 +592,7 @@
  		}
  	}
  
@@ -294,9 +408,9 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d.cu rodinia_backup/cuda/cfd/euler3d.cu
  	//	CUT_SAFE_CALL( cutStopTimer(timer) );  
  	sdkStopTimer(&timer); 
  
-diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d_double.cu
---- rodinia_3.1/cuda/cfd/euler3d_double.cu	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/cfd/euler3d_double.cu	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_3.1_new/cuda/cfd/euler3d_double.cu
+--- rodinia_3.1/cuda/cfd/euler3d_double.cu	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/euler3d_double.cu	2024-10-01 21:25:02.171049377 +0000
 @@ -2,18 +2,13 @@
  // This code is from the AIAA-2009-4001 paper
  
@@ -358,12 +472,24 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  }
  
  void dump(double* variables, int nel, int nelr)
-@@ -132,10 +127,10 @@
+@@ -124,18 +119,20 @@
+ 
+ __global__ void cuda_initialize_variables(int nelr, double* variables)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 	for(int j = 0; j < NVAR; j++)
+ 		variables[i + j*nelr] = ff_variable[j];
+ }
+ void initialize_variables(int nelr, double* variables)
  {
  	dim3 Dg(nelr / block_length), Db(block_length);
- 	cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
+-	cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
 -	cudaError_t error = cudaGetLastError();
 -	if (error != cudaSuccess) 
++	set_fp_exception_enabled("__device_stub__cuda_initialize_variables()");
++cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
 +	hipError_t error = hipGetLastError();
 +	if (error != hipSuccess) 
  	  {
@@ -372,12 +498,25 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	    exit(-1);
  	  }
  }
-@@ -207,10 +202,10 @@
+@@ -185,7 +182,8 @@
+ 
+ __global__ void cuda_compute_step_factor(int nelr, double* variables, double* areas, double* step_factors)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 
+ 	double density = variables[i + VAR_DENSITY*nelr];
+ 	double3 momentum;
+@@ -206,11 +204,12 @@
+ void compute_step_factor(int nelr, double* variables, double* areas, double* step_factors)
  {
  	dim3 Dg(nelr / block_length), Db(block_length);
- 	cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
+-	cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
 -	cudaError_t error = cudaGetLastError();		
 -	if (error != cudaSuccess) 
++	set_fp_exception_enabled("__device_stub__cuda_compute_step_factor()");
++cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
 +	hipError_t error = hipGetLastError();		
 +	if (error != hipSuccess) 
  	  {
@@ -386,12 +525,25 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	    exit(-1);
  	  }
  
-@@ -354,10 +349,10 @@
+@@ -222,7 +221,8 @@
+ */
+ __global__ void cuda_compute_flux(int nelr, int* elements_surrounding_elements, double* normals, double* variables, double* fluxes)
+ {
+-	const double smoothing_coefficient = double(0.2f);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const double smoothing_coefficient = double(0.2f);
+ 	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 	
+ 	int j, nb;
+@@ -353,11 +353,12 @@
+ void compute_flux(int nelr, int* elements_surrounding_elements, double* normals, double* variables, double* fluxes)
  {
  	dim3 Dg(nelr / block_length), Db(block_length);
- 	cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
+-	cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
 -	cudaError_t error = cudaGetLastError();
 -	if (error != cudaSuccess) 
++	set_fp_exception_enabled("__device_stub__cuda_compute_flux()");
++cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
 +	hipError_t error = hipGetLastError();
 +	if (error != hipSuccess) 
  	  {
@@ -400,12 +552,25 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	    exit(-1);
  	  }
  
-@@ -379,10 +374,10 @@
+@@ -365,7 +366,8 @@
+ 
+ __global__ void cuda_time_step(int j, int nelr, double* old_variables, double* variables, double* step_factors, double* fluxes)
+ {
+-	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
++	ENABLE_FP_EXCEPTION(RANDINT);
++const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+ 
+ 	double factor = step_factors[i]/double(RK+1-j);
+ 
+@@ -378,11 +380,12 @@
+ void time_step(int j, int nelr, double* old_variables, double* variables, double* step_factors, double* fluxes)
  {
  	dim3 Dg(nelr / block_length), Db(block_length);
- 	cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
+-	cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
 -	cudaError_t error = cudaGetLastError();
 -	if (error != cudaSuccess) 
++	set_fp_exception_enabled("__device_stub__cuda_time_step()");
++cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
 +	hipError_t error = hipGetLastError();
 +	if (error != hipSuccess) 
  	  {
@@ -414,7 +579,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	    exit(-1);
  	  }
  
-@@ -400,16 +395,16 @@
+@@ -400,16 +403,16 @@
  	}
  	const char* data_file_name = argv[1];
  	
@@ -435,7 +600,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	
  
  	printf("Name:                     %s\n", prop.name);
-@@ -447,12 +442,12 @@
+@@ -447,12 +450,12 @@
  		compute_flux_contribution(h_ff_variable[VAR_DENSITY], h_ff_momentum, h_ff_variable[VAR_DENSITY_ENERGY], ff_pressure, ff_velocity, h_ff_flux_contribution_momentum_x, h_ff_flux_contribution_momentum_y, h_ff_flux_contribution_momentum_z, h_ff_flux_contribution_density_energy);
  
  		// copy far field conditions to the gpu
@@ -453,7 +618,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	}
  	int nel;
  	int nelr;
-@@ -528,14 +523,14 @@
+@@ -528,14 +531,14 @@
  	// make sure all memory is doublely allocated before we start timing
  	initialize_variables(nelr, old_variables);
  	initialize_variables(nelr, fluxes);
@@ -471,7 +636,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	StopWatchInterface *timer = NULL;
  
  	sdkCreateTimer( &timer);
-@@ -548,10 +543,10 @@
+@@ -548,10 +551,10 @@
  		
  		// for the first iteration we compute the time step
  		compute_step_factor(nelr, variables, areas, step_factors);
@@ -485,7 +650,7 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  		    exit(-1);
  		  }
  
-@@ -559,25 +554,25 @@
+@@ -559,25 +562,25 @@
  		for(int j = 0; j < RK; j++)
  		  {
  		    compute_flux(nelr, elements_surrounding_elements, normals, variables, fluxes);
@@ -518,9 +683,9 @@ diff -ruN rodinia_3.1/cuda/cfd/euler3d_double.cu rodinia_backup/cuda/cfd/euler3d
  	sdkStopTimer(&timer);  
  
  	std::cout  << (sdkGetAverageTimerValue(&timer)/1000.0)  / iterations << " seconds per iteration" << std::endl;
-diff -ruN rodinia_3.1/cuda/cfd/exception.h rodinia_backup/cuda/cfd/exception.h
---- rodinia_3.1/cuda/cfd/exception.h	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/cfd/exception.h	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/exception.h rodinia_3.1_new/cuda/cfd/exception.h
+--- rodinia_3.1/cuda/cfd/exception.h	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/exception.h	2024-10-01 18:53:23.893277388 +0000
 @@ -0,0 +1,151 @@
 +/*
 +* Copyright 1993-2013 NVIDIA Corporation.  All rights reserved.
@@ -673,9 +838,9 @@ diff -ruN rodinia_3.1/cuda/cfd/exception.h rodinia_backup/cuda/cfd/exception.h
 +
 +#endif // #ifndef _EXCEPTION_H_
 +
-diff -ruN rodinia_3.1/cuda/cfd/helper_cuda.h rodinia_backup/cuda/cfd/helper_cuda.h
---- rodinia_3.1/cuda/cfd/helper_cuda.h	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/cfd/helper_cuda.h	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/helper_cuda.h rodinia_3.1_new/cuda/cfd/helper_cuda.h
+--- rodinia_3.1/cuda/cfd/helper_cuda.h	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/helper_cuda.h	2024-10-01 18:53:23.893277388 +0000
 @@ -0,0 +1,1041 @@
 +/**
 + * Copyright 1993-2014 NVIDIA Corporation.  All rights reserved.
@@ -1718,9 +1883,9 @@ diff -ruN rodinia_3.1/cuda/cfd/helper_cuda.h rodinia_backup/cuda/cfd/helper_cuda
 +
 +
 +#endif
-diff -ruN rodinia_3.1/cuda/cfd/helper_string.h rodinia_backup/cuda/cfd/helper_string.h
---- rodinia_3.1/cuda/cfd/helper_string.h	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/cfd/helper_string.h	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/helper_string.h rodinia_3.1_new/cuda/cfd/helper_string.h
+--- rodinia_3.1/cuda/cfd/helper_string.h	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/helper_string.h	2024-10-01 18:53:23.893277388 +0000
 @@ -0,0 +1,492 @@
 +/**
 + * Copyright 1993-2013 NVIDIA Corporation.  All rights reserved.
@@ -2214,9 +2379,9 @@ diff -ruN rodinia_3.1/cuda/cfd/helper_string.h rodinia_backup/cuda/cfd/helper_st
 +}
 +
 +#endif
-diff -ruN rodinia_3.1/cuda/cfd/helper_timer.h rodinia_backup/cuda/cfd/helper_timer.h
---- rodinia_3.1/cuda/cfd/helper_timer.h	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/cfd/helper_timer.h	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/helper_timer.h rodinia_3.1_new/cuda/cfd/helper_timer.h
+--- rodinia_3.1/cuda/cfd/helper_timer.h	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/helper_timer.h	2024-10-01 18:53:23.893277388 +0000
 @@ -0,0 +1,499 @@
 +/**
 + * Copyright 1993-2013 NVIDIA Corporation.  All rights reserved.
@@ -2717,40 +2882,9 @@ diff -ruN rodinia_3.1/cuda/cfd/helper_timer.h rodinia_backup/cuda/cfd/helper_tim
 +}
 +
 +#endif // HELPER_TIMER_H
-diff -ruN rodinia_3.1/cuda/cfd/Makefile rodinia_backup/cuda/cfd/Makefile
---- rodinia_3.1/cuda/cfd/Makefile	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/cfd/Makefile	2024-09-26 12:55:55.251231531 -0700
-@@ -11,21 +11,21 @@
- endif
- 
- 
--all: euler3d euler3d_double  pre_euler3d  pre_euler3d_double 
-+all: euler3d #euler3d_double  pre_euler3d  pre_euler3d_double 
- 
- euler3d: euler3d.cu
--	nvcc $(KERNEL_DIM) -O2 -Xptxas -v --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d.cu -o euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
- 
- euler3d_double: euler3d_double.cu
--	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d_double.cu -o euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) -O3 euler3d_double.cu -o euler3d_double 
- 
- 
- pre_euler3d: pre_euler3d.cu
--	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d.cu -o pre_euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) -O3 pre_euler3d.cu -o pre_euler3d 
- 
- pre_euler3d_double: pre_euler3d_double.cu
--	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d_double.cu -o pre_euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) -O3 pre_euler3d_double.cu -o pre_euler3d_double 
- 
- 
- clean:
--	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo
-+	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo *.o *.bc density density_energy momentum
-diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d.cu rodinia_backup/cuda/cfd/pre_euler3d.cu
---- rodinia_3.1/cuda/cfd/pre_euler3d.cu	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/cfd/pre_euler3d.cu	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d.cu rodinia_3.1_new/cuda/cfd/pre_euler3d.cu
+--- rodinia_3.1/cuda/cfd/pre_euler3d.cu	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/pre_euler3d.cu	2024-10-01 18:53:23.894277437 +0000
 @@ -2,8 +2,10 @@
  // This code is from the AIAA-2009-4001 paper
  
@@ -3003,9 +3137,9 @@ diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d.cu rodinia_backup/cuda/cfd/pre_euler3
  	sdkStopTimer(&timer);  
  
  	std::cout  << (sdkGetAverageTimerValue(&timer)/1000.0)  / iterations << " seconds per iteration" << std::endl;
-diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d_double.cu rodinia_backup/cuda/cfd/pre_euler3d_double.cu
---- rodinia_3.1/cuda/cfd/pre_euler3d_double.cu	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/cfd/pre_euler3d_double.cu	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d_double.cu rodinia_3.1_new/cuda/cfd/pre_euler3d_double.cu
+--- rodinia_3.1/cuda/cfd/pre_euler3d_double.cu	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/pre_euler3d_double.cu	2024-10-01 18:53:23.894277437 +0000
 @@ -1,19 +1,13 @@
  // Copyright 2009, Andrew Corrigan, acorriga@gmu.edu
  // This code is from the AIAA-2009-4001 paper
@@ -3210,26 +3344,190 @@ diff -ruN rodinia_3.1/cuda/cfd/pre_euler3d_double.cu rodinia_backup/cuda/cfd/pre
  	sdkStopTimer(&timer);  
  
  	std::cout  << (sdkGetAverageTimerValue(&timer)/1000.0)  / iterations << " seconds per iteration" << std::endl;
-diff -ruN rodinia_3.1/cuda/cfd/setup.ini rodinia_backup/cuda/cfd/setup.ini
---- rodinia_3.1/cuda/cfd/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/cfd/setup.ini	2024-09-26 12:55:55.251231531 -0700
+diff -ruN rodinia_3.1/cuda/cfd/seq.txt rodinia_3.1_new/cuda/cfd/seq.txt
+--- rodinia_3.1/cuda/cfd/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/seq.txt	2024-10-02 18:21:14.482718785 +0000
+@@ -0,0 +1,4 @@
++0
++2
++0x226028
++0x2261e0
+diff -ruN rodinia_3.1/cuda/cfd/setup.ini rodinia_3.1_new/cuda/cfd/setup.ini
+--- rodinia_3.1/cuda/cfd/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/cfd/setup.ini	2024-10-02 23:22:22.454152234 +0000
 @@ -0,0 +1,6 @@
 +[DEFAULT]
 +compile = make
-+run = ./euler3d fvcorr.domn.097K;./euler3d .fvcorr.domn.193K;./euler3d missile.domn.0.2M  
++run = ./euler3d_double fvcorr.domn.097K;./euler3d_double fvcorr.domn.193K;./euler3d_double missile.domn.0.2M  
 +use_clang_plugin = true
 +clang_convert = make INJECT_CODE_CLANG=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/dwt2d/autorun.sh rodinia_backup/cuda/dwt2d/autorun.sh
---- rodinia_3.1/cuda/dwt2d/autorun.sh	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/autorun.sh	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/Makefile rodinia_3.1_new/cuda/dwt2d/Makefile
+--- rodinia_3.1/cuda/dwt2d/Makefile	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/Makefile	1970-01-01 00:00:00.000000000 +0000
+@@ -1,112 +0,0 @@
+-#Configure
+-#CUDA_INSTALL_PATH ?= /usr/local/cuda
+-CUDA_INSTALL_PATH = $(CUDA_DIR)
+-EXECUTABLE := dwt2d
+-
+-# Debug options
+-dbg=0
+-cudagdb=0 #compile for use with cuda-gdb, note that 'dbg' must be 1 as well
+-performancetest=1
+-
+-# NVCC Options
+-NVCCFLAGS += -arch sm_20
+-
+-# Files
+-CFILES := 
+-CXXFILES := 
+-CUFILES := main.cu dwt.cu components.cu dwt_cuda/fdwt53.cu dwt_cuda/fdwt97.cu dwt_cuda/common.cu dwt_cuda/rdwt97.cu dwt_cuda/rdwt53.cu
+-
+-# Includes
+-INCLUDES := -I. -I$(CUDA_INSTALL_PATH)/include
+-
+-include ../../common/make.config
+-
+-
+-# Common flags
+-COMMONFLAGS += $(INCLUDES) 
+-NVCCFLAGS += $(COMMONFLAGS)
+-CXXFLAGS += $(COMMONFLAGS)
+-CFLAGS += $(COMMONFLAGS) -std=c99 
+-LDFLAGS += -L$(CUDA_INSTALL_PATH)/lib64 -lcudart
+-
+-# Warning flags (from cuda common.mk)
+-CXXWARN_FLAGS := \
+-	-W -Wall \
+-	-Wimplicit \
+-	-Wswitch \
+-	-Wformat \
+-	-Wchar-subscripts \
+-	-Wparentheses \
+-	-Wmultichar \
+-	-Wtrigraphs \
+-	-Wpointer-arith \
+-	-Wcast-align \
+-	-Wreturn-type \
+-	-Wno-unused-function \
+-	$(SPACE)
+-
+-CWARN_FLAGS := $(CXXWARN_FLAGS) \
+-	-Wstrict-prototypes \
+-	-Wmissing-prototypes \
+-	-Wmissing-declarations \
+-	-Wnested-externs \
+-	-Wmain \
+-
+-CFLAGS += $(CWARN_FLAGS)
+-CXXFLAGS += $(CXXWARN_FLAGS)
+-
+-# Debug/release flags
+-ifeq ($(dbg),1)
+-    COMMONFLAGS += -g 
+-    NVCCFLAGS   += -D_DEBUG
+-    CXXFLAGS    += -D_DEBUG
+-    CFLAGS      += -D_DEBUG
+-
+-    ifeq ($(cudagdb),1)
+-        NVCCFLAGS += -G
+-    endif
+-else 
+-    COMMONFLAGS += -O2 
+-    NVCCFLAGS   += --compiler-options -fno-strict-aliasing
+-    CXXFLAGS    += -fno-strict-aliasing
+-    CFLAGS      += -fno-strict-aliasing
+-endif
+-
+-#ifeq ($(performancetest),1)
+-#    COMMONFLAGS += -DGPU_DWT_TESTING
+-#endif
+-
+-#ifdef OUTPUT
+-#	override OUTPUT = -DOUTPUT
+-#endif
+-
+-OUTPUT = -DOUTPUT
+-
+-# Compilers
+-CXX := g++
+-CC := gcc
+-LINK := g++ -fPIC
+-NVCC := $(CUDA_INSTALL_PATH)/bin/nvcc
+-
+-# Generate object files list
+-COBJS=$(CFILES:.c=.c.o)
+-CXXOBJS=$(CXXFILES:.cpp=.cpp.o)
+-CUOBJS=$(CUFILES:.cu=.cu.o)
+-
+-.SUFFIXES: .c.o .cpp.o .cu.o .cu 
+-
+-%.c.o: %.c
+-	$(CC) $(CFLAGS) -c $< -o $@
+-
+-%.cu.o: %.cu
+-	$(NVCC) $(OUTPUT) $(NVCCFLAGS) -c $< -o $@
+-
+-%.cpp.o: %.cpp
+-	$(CXX) $(CXXFLAGS) -c $< -o $@
+-
+-$(EXECUTABLE): $(COBJS) $(CXXOBJS) $(CUOBJS) 
+-	$(LINK) -o $(EXECUTABLE) $(COBJS) $(CXXOBJS) $(CUOBJS) $(LDFLAGS)
+-
+-clean:
+-	rm -f $(COBJS) $(CXXOBJS) $(CUOBJS) $(EXECUTABLE)
+-	rm *.bmp.dwt.*		
+\ No newline at end of file
+diff -ruN rodinia_3.1/cuda/dwt2d/README rodinia_3.1_new/cuda/dwt2d/README
+--- rodinia_3.1/cuda/dwt2d/README	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/README	1970-01-01 00:00:00.000000000 +0000
+@@ -1,35 +0,0 @@
+-
+-// DESCRIPTION
+-
+-This is the CUDA version of the code.
+-
+-The JPEG2000 standard uses 2D Discrete Wavelet Transform (2D DWT), which consumes a significant part of the total encoding time
+-
+-
+-
+-// USE
+-**************OUTPUT********************
+-USAGE:
+-make clean
+-make OUTPUT=Y
+-
+-
+-**************PARAMETERS*****************
+-USEAGE:
+-./dwt2d [otpions] src_img.rgb <out_img.dwt>
+-
+-  -d, --dimension     dimensions of src img, e.g. 1920x1080
+-  -c, --components    number of color components, default 3
+-  -l, --level         DWT level, default 3
+-  -f, --forward       forward transform
+-  -5, --53            5/3 transform
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+diff -ruN rodinia_3.1/cuda/dwt2d/autorun.sh rodinia_3.1_new/cuda/dwt2d/autorun.sh
+--- rodinia_3.1/cuda/dwt2d/autorun.sh	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/autorun.sh	1970-01-01 00:00:00.000000000 +0000
 @@ -1 +0,0 @@
 -./dwt RGB_color_solid_cube_1.bmp -d 1024x1024 -f -5
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/dwt2d/common.h rodinia_backup/cuda/dwt2d/common.h
---- rodinia_3.1/cuda/dwt2d/common.h	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/common.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/common.h rodinia_3.1_new/cuda/dwt2d/common.h
+--- rodinia_3.1/cuda/dwt2d/common.h	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/common.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,62 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -3293,9 +3591,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/common.h rodinia_backup/cuda/dwt2d/common.h
 -
 -
 -#endif
-diff -ruN rodinia_3.1/cuda/dwt2d/components.cu rodinia_backup/cuda/dwt2d/components.cu
---- rodinia_3.1/cuda/dwt2d/components.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/components.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/components.cu rodinia_3.1_new/cuda/dwt2d/components.cu
+--- rodinia_3.1/cuda/dwt2d/components.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/components.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,193 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -3490,9 +3788,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/components.cu rodinia_backup/cuda/dwt2d/compone
 -
 -template void bwToComponent<float>(float *d_c, unsigned char *src, int width, int height);
 -template void bwToComponent<int>(int *d_c, unsigned char *src, int width, int height);
-diff -ruN rodinia_3.1/cuda/dwt2d/components.h rodinia_backup/cuda/dwt2d/components.h
---- rodinia_3.1/cuda/dwt2d/components.h	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/components.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/components.h rodinia_3.1_new/cuda/dwt2d/components.h
+--- rodinia_3.1/cuda/dwt2d/components.h	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/components.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,38 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -3532,9 +3830,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/components.h rodinia_backup/cuda/dwt2d/componen
 -void bwToComponent(T *d_c, unsigned char * src, int width, int height);
 -
 -#endif
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt.cu rodinia_backup/cuda/dwt2d/dwt.cu
---- rodinia_3.1/cuda/dwt2d/dwt.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt.cu rodinia_3.1_new/cuda/dwt2d/dwt.cu
+--- rodinia_3.1/cuda/dwt2d/dwt.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,359 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -3895,9 +4193,53 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt.cu rodinia_backup/cuda/dwt2d/dwt.cu
 -}
 -template int writeNStage2DDWT<float>(float *component_cuda, int pixWidth, int pixHeight, int stages, const char * filename, const char * suffix); 
 -template int writeNStage2DDWT<int>(int *component_cuda, int pixWidth, int pixHeight, int stages, const char * filename, const char * suffix); 
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.cu rodinia_backup/cuda/dwt2d/dwt_cuda/common.cu
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/common.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/common.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt.h rodinia_3.1_new/cuda/dwt2d/dwt.h
+--- rodinia_3.1/cuda/dwt2d/dwt.h	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt.h	1970-01-01 00:00:00.000000000 +0000
+@@ -1,40 +0,0 @@
+-/* 
+- * Copyright (c) 2009, Jiri Matela
+- * All rights reserved.
+- * 
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions are met:
+- * 
+- *     * Redistributions of source code must retain the above copyright
+- *       notice, this list of conditions and the following disclaimer.
+- *     * Redistributions in binary form must reproduce the above copyright
+- *       notice, this list of conditions and the following disclaimer in the
+- *       documentation and/or other materials provided with the distribution.
+- * 
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+- * POSSIBILITY OF SUCH DAMAGE.
+- */
+-
+-#ifndef _DWT_H
+-#define _DWT_H
+-
+-template<typename T> 
+-int nStage2dDWT(T *in, T *out, T * backup, int pixWidth, int pixHeight, int stages, bool forward);
+-
+-template<typename T>
+-int writeNStage2DDWT(T *component_cuda, int width, int height, 
+-                     int stages, const char * filename, const char * suffix);
+-template<typename T>
+-int writeLinear(T *component_cuda, int width, int height, 
+-                     const char * filename, const char * suffix);
+-
+-#endif
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.cu rodinia_3.1_new/cuda/dwt2d/dwt_cuda/common.cu
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/common.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/common.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,35 +0,0 @@
 -///  
 -/// @file    common.cu
@@ -3934,9 +4276,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.cu rodinia_backup/cuda/dwt2d/dw
 -namespace dwt_cuda {
 -  bool CudaDWTTester::testRunning = false;
 -}
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.h rodinia_backup/cuda/dwt2d/dwt_cuda/common.h
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/common.h	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/common.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.h rodinia_3.1_new/cuda/dwt2d/dwt_cuda/common.h
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/common.h	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/common.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,254 +0,0 @@
 -///  
 -/// @file    common.h
@@ -4192,9 +4534,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/common.h rodinia_backup/cuda/dwt2d/dwt
 -
 -#endif	// DWT_COMMON_CUDA_H
 -
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/dwt.h rodinia_backup/cuda/dwt2d/dwt_cuda/dwt.h
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/dwt.h	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/dwt.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/dwt.h rodinia_3.1_new/cuda/dwt2d/dwt_cuda/dwt.h
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/dwt.h	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/dwt.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,112 +0,0 @@
 -/// 
 -/// @file    dwt.h
@@ -4308,9 +4650,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/dwt.h rodinia_backup/cuda/dwt2d/dwt_cu
 -
 -#endif	// DWT_CUDA_H
 -
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt53.cu rodinia_backup/cuda/dwt2d/dwt_cuda/fdwt53.cu
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt53.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/fdwt53.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt53.cu rodinia_3.1_new/cuda/dwt2d/dwt_cuda/fdwt53.cu
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt53.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/fdwt53.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,395 +0,0 @@
 -/// @file    fdwt53.cu
 -/// @brief   CUDA implementation of forward 5/3 2D DWT.
@@ -4707,9 +5049,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt53.cu rodinia_backup/cuda/dwt2d/dw
 -  
 -
 -} // end of namespace dwt_cuda
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt97.cu rodinia_backup/cuda/dwt2d/dwt_cuda/fdwt97.cu
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt97.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/fdwt97.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt97.cu rodinia_3.1_new/cuda/dwt2d/dwt_cuda/fdwt97.cu
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt97.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/fdwt97.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,368 +0,0 @@
 -/// 
 -/// @file    fdwt97.cu
@@ -5079,9 +5421,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/fdwt97.cu rodinia_backup/cuda/dwt2d/dw
 -  
 -
 -} // end of namespace dwt_cuda
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/io.h rodinia_backup/cuda/dwt2d/dwt_cuda/io.h
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/io.h	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/io.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/io.h rodinia_3.1_new/cuda/dwt2d/dwt_cuda/io.h
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/io.h	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/io.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,473 +0,0 @@
 -///
 -/// @file:   io.h
@@ -5556,9 +5898,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/io.h rodinia_backup/cuda/dwt2d/dwt_cud
 -
 -#endif	// IO_H
 -
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt53.cu rodinia_backup/cuda/dwt2d/dwt_cuda/rdwt53.cu
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt53.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/rdwt53.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt53.cu rodinia_3.1_new/cuda/dwt2d/dwt_cuda/rdwt53.cu
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt53.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/rdwt53.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,360 +0,0 @@
 -/// 
 -/// @file    rdwt53.cu
@@ -5920,9 +6262,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt53.cu rodinia_backup/cuda/dwt2d/dw
 -  
 -
 -} // end of namespace dwt_cuda
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt97.cu rodinia_backup/cuda/dwt2d/dwt_cuda/rdwt97.cu
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt97.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/rdwt97.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt97.cu rodinia_3.1_new/cuda/dwt2d/dwt_cuda/rdwt97.cu
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt97.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/rdwt97.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,363 +0,0 @@
 -/// 
 -/// @file    rdwt97.cu
@@ -6287,9 +6629,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/rdwt97.cu rodinia_backup/cuda/dwt2d/dw
 -
 -  
 -} // end of namespace dwt_cuda
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/transform_buffer.h rodinia_backup/cuda/dwt2d/dwt_cuda/transform_buffer.h
---- rodinia_3.1/cuda/dwt2d/dwt_cuda/transform_buffer.h	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_cuda/transform_buffer.h	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/transform_buffer.h rodinia_3.1_new/cuda/dwt2d/dwt_cuda/transform_buffer.h
+--- rodinia_3.1/cuda/dwt2d/dwt_cuda/transform_buffer.h	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_cuda/transform_buffer.h	1970-01-01 00:00:00.000000000 +0000
 @@ -1,339 +0,0 @@
 -/// line 248 the index
 -/// @file    transform_buffer.h
@@ -6630,53 +6972,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_cuda/transform_buffer.h rodinia_backup/cuda
 -
 -#endif	// TRANSFORM_BUFFER_H
 -
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt.h rodinia_backup/cuda/dwt2d/dwt.h
---- rodinia_3.1/cuda/dwt2d/dwt.h	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt.h	1969-12-31 16:00:00.000000000 -0800
-@@ -1,40 +0,0 @@
--/* 
-- * Copyright (c) 2009, Jiri Matela
-- * All rights reserved.
-- * 
-- * Redistribution and use in source and binary forms, with or without
-- * modification, are permitted provided that the following conditions are met:
-- * 
-- *     * Redistributions of source code must retain the above copyright
-- *       notice, this list of conditions and the following disclaimer.
-- *     * Redistributions in binary form must reproduce the above copyright
-- *       notice, this list of conditions and the following disclaimer in the
-- *       documentation and/or other materials provided with the distribution.
-- * 
-- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-- * POSSIBILITY OF SUCH DAMAGE.
-- */
--
--#ifndef _DWT_H
--#define _DWT_H
--
--template<typename T> 
--int nStage2dDWT(T *in, T *out, T * backup, int pixWidth, int pixHeight, int stages, bool forward);
--
--template<typename T>
--int writeNStage2DDWT(T *component_cuda, int width, int height, 
--                     int stages, const char * filename, const char * suffix);
--template<typename T>
--int writeLinear(T *component_cuda, int width, int height, 
--                     const char * filename, const char * suffix);
--
--#endif
-diff -ruN rodinia_3.1/cuda/dwt2d/dwt_kernel.c.copy rodinia_backup/cuda/dwt2d/dwt_kernel.c.copy
---- rodinia_3.1/cuda/dwt2d/dwt_kernel.c.copy	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/dwt_kernel.c.copy	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/dwt_kernel.c.copy rodinia_3.1_new/cuda/dwt2d/dwt_kernel.c.copy
+--- rodinia_3.1/cuda/dwt2d/dwt_kernel.c.copy	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/dwt_kernel.c.copy	1970-01-01 00:00:00.000000000 +0000
 @@ -1,550 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -7228,9 +7526,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/dwt_kernel.c.copy rodinia_backup/cuda/dwt2d/dwt
 -}
 -
 -#endif
-diff -ruN rodinia_3.1/cuda/dwt2d/main.cu rodinia_backup/cuda/dwt2d/main.cu
---- rodinia_3.1/cuda/dwt2d/main.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/main.cu	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/main.cu rodinia_3.1_new/cuda/dwt2d/main.cu
+--- rodinia_3.1/cuda/dwt2d/main.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/main.cu	1970-01-01 00:00:00.000000000 +0000
 @@ -1,398 +0,0 @@
 -/* 
 - * Copyright (c) 2009, Jiri Matela
@@ -7630,165 +7928,9 @@ diff -ruN rodinia_3.1/cuda/dwt2d/main.cu rodinia_backup/cuda/dwt2d/main.cu
 -
 -    return 0;
 -}
-diff -ruN rodinia_3.1/cuda/dwt2d/Makefile rodinia_backup/cuda/dwt2d/Makefile
---- rodinia_3.1/cuda/dwt2d/Makefile	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/Makefile	1969-12-31 16:00:00.000000000 -0800
-@@ -1,112 +0,0 @@
--#Configure
--#CUDA_INSTALL_PATH ?= /usr/local/cuda
--CUDA_INSTALL_PATH = $(CUDA_DIR)
--EXECUTABLE := dwt2d
--
--# Debug options
--dbg=0
--cudagdb=0 #compile for use with cuda-gdb, note that 'dbg' must be 1 as well
--performancetest=1
--
--# NVCC Options
--NVCCFLAGS += -arch sm_20
--
--# Files
--CFILES := 
--CXXFILES := 
--CUFILES := main.cu dwt.cu components.cu dwt_cuda/fdwt53.cu dwt_cuda/fdwt97.cu dwt_cuda/common.cu dwt_cuda/rdwt97.cu dwt_cuda/rdwt53.cu
--
--# Includes
--INCLUDES := -I. -I$(CUDA_INSTALL_PATH)/include
--
--include ../../common/make.config
--
--
--# Common flags
--COMMONFLAGS += $(INCLUDES) 
--NVCCFLAGS += $(COMMONFLAGS)
--CXXFLAGS += $(COMMONFLAGS)
--CFLAGS += $(COMMONFLAGS) -std=c99 
--LDFLAGS += -L$(CUDA_INSTALL_PATH)/lib64 -lcudart
--
--# Warning flags (from cuda common.mk)
--CXXWARN_FLAGS := \
--	-W -Wall \
--	-Wimplicit \
--	-Wswitch \
--	-Wformat \
--	-Wchar-subscripts \
--	-Wparentheses \
--	-Wmultichar \
--	-Wtrigraphs \
--	-Wpointer-arith \
--	-Wcast-align \
--	-Wreturn-type \
--	-Wno-unused-function \
--	$(SPACE)
--
--CWARN_FLAGS := $(CXXWARN_FLAGS) \
--	-Wstrict-prototypes \
--	-Wmissing-prototypes \
--	-Wmissing-declarations \
--	-Wnested-externs \
--	-Wmain \
--
--CFLAGS += $(CWARN_FLAGS)
--CXXFLAGS += $(CXXWARN_FLAGS)
--
--# Debug/release flags
--ifeq ($(dbg),1)
--    COMMONFLAGS += -g 
--    NVCCFLAGS   += -D_DEBUG
--    CXXFLAGS    += -D_DEBUG
--    CFLAGS      += -D_DEBUG
--
--    ifeq ($(cudagdb),1)
--        NVCCFLAGS += -G
--    endif
--else 
--    COMMONFLAGS += -O2 
--    NVCCFLAGS   += --compiler-options -fno-strict-aliasing
--    CXXFLAGS    += -fno-strict-aliasing
--    CFLAGS      += -fno-strict-aliasing
--endif
--
--#ifeq ($(performancetest),1)
--#    COMMONFLAGS += -DGPU_DWT_TESTING
--#endif
--
--#ifdef OUTPUT
--#	override OUTPUT = -DOUTPUT
--#endif
--
--OUTPUT = -DOUTPUT
--
--# Compilers
--CXX := g++
--CC := gcc
--LINK := g++ -fPIC
--NVCC := $(CUDA_INSTALL_PATH)/bin/nvcc
--
--# Generate object files list
--COBJS=$(CFILES:.c=.c.o)
--CXXOBJS=$(CXXFILES:.cpp=.cpp.o)
--CUOBJS=$(CUFILES:.cu=.cu.o)
--
--.SUFFIXES: .c.o .cpp.o .cu.o .cu 
--
--%.c.o: %.c
--	$(CC) $(CFLAGS) -c $< -o $@
--
--%.cu.o: %.cu
--	$(NVCC) $(OUTPUT) $(NVCCFLAGS) -c $< -o $@
--
--%.cpp.o: %.cpp
--	$(CXX) $(CXXFLAGS) -c $< -o $@
--
--$(EXECUTABLE): $(COBJS) $(CXXOBJS) $(CUOBJS) 
--	$(LINK) -o $(EXECUTABLE) $(COBJS) $(CXXOBJS) $(CUOBJS) $(LDFLAGS)
--
--clean:
--	rm -f $(COBJS) $(CXXOBJS) $(CUOBJS) $(EXECUTABLE)
--	rm *.bmp.dwt.*		
-\ No newline at end of file
-diff -ruN rodinia_3.1/cuda/dwt2d/README rodinia_backup/cuda/dwt2d/README
---- rodinia_3.1/cuda/dwt2d/README	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/README	1969-12-31 16:00:00.000000000 -0800
-@@ -1,35 +0,0 @@
--
--// DESCRIPTION
--
--This is the CUDA version of the code.
--
--The JPEG2000 standard uses 2D Discrete Wavelet Transform (2D DWT), which consumes a significant part of the total encoding time
--
--
--
--// USE
--**************OUTPUT********************
--USAGE:
--make clean
--make OUTPUT=Y
--
--
--**************PARAMETERS*****************
--USEAGE:
--./dwt2d [otpions] src_img.rgb <out_img.dwt>
--
--  -d, --dimension     dimensions of src img, e.g. 1920x1080
--  -c, --components    number of color components, default 3
--  -l, --level         DWT level, default 3
--  -f, --forward       forward transform
--  -5, --53            5/3 transform
--
--
--
--
--
--
--
--
--
--
-diff -ruN rodinia_3.1/cuda/dwt2d/result.txt rodinia_backup/cuda/dwt2d/result.txt
---- rodinia_3.1/cuda/dwt2d/result.txt	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/result.txt	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/result.txt rodinia_3.1_new/cuda/dwt2d/result.txt
+--- rodinia_3.1/cuda/dwt2d/result.txt	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/result.txt	1970-01-01 00:00:00.000000000 +0000
 @@ -1,9 +0,0 @@
 -/usr/local/cuda/bin/nvcc -arch sm_20 -I. -I/include  -O2  --compiler-options -fno-strict-aliasing -c main.cu -o main.cu.o
 -/usr/local/cuda/bin/nvcc -arch sm_20 -I. -I/include  -O2  --compiler-options -fno-strict-aliasing -c dwt.cu -o dwt.cu.o
@@ -7799,17 +7941,38 @@ diff -ruN rodinia_3.1/cuda/dwt2d/result.txt rodinia_backup/cuda/dwt2d/result.txt
 -/usr/local/cuda/bin/nvcc -arch sm_20 -I. -I/include  -O2  --compiler-options -fno-strict-aliasing -c dwt_cuda/rdwt97.cu -o dwt_cuda/rdwt97.cu.o
 -/usr/local/cuda/bin/nvcc -arch sm_20 -I. -I/include  -O2  --compiler-options -fno-strict-aliasing -c dwt_cuda/rdwt53.cu -o dwt_cuda/rdwt53.cu.o
 -g++ -fPIC -o dwt2d   main.cu.o dwt.cu.o components.cu.o dwt_cuda/fdwt53.cu.o dwt_cuda/fdwt97.cu.o dwt_cuda/common.cu.o dwt_cuda/rdwt97.cu.o dwt_cuda/rdwt53.cu.o -L/usr/local/cuda/lib64 -lcudart
-diff -ruN rodinia_3.1/cuda/dwt2d/run.sh rodinia_backup/cuda/dwt2d/run.sh
---- rodinia_3.1/cuda/dwt2d/run.sh	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/dwt2d/run.sh	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/dwt2d/run.sh rodinia_3.1_new/cuda/dwt2d/run.sh
+--- rodinia_3.1/cuda/dwt2d/run.sh	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/dwt2d/run.sh	1970-01-01 00:00:00.000000000 +0000
 @@ -1,3 +0,0 @@
 -./dwt2d 192.bmp -d 192x192 -f -5 -l 3
 -ls
 -./dwt2d rgb.bmp -d 1024x1024 -f -5 -l 3
-Binary files rodinia_3.1/cuda/gaussian/gaussian and rodinia_backup/cuda/gaussian/gaussian differ
-diff -ruN rodinia_3.1/cuda/gaussian/gaussian.cu rodinia_backup/cuda/gaussian/gaussian.cu
---- rodinia_3.1/cuda/gaussian/gaussian.cu	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/gaussian/gaussian.cu	2024-09-26 12:55:55.315234695 -0700
+diff -ruN rodinia_3.1/cuda/gaussian/Makefile rodinia_3.1_new/cuda/gaussian/Makefile
+--- rodinia_3.1/cuda/gaussian/Makefile	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/gaussian/Makefile	2024-10-01 18:53:23.896277535 +0000
+@@ -1,14 +1,14 @@
+ include ../../common/make.config
+ 
+-CC := $(CUDA_DIR)/bin/nvcc
++CC := hipcc
+ 
+-INCLUDE := $(CUDA_DIR)/include
++INCLUDE := 
+ 
+ SRC = gaussian.cu
+ EXE = gaussian
+ 
+ release: $(SRC)
+-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
++	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
+ 
+ clean:
+ 	rm gaussian
+Binary files rodinia_3.1/cuda/gaussian/gaussian and rodinia_3.1_new/cuda/gaussian/gaussian differ
+diff -ruN rodinia_3.1/cuda/gaussian/gaussian.cu rodinia_3.1_new/cuda/gaussian/gaussian.cu
+--- rodinia_3.1/cuda/gaussian/gaussian.cu	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/gaussian/gaussian.cu	2024-10-01 22:00:10.338398302 +0000
 @@ -15,7 +15,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -7819,6 +7982,15 @@ diff -ruN rodinia_3.1/cuda/gaussian/gaussian.cu rodinia_backup/cuda/gaussian/gau
  #include <string.h>
  #include <math.h>
  
+@@ -92,7 +92,7 @@
+ int main(int argc, char *argv[])
+ {
+   printf("WG size of kernel 1 = %d, WG size of kernel 2= %d X %d\n", MAXBLOCKSIZE, BLOCK_SIZE_XY, BLOCK_SIZE_XY);
+-    int verbose = 1;
++    int verbose = 0;
+     int i, j;
+     char flag;
+     if (argc < 2) {
 @@ -199,15 +199,15 @@
   **-----------------------------------------------------
   */
@@ -7916,30 +8088,9 @@ diff -ruN rodinia_3.1/cuda/gaussian/gaussian.cu rodinia_backup/cuda/gaussian/gau
          exit(EXIT_FAILURE);
      }                         
  }
-diff -ruN rodinia_3.1/cuda/gaussian/Makefile rodinia_backup/cuda/gaussian/Makefile
---- rodinia_3.1/cuda/gaussian/Makefile	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/gaussian/Makefile	2024-09-26 12:55:55.315234695 -0700
-@@ -1,14 +1,14 @@
- include ../../common/make.config
- 
--CC := $(CUDA_DIR)/bin/nvcc
-+CC := hipcc
- 
--INCLUDE := $(CUDA_DIR)/include
-+INCLUDE := 
- 
- SRC = gaussian.cu
- EXE = gaussian
- 
- release: $(SRC)
--	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
- 
- clean:
- 	rm gaussian
-diff -ruN rodinia_3.1/cuda/gaussian/matrixGenerator.py rodinia_backup/cuda/gaussian/matrixGenerator.py
---- rodinia_3.1/cuda/gaussian/matrixGenerator.py	2024-09-26 15:55:15.615562881 -0700
-+++ rodinia_backup/cuda/gaussian/matrixGenerator.py	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/gaussian/matrixGenerator.py rodinia_3.1_new/cuda/gaussian/matrixGenerator.py
+--- rodinia_3.1/cuda/gaussian/matrixGenerator.py	2024-10-02 23:14:10.094865894 +0000
++++ rodinia_3.1_new/cuda/gaussian/matrixGenerator.py	1970-01-01 00:00:00.000000000 +0000
 @@ -1,95 +0,0 @@
 -#!/usr/bin/python
 -
@@ -8036,9 +8187,15 @@ diff -ruN rodinia_3.1/cuda/gaussian/matrixGenerator.py rodinia_backup/cuda/gauss
 -	f.write("\n\n")
 -	
 -	f.close()
-diff -ruN rodinia_3.1/cuda/gaussian/setup.ini rodinia_backup/cuda/gaussian/setup.ini
---- rodinia_3.1/cuda/gaussian/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/gaussian/setup.ini	2024-09-26 12:55:55.318234843 -0700
+diff -ruN rodinia_3.1/cuda/gaussian/seq.txt rodinia_3.1_new/cuda/gaussian/seq.txt
+--- rodinia_3.1/cuda/gaussian/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/gaussian/seq.txt	2024-10-01 22:00:25.813168211 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/gaussian/setup.ini rodinia_3.1_new/cuda/gaussian/setup.ini
+--- rodinia_3.1/cuda/gaussian/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/gaussian/setup.ini	2024-10-01 18:53:23.896277535 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -8048,9 +8205,31 @@ diff -ruN rodinia_3.1/cuda/gaussian/setup.ini rodinia_backup/cuda/gaussian/setup
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/heartwall/main.cu rodinia_backup/cuda/heartwall/main.cu
---- rodinia_3.1/cuda/heartwall/main.cu	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/heartwall/main.cu	2024-09-26 12:55:55.318234843 -0700
+diff -ruN rodinia_3.1/cuda/heartwall/Makefile rodinia_3.1_new/cuda/heartwall/Makefile
+--- rodinia_3.1/cuda/heartwall/Makefile	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/heartwall/Makefile	2024-10-01 18:53:23.896277535 +0000
+@@ -1,3 +1,4 @@
++include ../../common/make.config
+ 
+ ifdef OUTPUT
+ override OUTPUT = -DOUTPUT
+@@ -5,11 +6,11 @@
+ 
+ # link objects(binaries) together
+ heartwall: main.o ./AVI/avilib.o ./AVI/avimod.o 
+-	nvcc main.o ./AVI/avilib.o ./AVI/avimod.o -I/usr/local/cuda/include -lm -o heartwall
++	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o main.o ./AVI/avilib.o ./AVI/avimod.o -lm -o heartwall
+ 
+ # compile main function file into object (binary)
+ main.o: main.cu kernel.cu define.c
+-	nvcc $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
++	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
+ 
+ ./AVI/avilib.o ./AVI/avimod.o:
+ 	cd AVI; make;
+diff -ruN rodinia_3.1/cuda/heartwall/main.cu rodinia_3.1_new/cuda/heartwall/main.cu
+--- rodinia_3.1/cuda/heartwall/main.cu	2015-12-11 15:46:05.000000000 +0000
++++ rodinia_3.1_new/cuda/heartwall/main.cu	2024-10-01 18:53:23.896277535 +0000
 @@ -14,7 +14,7 @@
  
  #include <avilib.h>
@@ -8363,31 +8542,15 @@ diff -ruN rodinia_3.1/cuda/heartwall/main.cu rodinia_backup/cuda/heartwall/main.
  	}
  
  }
-diff -ruN rodinia_3.1/cuda/heartwall/Makefile rodinia_backup/cuda/heartwall/Makefile
---- rodinia_3.1/cuda/heartwall/Makefile	2015-12-11 07:46:05.000000000 -0800
-+++ rodinia_backup/cuda/heartwall/Makefile	2024-09-26 12:55:55.318234843 -0700
-@@ -1,3 +1,4 @@
-+include ../../common/make.config
- 
- ifdef OUTPUT
- override OUTPUT = -DOUTPUT
-@@ -5,11 +6,11 @@
- 
- # link objects(binaries) together
- heartwall: main.o ./AVI/avilib.o ./AVI/avimod.o 
--	nvcc main.o ./AVI/avilib.o ./AVI/avimod.o -I/usr/local/cuda/include -lm -o heartwall
-+	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o main.o ./AVI/avilib.o ./AVI/avimod.o -lm -o heartwall
- 
- # compile main function file into object (binary)
- main.o: main.cu kernel.cu define.c
--	nvcc $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
-+	hipcc $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
- 
- ./AVI/avilib.o ./AVI/avimod.o:
- 	cd AVI; make;
-diff -ruN rodinia_3.1/cuda/heartwall/setup.ini rodinia_backup/cuda/heartwall/setup.ini
---- rodinia_3.1/cuda/heartwall/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/heartwall/setup.ini	2024-09-26 12:55:55.319234893 -0700
+diff -ruN rodinia_3.1/cuda/heartwall/seq.txt rodinia_3.1_new/cuda/heartwall/seq.txt
+--- rodinia_3.1/cuda/heartwall/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/heartwall/seq.txt	2024-10-01 19:57:55.220748321 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/heartwall/setup.ini rodinia_3.1_new/cuda/heartwall/setup.ini
+--- rodinia_3.1/cuda/heartwall/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/heartwall/setup.ini	2024-10-01 18:53:23.896277535 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -8397,9 +8560,42 @@ diff -ruN rodinia_3.1/cuda/heartwall/setup.ini rodinia_backup/cuda/heartwall/set
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/hotspot/hotspot.cu rodinia_backup/cuda/hotspot/hotspot.cu
---- rodinia_3.1/cuda/hotspot/hotspot.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/hotspot/hotspot.cu	2024-09-26 12:55:55.349236376 -0700
+diff -ruN rodinia_3.1/cuda/hotspot/Makefile rodinia_3.1_new/cuda/hotspot/Makefile
+--- rodinia_3.1/cuda/hotspot/Makefile	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot/Makefile	2024-10-01 18:53:23.896277535 +0000
+@@ -1,24 +1,22 @@
+ include ../../common/make.config
+ 
+-CC := $(CUDA_DIR)/bin/nvcc
+-
+-INCLUDE := $(CUDA_DIR)/include
++CC := hipcc
+ 
+ SRC = hotspot.cu
+ 
+ EXE = hotspot
+ 
+ release: $(SRC)
+-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
++	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
+ 
+ enum: $(SRC)
+-	$(CC) $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
++	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE)
+ 
+ debug: $(SRC)
+-	$(CC) $(KERNEL_DIM) -g $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
++	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g $(SRC) -o $(EXE)
+ 
+ debugenum: $(SRC)
+-	$(CC) $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
++	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE)
+ 
+ clean: $(SRC)
+ 	rm -f $(EXE) $(EXE).linkinfo result.txt
+diff -ruN rodinia_3.1/cuda/hotspot/hotspot.cu rodinia_3.1_new/cuda/hotspot/hotspot.cu
+--- rodinia_3.1/cuda/hotspot/hotspot.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot/hotspot.cu	2024-10-01 18:53:23.896277535 +0000
 @@ -1,3 +1,5 @@
 +
 +#include <hip/hip_runtime.h>
@@ -8457,48 +8653,21 @@ diff -ruN rodinia_3.1/cuda/hotspot/hotspot.cu rodinia_backup/cuda/hotspot/hotspo
 +    hipFree(MatrixTemp[1]);
      free(MatrixOut);
  }
-diff -ruN rodinia_3.1/cuda/hotspot/Makefile rodinia_backup/cuda/hotspot/Makefile
---- rodinia_3.1/cuda/hotspot/Makefile	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/hotspot/Makefile	2024-09-26 12:55:55.349236376 -0700
-@@ -1,24 +1,22 @@
- include ../../common/make.config
- 
--CC := $(CUDA_DIR)/bin/nvcc
--
--INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
- 
- SRC = hotspot.cu
- 
- EXE = hotspot
- 
- release: $(SRC)
--	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
- 
- enum: $(SRC)
--	$(CC) $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE)
- 
- debug: $(SRC)
--	$(CC) $(KERNEL_DIM) -g $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g $(SRC) -o $(EXE)
- 
- debugenum: $(SRC)
--	$(CC) $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE)
- 
- clean: $(SRC)
- 	rm -f $(EXE) $(EXE).linkinfo result.txt
-diff -ruN rodinia_3.1/cuda/hotspot/run rodinia_backup/cuda/hotspot/run
---- rodinia_3.1/cuda/hotspot/run	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/hotspot/run	2024-09-26 12:55:55.357236771 -0700
+diff -ruN rodinia_3.1/cuda/hotspot/run rodinia_3.1_new/cuda/hotspot/run
+--- rodinia_3.1/cuda/hotspot/run	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot/run	2024-10-01 18:53:23.897277585 +0000
 @@ -1 +1 @@
 -./hotspot 512 2 2 ../../data/hotspot/temp_512 ../../data/hotspot/power_512 output.out
 +./hotspot 512 2 2 temp_512 power_512 output.out
-diff -ruN rodinia_3.1/cuda/hotspot/setup.ini rodinia_backup/cuda/hotspot/setup.ini
---- rodinia_3.1/cuda/hotspot/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/hotspot/setup.ini	2024-09-26 12:55:55.357236771 -0700
+diff -ruN rodinia_3.1/cuda/hotspot/seq.txt rodinia_3.1_new/cuda/hotspot/seq.txt
+--- rodinia_3.1/cuda/hotspot/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot/seq.txt	2024-10-01 19:58:00.328999792 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/hotspot/setup.ini rodinia_3.1_new/cuda/hotspot/setup.ini
+--- rodinia_3.1/cuda/hotspot/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot/setup.ini	2024-10-01 18:53:23.897277585 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -8508,10 +8677,10 @@ diff -ruN rodinia_3.1/cuda/hotspot/setup.ini rodinia_backup/cuda/hotspot/setup.i
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-Binary files rodinia_3.1/cuda/hotspot3D/3D and rodinia_backup/cuda/hotspot3D/3D differ
-diff -ruN rodinia_3.1/cuda/hotspot3D/3D.cu rodinia_backup/cuda/hotspot3D/3D.cu
---- rodinia_3.1/cuda/hotspot3D/3D.cu	2015-12-11 07:46:16.000000000 -0800
-+++ rodinia_backup/cuda/hotspot3D/3D.cu	2024-09-26 12:55:55.378237810 -0700
+Binary files rodinia_3.1/cuda/hotspot3D/3D and rodinia_3.1_new/cuda/hotspot3D/3D differ
+diff -ruN rodinia_3.1/cuda/hotspot3D/3D.cu rodinia_3.1_new/cuda/hotspot3D/3D.cu
+--- rodinia_3.1/cuda/hotspot3D/3D.cu	2015-12-11 15:46:16.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot3D/3D.cu	2024-10-01 18:53:23.897277585 +0000
 @@ -1,3 +1,4 @@
 +#include <hip/hip_runtime.h>
  #include <stdio.h>
@@ -8544,9 +8713,9 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/3D.cu rodinia_backup/cuda/hotspot3D/3D.cu
      free(tempIn);
      free(tempOut); free(powerIn);
      return 0;
-diff -ruN rodinia_3.1/cuda/hotspot3D/Makefile rodinia_backup/cuda/hotspot3D/Makefile
---- rodinia_3.1/cuda/hotspot3D/Makefile	2015-12-11 07:46:16.000000000 -0800
-+++ rodinia_backup/cuda/hotspot3D/Makefile	2024-09-26 12:55:55.378237810 -0700
+diff -ruN rodinia_3.1/cuda/hotspot3D/Makefile rodinia_3.1_new/cuda/hotspot3D/Makefile
+--- rodinia_3.1/cuda/hotspot3D/Makefile	2015-12-11 15:46:16.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot3D/Makefile	2024-10-01 18:53:23.897277585 +0000
 @@ -1,8 +1,6 @@
 -include ~/rodinia_3.0/common/make.config
 +include ../../common/make.config
@@ -8582,9 +8751,9 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/Makefile rodinia_backup/cuda/hotspot3D/Make
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo $(OUTPUT) 
-diff -ruN rodinia_3.1/cuda/hotspot3D/opt1.cu rodinia_backup/cuda/hotspot3D/opt1.cu
---- rodinia_3.1/cuda/hotspot3D/opt1.cu	2015-12-11 07:46:16.000000000 -0800
-+++ rodinia_backup/cuda/hotspot3D/opt1.cu	2024-09-26 12:55:55.378237810 -0700
+diff -ruN rodinia_3.1/cuda/hotspot3D/opt1.cu rodinia_3.1_new/cuda/hotspot3D/opt1.cu
+--- rodinia_3.1/cuda/hotspot3D/opt1.cu	2015-12-11 15:46:16.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot3D/opt1.cu	2024-10-01 18:53:23.897277585 +0000
 @@ -70,13 +70,13 @@
  
      size_t s = sizeof(float) * nx * ny * nz;  
@@ -8625,9 +8794,15 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/opt1.cu rodinia_backup/cuda/hotspot3D/opt1.
      return;
  }
  
-diff -ruN rodinia_3.1/cuda/hotspot3D/setup.ini rodinia_backup/cuda/hotspot3D/setup.ini
---- rodinia_3.1/cuda/hotspot3D/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/hotspot3D/setup.ini	2024-09-26 12:55:55.399238848 -0700
+diff -ruN rodinia_3.1/cuda/hotspot3D/seq.txt rodinia_3.1_new/cuda/hotspot3D/seq.txt
+--- rodinia_3.1/cuda/hotspot3D/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot3D/seq.txt	2024-10-01 19:58:09.521452320 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/hotspot3D/setup.ini rodinia_3.1_new/cuda/hotspot3D/setup.ini
+--- rodinia_3.1/cuda/hotspot3D/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/hotspot3D/setup.ini	2024-10-01 18:53:23.897277585 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -8637,9 +8812,9 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/setup.ini rodinia_backup/cuda/hotspot3D/set
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda.cu rodinia_backup/cuda/lavaMD/kernel/kernel_gpu_cuda.cu
---- rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda.cu	2015-12-11 07:46:07.000000000 -0800
-+++ rodinia_backup/cuda/lavaMD/kernel/kernel_gpu_cuda.cu	2024-09-26 12:55:55.429240331 -0700
+diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda.cu rodinia_3.1_new/cuda/lavaMD/kernel/kernel_gpu_cuda.cu
+--- rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda.cu	2015-12-11 15:46:07.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/kernel/kernel_gpu_cuda.cu	2024-10-01 18:53:23.897277585 +0000
 @@ -2,6 +2,7 @@
  //	plasmaKernel_gpu_2
  //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------200
@@ -8648,9 +8823,9 @@ diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda.cu rodinia_backup/cuda/
  __global__ void kernel_gpu_cuda(par_str d_par_gpu,
  								dim_str d_dim_gpu,
  								box_str* d_box_gpu,
-diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu rodinia_backup/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu
---- rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu	2024-09-26 12:55:55.430240381 -0700
+diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu rodinia_3.1_new/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu
+--- rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu	2024-10-01 18:53:23.897277585 +0000
 @@ -6,6 +6,8 @@
  //	MAIN FUNCTION HEADER
  //======================================================================================================================================================150
@@ -8788,9 +8963,9 @@ diff -ruN rodinia_3.1/cuda/lavaMD/kernel/kernel_gpu_cuda_wrapper.cu rodinia_back
  
  	time6 = get_time();
  
-diff -ruN rodinia_3.1/cuda/lavaMD/makefile rodinia_backup/cuda/lavaMD/makefile
---- rodinia_3.1/cuda/lavaMD/makefile	2015-12-11 07:46:07.000000000 -0800
-+++ rodinia_backup/cuda/lavaMD/makefile	2024-09-26 12:55:55.426240183 -0700
+diff -ruN rodinia_3.1/cuda/lavaMD/makefile rodinia_3.1_new/cuda/lavaMD/makefile
+--- rodinia_3.1/cuda/lavaMD/makefile	2015-12-11 15:46:07.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/makefile	2024-10-01 18:53:23.897277585 +0000
 @@ -16,9 +16,9 @@
  OMP_LIB = -lgomp
  OMP_FLAG = -fopenmp
@@ -8819,9 +8994,15 @@ diff -ruN rodinia_3.1/cuda/lavaMD/makefile rodinia_backup/cuda/lavaMD/makefile
  			$(OMP_LIB) \
  			-o lavaMD
  
-diff -ruN rodinia_3.1/cuda/lavaMD/setup.ini rodinia_backup/cuda/lavaMD/setup.ini
---- rodinia_3.1/cuda/lavaMD/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/lavaMD/setup.ini	2024-09-26 12:55:55.429240331 -0700
+diff -ruN rodinia_3.1/cuda/lavaMD/seq.txt rodinia_3.1_new/cuda/lavaMD/seq.txt
+--- rodinia_3.1/cuda/lavaMD/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/seq.txt	2024-10-01 19:58:14.386691827 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/lavaMD/setup.ini rodinia_3.1_new/cuda/lavaMD/setup.ini
+--- rodinia_3.1/cuda/lavaMD/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/setup.ini	2024-10-01 18:53:23.897277585 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -8831,9 +9012,9 @@ diff -ruN rodinia_3.1/cuda/lavaMD/setup.ini rodinia_backup/cuda/lavaMD/setup.ini
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/lavaMD/util/device/device.cu rodinia_backup/cuda/lavaMD/util/device/device.cu
---- rodinia_3.1/cuda/lavaMD/util/device/device.cu	2015-12-11 07:46:07.000000000 -0800
-+++ rodinia_backup/cuda/lavaMD/util/device/device.cu	2024-09-26 12:55:55.430240381 -0700
+diff -ruN rodinia_3.1/cuda/lavaMD/util/device/device.cu rodinia_3.1_new/cuda/lavaMD/util/device/device.cu
+--- rodinia_3.1/cuda/lavaMD/util/device/device.cu	2015-12-11 15:46:07.000000000 +0000
++++ rodinia_3.1_new/cuda/lavaMD/util/device/device.cu	2024-10-01 18:53:23.897277585 +0000
 @@ -6,6 +6,8 @@
  //	INCLUDE/DEFINE
  //======================================================================================================================================================150
@@ -8888,10 +9069,46 @@ diff -ruN rodinia_3.1/cuda/lavaMD/util/device/device.cu rodinia_backup/cuda/lava
  		fflush(NULL);
  		exit(EXIT_FAILURE);
  	}
-Binary files rodinia_3.1/cuda/lud/common/common.o and rodinia_backup/cuda/lud/common/common.o differ
-diff -ruN rodinia_3.1/cuda/lud/cuda/lud.cu rodinia_backup/cuda/lud/cuda/lud.cu
---- rodinia_3.1/cuda/lud/cuda/lud.cu	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/lud/cuda/lud.cu	2024-09-26 12:55:55.459241814 -0700
+Binary files rodinia_3.1/cuda/lud/common/common.o and rodinia_3.1_new/cuda/lud/common/common.o differ
+diff -ruN rodinia_3.1/cuda/lud/cuda/Makefile rodinia_3.1_new/cuda/lud/cuda/Makefile
+--- rodinia_3.1/cuda/lud/cuda/Makefile	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/cuda/Makefile	2024-10-01 18:53:23.898277634 +0000
+@@ -1,5 +1,7 @@
++include ../../../common/make.config
++
+ CC = gcc
+-NVCC = nvcc
++NVCC = hipcc
+ 
+ DEFS += \
+ 		-DGPU_TIMER \
+@@ -7,8 +9,7 @@
+ 
+ NVCCFLAGS += -I../common \
+ 			 -O3 \
+-			 -use_fast_math \
+-			 -arch=sm_13 \
++			 -ffast-math \
+ 			 -lm \
+ 			 $(SPACE)
+ 
+@@ -34,11 +35,11 @@
+ 	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
+ 
+ %.o:	%.cu 
+-	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
++	$(NVCC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
+ 
+ 
+ $(EXECUTABLE) : $(OBJS)
+-	$(NVCC) $(NVCCFLAGS) -o $@  $?
++	$(NVCC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(NVCCFLAGS) -o $@  $?
+ 
+ clean:
+ 	rm -f $(EXECUTABLE) $(OBJS) *.linkinfo
+diff -ruN rodinia_3.1/cuda/lud/cuda/lud.cu rodinia_3.1_new/cuda/lud/cuda/lud.cu
+--- rodinia_3.1/cuda/lud/cuda/lud.cu	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/cuda/lud.cu	2024-10-01 18:53:23.898277634 +0000
 @@ -16,7 +16,7 @@
   * =====================================================================================
   */
@@ -8932,19 +9149,20 @@ diff -ruN rodinia_3.1/cuda/lud/cuda/lud.cu rodinia_backup/cuda/lud/cuda/lud.cu
  
  
    if (do_verify){
-Binary files rodinia_3.1/cuda/lud/cuda/lud_cuda and rodinia_backup/cuda/lud/cuda/lud_cuda differ
-diff -ruN rodinia_3.1/cuda/lud/cuda/lud_kernel.cu rodinia_backup/cuda/lud/cuda/lud_kernel.cu
---- rodinia_3.1/cuda/lud/cuda/lud_kernel.cu	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/lud/cuda/lud_kernel.cu	2024-09-26 12:55:55.459241814 -0700
+Binary files rodinia_3.1/cuda/lud/cuda/lud.o and rodinia_3.1_new/cuda/lud/cuda/lud.o differ
+Binary files rodinia_3.1/cuda/lud/cuda/lud_cuda and rodinia_3.1_new/cuda/lud/cuda/lud_cuda differ
+diff -ruN rodinia_3.1/cuda/lud/cuda/lud_kernel.cu rodinia_3.1_new/cuda/lud/cuda/lud_kernel.cu
+--- rodinia_3.1/cuda/lud/cuda/lud_kernel.cu	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/cuda/lud_kernel.cu	2024-10-01 18:53:23.898277634 +0000
 @@ -1,4 +1,4 @@
 -#include <cuda.h>
 +#include <hip/hip_runtime.h>
  #include <stdio.h>
  
  #ifdef RD_WG_SIZE_0_0
-diff -ruN rodinia_3.1/cuda/lud/cuda/lud_kernel.cu.old rodinia_backup/cuda/lud/cuda/lud_kernel.cu.old
---- rodinia_3.1/cuda/lud/cuda/lud_kernel.cu.old	2015-12-11 07:46:08.000000000 -0800
-+++ rodinia_backup/cuda/lud/cuda/lud_kernel.cu.old	1969-12-31 16:00:00.000000000 -0800
+diff -ruN rodinia_3.1/cuda/lud/cuda/lud_kernel.cu.old rodinia_3.1_new/cuda/lud/cuda/lud_kernel.cu.old
+--- rodinia_3.1/cuda/lud/cuda/lud_kernel.cu.old	2015-12-11 15:46:08.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/cuda/lud_kernel.cu.old	1970-01-01 00:00:00.000000000 +0000
 @@ -1,162 +0,0 @@
 -#include <cuda.h>
 -#include <stdio.h>
@@ -9108,47 +9326,16 @@ diff -ruN rodinia_3.1/cuda/lud/cuda/lud_kernel.cu.old rodinia_backup/cuda/lud/cu
 -  lud_diagonal<<<1,BLOCK_SIZE>>>(m, matrix_dim, i);
 -}
 -
-Binary files rodinia_3.1/cuda/lud/cuda/lud_kernel.o and rodinia_backup/cuda/lud/cuda/lud_kernel.o differ
-Binary files rodinia_3.1/cuda/lud/cuda/lud.o and rodinia_backup/cuda/lud/cuda/lud.o differ
-diff -ruN rodinia_3.1/cuda/lud/cuda/Makefile rodinia_backup/cuda/lud/cuda/Makefile
---- rodinia_3.1/cuda/lud/cuda/Makefile	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/lud/cuda/Makefile	2024-09-26 12:55:55.459241814 -0700
-@@ -1,5 +1,7 @@
-+include ../../../common/make.config
-+
- CC = gcc
--NVCC = nvcc
-+NVCC = hipcc
- 
- DEFS += \
- 		-DGPU_TIMER \
-@@ -7,8 +9,7 @@
- 
- NVCCFLAGS += -I../common \
- 			 -O3 \
--			 -use_fast_math \
--			 -arch=sm_13 \
-+			 -ffast-math \
- 			 -lm \
- 			 $(SPACE)
- 
-@@ -34,11 +35,11 @@
- 	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
- 
- %.o:	%.cu 
--	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
-+	$(NVCC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
- 
- 
- $(EXECUTABLE) : $(OBJS)
--	$(NVCC) $(NVCCFLAGS) -o $@  $?
-+	$(NVCC) $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o $(NVCCFLAGS) -o $@  $?
- 
- clean:
- 	rm -f $(EXECUTABLE) $(OBJS) *.linkinfo
-diff -ruN rodinia_3.1/cuda/lud/setup.ini rodinia_backup/cuda/lud/setup.ini
---- rodinia_3.1/cuda/lud/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/lud/setup.ini	2024-09-26 12:55:55.459241814 -0700
+Binary files rodinia_3.1/cuda/lud/cuda/lud_kernel.o and rodinia_3.1_new/cuda/lud/cuda/lud_kernel.o differ
+diff -ruN rodinia_3.1/cuda/lud/seq.txt rodinia_3.1_new/cuda/lud/seq.txt
+--- rodinia_3.1/cuda/lud/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/seq.txt	2024-10-01 19:58:23.995164836 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/lud/setup.ini rodinia_3.1_new/cuda/lud/setup.ini
+--- rodinia_3.1/cuda/lud/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/lud/setup.ini	2024-10-01 18:53:23.898277634 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -9158,41 +9345,9 @@ diff -ruN rodinia_3.1/cuda/lud/setup.ini rodinia_backup/cuda/lud/setup.ini
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/myocyte/file.c rodinia_backup/cuda/myocyte/file.c
---- rodinia_3.1/cuda/myocyte/file.c	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/file.c	2024-09-26 12:55:55.460241864 -0700
-@@ -94,7 +94,7 @@
- 
- 	fid = fopen(filename, "r");
- 	if( fid == NULL ){
--		printf( "The file was not opened for reading\n" );
-+		printf( "The file was not opened for reading: %s\n", filename );
- 		return;
- 	}
- 
-diff -ruN rodinia_3.1/cuda/myocyte/main.cu rodinia_backup/cuda/myocyte/main.cu
---- rodinia_3.1/cuda/myocyte/main.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/main.cu	2024-09-26 12:55:55.460241864 -0700
-@@ -11,7 +11,7 @@
- // Myocyte application models cardiac myocyte (heart muscle cell) and simulates its behavior according to the work by Saucerman and Bers [8]. The model integrates 
- // cardiac myocyte electrical activity with the calcineurin pathway, which is a key aspect of the development of heart failure. The model spans large number of temporal 
- // scales to reflect how changes in heart rate as observed during exercise or stress contribute to calcineurin pathway activation, which ultimately leads to the expression 
--// of numerous genes that remodel the heartï¿½s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
-+// of numerous genes that remodel the heartï¿½s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
- // Biochemical reactions, ion transport and electrical activity in the cell are modeled with 91 ordinary differential equations (ODEs) that are determined by more than 200 
- // experimentally validated parameters. The model is simulated by solving this group of ODEs for a specified time interval. The process of ODE solving is based on the 
- // causal relationship between values of ODEs at different time steps, thus it is mostly sequential. At every dynamically determined time step, the solver evaluates the 
-@@ -79,6 +79,7 @@
- //		DEFINE / INCLUDE
- //====================================================================================================100
- 
-+#include <hip/hip_runtime.h>
- #include <stdio.h>
- #include <stdlib.h>
- #include <math.h>
-diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_backup/cuda/myocyte/Makefile
---- rodinia_3.1/cuda/myocyte/Makefile	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/Makefile	2024-09-26 12:55:55.459241814 -0700
+diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefile
+--- rodinia_3.1/cuda/myocyte/Makefile	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/Makefile	2024-10-01 18:53:23.898277634 +0000
 @@ -9,10 +9,7 @@
  
  # link objects(binaries) together
@@ -9214,9 +9369,41 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_backup/cuda/myocyte/Makefile
  				-c -O3 -g
  
  # delete all object files
-diff -ruN rodinia_3.1/cuda/myocyte/master.cu rodinia_backup/cuda/myocyte/master.cu
---- rodinia_3.1/cuda/myocyte/master.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/master.cu	2024-09-26 12:55:55.460241864 -0700
+diff -ruN rodinia_3.1/cuda/myocyte/file.c rodinia_3.1_new/cuda/myocyte/file.c
+--- rodinia_3.1/cuda/myocyte/file.c	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/file.c	2024-10-01 18:53:23.898277634 +0000
+@@ -94,7 +94,7 @@
+ 
+ 	fid = fopen(filename, "r");
+ 	if( fid == NULL ){
+-		printf( "The file was not opened for reading\n" );
++		printf( "The file was not opened for reading: %s\n", filename );
+ 		return;
+ 	}
+ 
+diff -ruN rodinia_3.1/cuda/myocyte/main.cu rodinia_3.1_new/cuda/myocyte/main.cu
+--- rodinia_3.1/cuda/myocyte/main.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/main.cu	2024-10-01 18:53:23.898277634 +0000
+@@ -11,7 +11,7 @@
+ // Myocyte application models cardiac myocyte (heart muscle cell) and simulates its behavior according to the work by Saucerman and Bers [8]. The model integrates 
+ // cardiac myocyte electrical activity with the calcineurin pathway, which is a key aspect of the development of heart failure. The model spans large number of temporal 
+ // scales to reflect how changes in heart rate as observed during exercise or stress contribute to calcineurin pathway activation, which ultimately leads to the expression 
+-// of numerous genes that remodel the heart’s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
++// of numerous genes that remodel the heartï¿½s structure. It can be used to identify potential therapeutic targets that may be useful for the treatment of heart failure. 
+ // Biochemical reactions, ion transport and electrical activity in the cell are modeled with 91 ordinary differential equations (ODEs) that are determined by more than 200 
+ // experimentally validated parameters. The model is simulated by solving this group of ODEs for a specified time interval. The process of ODE solving is based on the 
+ // causal relationship between values of ODEs at different time steps, thus it is mostly sequential. At every dynamically determined time step, the solver evaluates the 
+@@ -79,6 +79,7 @@
+ //		DEFINE / INCLUDE
+ //====================================================================================================100
+ 
++#include <hip/hip_runtime.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <math.h>
+diff -ruN rodinia_3.1/cuda/myocyte/master.cu rodinia_3.1_new/cuda/myocyte/master.cu
+--- rodinia_3.1/cuda/myocyte/master.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/master.cu	2024-10-01 18:53:23.898277634 +0000
 @@ -43,8 +43,8 @@
  	int d_com_mem;
  	d_com_mem = 3 * sizeof(fp);
@@ -9239,9 +9426,15 @@ diff -ruN rodinia_3.1/cuda/myocyte/master.cu rodinia_backup/cuda/myocyte/master.
  
  	//=====================================================================
  	//	FINAL KERNEL
-diff -ruN rodinia_3.1/cuda/myocyte/setup.ini rodinia_backup/cuda/myocyte/setup.ini
---- rodinia_3.1/cuda/myocyte/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/setup.ini	2024-09-26 12:55:55.460241864 -0700
+diff -ruN rodinia_3.1/cuda/myocyte/seq.txt rodinia_3.1_new/cuda/myocyte/seq.txt
+--- rodinia_3.1/cuda/myocyte/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/seq.txt	2024-10-01 19:58:29.930457018 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/myocyte/setup.ini rodinia_3.1_new/cuda/myocyte/setup.ini
+--- rodinia_3.1/cuda/myocyte/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/setup.ini	2024-10-01 18:53:23.898277634 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -9251,9 +9444,72 @@ diff -ruN rodinia_3.1/cuda/myocyte/setup.ini rodinia_backup/cuda/myocyte/setup.i
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/myocyte/work_2.cu rodinia_backup/cuda/myocyte/work_2.cu
---- rodinia_3.1/cuda/myocyte/work_2.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/work_2.cu	2024-09-26 12:55:55.460241864 -0700
+diff -ruN rodinia_3.1/cuda/myocyte/work.cu rodinia_3.1_new/cuda/myocyte/work.cu
+--- rodinia_3.1/cuda/myocyte/work.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/work.cu	2024-10-01 18:53:23.899277683 +0000
+@@ -98,22 +98,22 @@
+ 	int d_initvalu_mem;
+ 	d_initvalu_mem = EQUATIONS * sizeof(fp);
+ 	fp* d_initvalu;
+-	cudaMalloc((void **)&d_initvalu, d_initvalu_mem);
++	hipMalloc((void **)&d_initvalu, d_initvalu_mem);
+ 
+ 	int d_finavalu_mem;
+ 	d_finavalu_mem = EQUATIONS * sizeof(fp);
+ 	fp* d_finavalu;
+-	cudaMalloc((void **)&d_finavalu, d_finavalu_mem);
++	hipMalloc((void **)&d_finavalu, d_finavalu_mem);
+ 
+ 	int d_params_mem;
+ 	d_params_mem = PARAMETERS * sizeof(fp);
+ 	fp* d_params;
+-	cudaMalloc((void **)&d_params, d_params_mem);
++	hipMalloc((void **)&d_params, d_params_mem);
+ 
+ 	int d_com_mem;
+ 	d_com_mem = 3 * sizeof(fp);
+ 	fp* d_com;
+-	cudaMalloc((void **)&d_com, d_com_mem);
++	hipMalloc((void **)&d_com, d_com_mem);
+ 
+ 	time2 = get_time();
+ 
+@@ -123,7 +123,7 @@
+ 
+ 	// y
+ 	for(i=0; i<workload; i++){
+-		read(	"../../data/myocyte/y.txt",
++		read(	"./y.txt",
+ 					y[i][0],
+ 					EQUATIONS,
+ 					1,
+@@ -132,7 +132,7 @@
+ 
+ 	// params
+ 	for(i=0; i<workload; i++){
+-		read("../../data/myocyte/params.txt",
++		read("./params.txt",
+ 					params[i],
+ 					PARAMETERS,
+ 					1,
+@@ -221,10 +221,10 @@
+ 	free(com);
+ 
+ 	// GPU memory
+-	cudaFree(d_initvalu);
+-	cudaFree(d_finavalu);
+-	cudaFree(d_params);
+-	cudaFree(d_com);
++	hipFree(d_initvalu);
++	hipFree(d_finavalu);
++	hipFree(d_params);
++	hipFree(d_com);
+ 
+ 	//================================================================================80
+ 	//		DISPLAY TIMING
+diff -ruN rodinia_3.1/cuda/myocyte/work_2.cu rodinia_3.1_new/cuda/myocyte/work_2.cu
+--- rodinia_3.1/cuda/myocyte/work_2.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/myocyte/work_2.cu	2024-10-01 18:53:23.898277634 +0000
 @@ -114,37 +114,37 @@
  
  	y_mem = workload * (xmax+1) * EQUATIONS * sizeof(fp);
@@ -9400,93 +9656,9 @@ diff -ruN rodinia_3.1/cuda/myocyte/work_2.cu rodinia_backup/cuda/myocyte/work_2.
  
  	time6= get_time();
  
-diff -ruN rodinia_3.1/cuda/myocyte/work.cu rodinia_backup/cuda/myocyte/work.cu
---- rodinia_3.1/cuda/myocyte/work.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/myocyte/work.cu	2024-09-26 12:55:55.460241864 -0700
-@@ -98,22 +98,22 @@
- 	int d_initvalu_mem;
- 	d_initvalu_mem = EQUATIONS * sizeof(fp);
- 	fp* d_initvalu;
--	cudaMalloc((void **)&d_initvalu, d_initvalu_mem);
-+	hipMalloc((void **)&d_initvalu, d_initvalu_mem);
- 
- 	int d_finavalu_mem;
- 	d_finavalu_mem = EQUATIONS * sizeof(fp);
- 	fp* d_finavalu;
--	cudaMalloc((void **)&d_finavalu, d_finavalu_mem);
-+	hipMalloc((void **)&d_finavalu, d_finavalu_mem);
- 
- 	int d_params_mem;
- 	d_params_mem = PARAMETERS * sizeof(fp);
- 	fp* d_params;
--	cudaMalloc((void **)&d_params, d_params_mem);
-+	hipMalloc((void **)&d_params, d_params_mem);
- 
- 	int d_com_mem;
- 	d_com_mem = 3 * sizeof(fp);
- 	fp* d_com;
--	cudaMalloc((void **)&d_com, d_com_mem);
-+	hipMalloc((void **)&d_com, d_com_mem);
- 
- 	time2 = get_time();
- 
-@@ -123,7 +123,7 @@
- 
- 	// y
- 	for(i=0; i<workload; i++){
--		read(	"../../data/myocyte/y.txt",
-+		read(	"./y.txt",
- 					y[i][0],
- 					EQUATIONS,
- 					1,
-@@ -132,7 +132,7 @@
- 
- 	// params
- 	for(i=0; i<workload; i++){
--		read("../../data/myocyte/params.txt",
-+		read("./params.txt",
- 					params[i],
- 					PARAMETERS,
- 					1,
-@@ -221,10 +221,10 @@
- 	free(com);
- 
- 	// GPU memory
--	cudaFree(d_initvalu);
--	cudaFree(d_finavalu);
--	cudaFree(d_params);
--	cudaFree(d_com);
-+	hipFree(d_initvalu);
-+	hipFree(d_finavalu);
-+	hipFree(d_params);
-+	hipFree(d_com);
- 
- 	//================================================================================80
- 	//		DISPLAY TIMING
-diff -ruN rodinia_3.1/cuda/nn/filelist_4 rodinia_backup/cuda/nn/filelist_4
---- rodinia_3.1/cuda/nn/filelist_4	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/nn/filelist_4	2024-09-26 12:55:55.461241913 -0700
-@@ -1,4 +1,4 @@
--../../data/nn/cane4_0.db
--../../data/nn/cane4_1.db
--../../data/nn/cane4_2.db
--../../data/nn/cane4_3.db
-+./cane4_0.db
-+./cane4_1.db
-+./cane4_2.db
-+./cane4_3.db
-diff -ruN rodinia_3.1/cuda/nn/filelist.txt rodinia_backup/cuda/nn/filelist.txt
---- rodinia_3.1/cuda/nn/filelist.txt	2024-09-26 15:55:15.771570569 -0700
-+++ rodinia_backup/cuda/nn/filelist.txt	1969-12-31 16:00:00.000000000 -0800
-@@ -1,5 +0,0 @@
--cane4_0.db
--cane4_1.db
--cane4_2.db
--cane4_3.db
--
-diff -ruN rodinia_3.1/cuda/nn/Makefile rodinia_backup/cuda/nn/Makefile
---- rodinia_3.1/cuda/nn/Makefile	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/nn/Makefile	2024-09-26 12:55:55.460241864 -0700
+diff -ruN rodinia_3.1/cuda/nn/Makefile rodinia_3.1_new/cuda/nn/Makefile
+--- rodinia_3.1/cuda/nn/Makefile	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/nn/Makefile	2024-10-01 18:53:23.899277683 +0000
 @@ -1,7 +1,7 @@
  include ../../common/make.config
  
@@ -9507,9 +9679,30 @@ diff -ruN rodinia_3.1/cuda/nn/Makefile rodinia_backup/cuda/nn/Makefile
  
  hurricane_gen : hurricane_gen.c
  	$(LOCAL_CC) -o $@ $< -lm
-diff -ruN rodinia_3.1/cuda/nn/nn_cuda.cu rodinia_backup/cuda/nn/nn_cuda.cu
---- rodinia_3.1/cuda/nn/nn_cuda.cu	2015-12-11 07:46:06.000000000 -0800
-+++ rodinia_backup/cuda/nn/nn_cuda.cu	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/nn/filelist.txt rodinia_3.1_new/cuda/nn/filelist.txt
+--- rodinia_3.1/cuda/nn/filelist.txt	2024-10-02 23:14:10.225872357 +0000
++++ rodinia_3.1_new/cuda/nn/filelist.txt	1970-01-01 00:00:00.000000000 +0000
+@@ -1,5 +0,0 @@
+-cane4_0.db
+-cane4_1.db
+-cane4_2.db
+-cane4_3.db
+-
+diff -ruN rodinia_3.1/cuda/nn/filelist_4 rodinia_3.1_new/cuda/nn/filelist_4
+--- rodinia_3.1/cuda/nn/filelist_4	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/nn/filelist_4	2024-10-01 18:53:23.899277683 +0000
+@@ -1,4 +1,4 @@
+-../../data/nn/cane4_0.db
+-../../data/nn/cane4_1.db
+-../../data/nn/cane4_2.db
+-../../data/nn/cane4_3.db
++./cane4_0.db
++./cane4_1.db
++./cane4_2.db
++./cane4_3.db
+diff -ruN rodinia_3.1/cuda/nn/nn_cuda.cu rodinia_3.1_new/cuda/nn/nn_cuda.cu
+--- rodinia_3.1/cuda/nn/nn_cuda.cu	2015-12-11 15:46:06.000000000 +0000
++++ rodinia_3.1_new/cuda/nn/nn_cuda.cu	2024-10-01 18:53:23.899277683 +0000
 @@ -8,7 +8,7 @@
  #include <sys/time.h>
  #include <float.h>
@@ -9588,9 +9781,15 @@ diff -ruN rodinia_3.1/cuda/nn/nn_cuda.cu rodinia_backup/cuda/nn/nn_cuda.cu
              exit(1);
          }
          // read each record
-diff -ruN rodinia_3.1/cuda/nn/setup.ini rodinia_backup/cuda/nn/setup.ini
---- rodinia_3.1/cuda/nn/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/nn/setup.ini	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/nn/seq.txt rodinia_3.1_new/cuda/nn/seq.txt
+--- rodinia_3.1/cuda/nn/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/nn/seq.txt	2024-10-01 19:58:33.229619430 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/nn/setup.ini rodinia_3.1_new/cuda/nn/setup.ini
+--- rodinia_3.1/cuda/nn/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/nn/setup.ini	2024-10-01 18:53:23.899277683 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -9600,9 +9799,9 @@ diff -ruN rodinia_3.1/cuda/nn/setup.ini rodinia_backup/cuda/nn/setup.ini
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/nw/Makefile rodinia_backup/cuda/nw/Makefile
---- rodinia_3.1/cuda/nw/Makefile	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/nw/Makefile	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/nw/Makefile rodinia_3.1_new/cuda/nw/Makefile
+--- rodinia_3.1/cuda/nw/Makefile	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/nw/Makefile	2024-10-01 18:53:23.899277683 +0000
 @@ -1,24 +1,22 @@
  include ../../common/make.config
  
@@ -9634,9 +9833,9 @@ diff -ruN rodinia_3.1/cuda/nw/Makefile rodinia_backup/cuda/nw/Makefile
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo result.txt
-diff -ruN rodinia_3.1/cuda/nw/needle.cu rodinia_backup/cuda/nw/needle.cu
---- rodinia_3.1/cuda/nw/needle.cu	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/nw/needle.cu	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/nw/needle.cu rodinia_3.1_new/cuda/nw/needle.cu
+--- rodinia_3.1/cuda/nw/needle.cu	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/nw/needle.cu	2024-10-01 18:53:23.899277683 +0000
 @@ -4,7 +4,7 @@
  #include <string.h>
  #include <math.h>
@@ -9682,9 +9881,15 @@ diff -ruN rodinia_3.1/cuda/nw/needle.cu rodinia_backup/cuda/nw/needle.cu
  
  	free(referrence);
  	free(input_itemsets);
-diff -ruN rodinia_3.1/cuda/nw/setup.ini rodinia_backup/cuda/nw/setup.ini
---- rodinia_3.1/cuda/nw/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/nw/setup.ini	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/nw/seq.txt rodinia_3.1_new/cuda/nw/seq.txt
+--- rodinia_3.1/cuda/nw/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/nw/seq.txt	2024-10-01 19:58:36.144762938 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/nw/setup.ini rodinia_3.1_new/cuda/nw/setup.ini
+--- rodinia_3.1/cuda/nw/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/nw/setup.ini	2024-10-01 18:53:23.899277683 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -9694,9 +9899,33 @@ diff -ruN rodinia_3.1/cuda/nw/setup.ini rodinia_backup/cuda/nw/setup.ini
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu rodinia_backup/cuda/particlefilter/ex_particle_CUDA_float_seq.cu
---- rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/particlefilter/ex_particle_CUDA_float_seq.cu	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/particlefilter/Makefile rodinia_3.1_new/cuda/particlefilter/Makefile
+--- rodinia_3.1/cuda/particlefilter/Makefile	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/particlefilter/Makefile	2024-10-01 18:53:23.900277732 +0000
+@@ -2,17 +2,15 @@
+ 
+ include ../../common/make.config
+ 
+-CC := $(CUDA_DIR)/bin/nvcc
+-
+-INCLUDE := $(CUDA_DIR)/include
++CC := hipcc
+ 
+ all: naive float
+ 
+ naive: ex_particle_CUDA_naive_seq.cu
+-	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
++	$(CC)  -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
+ 	
+ float: ex_particle_CUDA_float_seq.cu
+-	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_float_seq.cu -o particlefilter_float
++	$(CC) -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o ex_particle_CUDA_float_seq.cu -o particlefilter_float
+ 
+ clean:
+ 	rm particlefilter_naive particlefilter_float
+diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu rodinia_3.1_new/cuda/particlefilter/ex_particle_CUDA_float_seq.cu
+--- rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/particlefilter/ex_particle_CUDA_float_seq.cu	2024-10-01 18:53:23.899277683 +0000
 @@ -1,3 +1,4 @@
 +#include "hip/hip_runtime.h"
  #include <stdio.h>
@@ -9848,9 +10077,9 @@ diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu rodinia_
  
      //free regular memory
      free(likelihood);
-diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu rodinia_backup/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu
---- rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu rodinia_3.1_new/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu
+--- rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu	2015-12-11 15:46:14.000000000 +0000
++++ rodinia_3.1_new/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu	2024-10-01 18:53:23.900277732 +0000
 @@ -1,3 +1,4 @@
 +#include "hip/hip_runtime.h"
  /**
@@ -9940,33 +10169,15 @@ diff -ruN rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu rodinia_
  	
  	//free memory
  	free(disk);
-diff -ruN rodinia_3.1/cuda/particlefilter/Makefile rodinia_backup/cuda/particlefilter/Makefile
---- rodinia_3.1/cuda/particlefilter/Makefile	2015-12-11 07:46:14.000000000 -0800
-+++ rodinia_backup/cuda/particlefilter/Makefile	2024-09-26 12:55:55.462241963 -0700
-@@ -2,17 +2,15 @@
- 
- include ../../common/make.config
- 
--CC := $(CUDA_DIR)/bin/nvcc
--
--INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
- 
- all: naive float
- 
- naive: ex_particle_CUDA_naive_seq.cu
--	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
-+	$(CC)  -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
- 	
- float: ex_particle_CUDA_float_seq.cu
--	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_float_seq.cu -o particlefilter_float
-+	$(CC) -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/hipec/inst_pass/Inst/InstStub.o ex_particle_CUDA_float_seq.cu -o particlefilter_float
- 
- clean:
- 	rm particlefilter_naive particlefilter_float
-diff -ruN rodinia_3.1/cuda/particlefilter/setup.ini rodinia_backup/cuda/particlefilter/setup.ini
---- rodinia_3.1/cuda/particlefilter/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/particlefilter/setup.ini	2024-09-26 12:55:55.462241963 -0700
+diff -ruN rodinia_3.1/cuda/particlefilter/seq.txt rodinia_3.1_new/cuda/particlefilter/seq.txt
+--- rodinia_3.1/cuda/particlefilter/seq.txt	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/particlefilter/seq.txt	2024-10-01 19:58:42.386070186 +0000
+@@ -0,0 +1,2 @@
++0
++0
+diff -ruN rodinia_3.1/cuda/particlefilter/setup.ini rodinia_3.1_new/cuda/particlefilter/setup.ini
+--- rodinia_3.1/cuda/particlefilter/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/particlefilter/setup.ini	2024-10-01 18:53:23.900277732 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -9976,9 +10187,9 @@ diff -ruN rodinia_3.1/cuda/particlefilter/setup.ini rodinia_backup/cuda/particle
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/srad/srad_v1/device.c rodinia_backup/cuda/srad/srad_v1/device.c
---- rodinia_3.1/cuda/srad/srad_v1/device.c	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v1/device.c	2024-09-26 12:55:55.463242012 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v1/device.c rodinia_3.1_new/cuda/srad/srad_v1/device.c
+--- rodinia_3.1/cuda/srad/srad_v1/device.c	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v1/device.c	2024-10-01 18:53:23.900277732 +0000
 @@ -13,26 +13,26 @@
  	int device;
  
@@ -10025,30 +10236,9 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/device.c rodinia_backup/cuda/srad/srad_v
  		fflush(NULL);
  		exit(EXIT_FAILURE);
  	}
-diff -ruN rodinia_3.1/cuda/srad/srad_v1/image_out.pgm rodinia_backup/cuda/srad/srad_v1/image_out.pgm
---- rodinia_3.1/cuda/srad/srad_v1/image_out.pgm	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v1/image_out.pgm	2024-09-26 12:55:55.464242061 -0700
-@@ -104,7 +104,7 @@
- 209 209 209 208 208 207 207 206 205 204 204 203 203 202 202 202 201 201 200 199 198 197 195 193 191 188 186 184 182 180 178 176 174 173 171 170 168 167 165 164 162 161 159 157 156 154 152 150 149 147 145 143 142 140 139 137 136 135 134 133 132 131 130 128 127 125 123 122 120 118 117 115 114 113 112 112 111 111 111 111 112 112 113 114 114 115 116 117 118 118 119 119 119 119 119 118 118 117 116 115 114 113 112 111 110 108 107 106 105 105 104 104 103 103 103 103 102 102 102 102 101 101 100 99 98 97 96 95 94 93 92 91 91 90 90 89 89 89 90 90 91 91 92 92 93 94 94 94 95 95 94 94 94 93 93 92 92 91 90 90 89 89 88 88 87 86 86 85 84 84 83 83 82 82 82 83 83 83 84 84 85 85 86 86 87 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 103 105 107 109 111 114 116 119 121 123 124 126 127 128 129 129 130 130 131 132 133 133 134 135 136 137 138 138 139 139 139 139 139 138 137 136 135 133 132 130 129 128 127 126 126 126 126 127 128 129 130 132 133 134 136 137 138 139 140 141 141 142 142 142 141 141 141 140 140 139 138 138 137 136 135 134 133 132 131 130 130 129 128 127 126 125 124 123 122 121 120 120 119 118 118 117 117 116 116 115 114 113 112 110 108 106 104 101 99 96 94 92 90 88 87 86 84 83 82 81 81 80 79 78 77 76 75 74 74 73 72 72 71 71 71 71 71 72 72 73 74 74 75 75 75 76 76 77 78 79 79 80 81 82 83 83 84 85 85 86 86 86 87 87 88 88 89 90 91 92 93 94 96 98 99 101 103 104 106 108 109 111 112 113 114 115 116 117 118 119 120 121 122 123 123 123 124 123 123 122 121 120 119 118 117 116 115 115 115 115 116 116 117 118 118 119 119 119 119 118 117 116 115 114 113 112 111 110 109 108 108 107 107 108 108 109 109 110 111 112 112 112 113 113 113 113 112 112 111 111 110 110 109 109 108 107 107 107 
- 209 209 208 208 208 207 207 206 205 204 204 203 202 202 202 201 201 200 199 198 197 195 193 191 189 187 185 182 180 178 175 173 171 169 168 166 164 162 160 159 157 155 153 152 150 148 147 145 144 142 140 139 137 136 134 133 132 131 130 128 127 126 125 123 122 120 119 117 116 114 113 112 111 110 109 109 108 108 108 109 109 110 110 111 112 113 114 115 115 116 116 116 117 117 116 116 115 115 114 113 112 111 109 108 107 106 105 103 103 102 101 101 100 100 100 100 100 100 100 99 99 99 98 97 96 95 94 93 92 91 90 90 89 88 88 88 88 88 88 88 89 89 90 91 91 92 92 93 93 93 93 93 93 92 92 91 90 90 89 89 88 88 87 86 86 85 84 83 83 82 81 81 81 81 81 81 81 82 82 82 83 83 84 85 85 86 87 88 88 89 91 92 93 94 95 96 97 99 100 101 103 105 107 109 112 114 117 119 121 123 125 126 127 128 129 130 130 131 132 132 133 134 135 136 136 137 138 138 139 139 139 139 138 138 137 136 134 133 132 130 129 128 127 127 126 126 127 127 128 129 131 132 133 135 136 137 138 139 140 140 141 141 141 141 141 141 140 140 140 139 138 138 137 136 136 135 134 133 132 132 131 130 130 129 128 127 127 126 125 124 123 122 121 120 120 119 119 118 118 117 116 115 114 112 110 108 105 103 100 98 95 93 91 90 88 87 86 84 83 83 82 81 80 79 78 76 75 74 73 72 71 71 70 70 70 70 70 70 71 71 72 72 73 74 74 75 75 76 77 78 78 79 80 81 82 82 83 83 84 84 85 85 85 86 86 87 88 88 89 91 92 93 95 97 99 100 102 104 106 108 109 111 112 113 114 115 116 117 118 119 119 120 121 121 122 122 122 122 121 120 119 118 117 116 115 115 114 114 114 114 114 115 115 116 117 117 117 117 117 116 115 114 113 112 111 110 109 108 107 107 106 106 106 107 107 108 109 110 111 111 112 112 113 113 113 112 112 112 112 111 111 110 109 109 108 108 108 107 
- 208 208 208 207 207 207 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 190 188 185 183 180 178 176 173 171 169 166 164 162 160 158 156 154 152 150 148 147 145 143 142 140 139 137 136 134 133 132 130 129 128 127 125 124 123 122 120 119 117 116 114 113 111 110 109 108 107 107 106 106 106 106 106 106 107 107 108 109 110 110 111 112 112 113 113 114 114 114 113 113 112 112 111 110 109 108 107 105 104 103 102 101 100 99 98 98 98 97 97 97 97 97 97 97 97 97 96 95 95 94 93 92 91 90 89 88 88 87 87 86 86 86 87 87 87 88 89 89 90 91 91 91 92 92 92 92 92 91 91 90 90 89 88 88 87 86 86 85 84 84 83 82 81 81 80 80 80 79 80 80 80 80 81 81 81 82 83 83 84 85 86 87 88 89 90 91 92 93 94 96 97 98 100 102 103 106 108 110 112 115 117 120 122 123 125 126 128 129 129 130 131 131 132 133 134 134 135 136 137 137 138 138 139 139 139 138 138 137 137 136 134 133 132 130 129 128 127 127 127 127 127 128 129 130 131 133 134 135 136 137 138 139 140 140 140 141 141 141 141 140 140 140 139 139 138 138 137 137 136 135 135 134 133 133 132 132 131 131 130 130 129 128 127 126 125 124 123 123 122 121 121 120 119 119 118 117 115 113 111 109 107 104 102 99 97 95 93 91 89 88 87 86 85 84 83 82 81 79 78 77 76 74 73 72 71 70 69 69 69 69 69 69 69 70 70 71 71 72 73 73 74 75 76 76 77 78 79 80 81 81 82 82 83 83 83 84 84 85 85 86 87 88 89 90 91 93 95 97 98 100 102 104 106 108 110 111 112 113 114 115 116 117 118 118 119 120 120 121 121 121 121 121 120 119 119 118 117 116 115 114 114 114 113 114 114 114 115 115 116 116 116 116 115 115 114 113 111 110 109 108 107 106 106 106 105 106 106 107 107 108 109 110 111 111 112 112 113 113 113 113 113 112 112 112 111 111 110 110 109 109 109 108 
--206 206 206 206 206 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 191 188 186 184 181 179 176 174 171 169 166 164 161 159 156 154 152 150 148 146 144 142 140 139 137 136 135 133 132 131 129 128 127 125 124 123 122 120 119 118 116 115 113 112 110 109 108 107 106 105 104 104 103 103 103 103 103 104 104 105 106 106 107 108 108 109 109 110 110 110 110 110 110 110 109 109 108 107 106 105 104 103 101 100 99 98 97 97 96 96 95 95 95 95 95 95 95 95 95 95 94 94 93 92 91 90 89 88 88 87 86 86 85 85 85 85 85 86 86 87 87 88 89 89 90 90 90 91 91 91 90 90 90 89 89 88 87 87 86 86 85 84 83 82 82 81 80 80 79 79 79 79 79 79 79 79 80 80 80 81 82 82 83 84 85 86 87 88 89 90 92 93 94 96 97 99 100 102 104 106 108 111 113 116 118 120 122 124 125 127 128 129 130 131 131 132 133 133 134 135 136 136 137 137 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 128 128 127 127 128 128 129 130 131 132 134 135 136 137 138 138 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 136 136 135 135 134 134 134 134 133 133 133 132 131 130 130 129 128 126 125 125 124 123 122 122 121 120 119 118 116 115 113 110 108 105 103 100 98 96 94 92 91 90 88 87 86 85 84 83 82 80 79 77 76 74 73 72 70 69 69 68 68 67 68 68 68 68 69 69 70 70 71 72 73 73 74 75 76 77 78 79 79 80 81 81 81 82 82 83 83 84 84 85 86 87 88 90 91 93 95 97 99 101 103 105 107 109 110 112 113 114 115 116 117 117 118 119 119 120 120 121 121 121 121 121 120 120 119 118 117 116 116 115 115 114 114 114 115 115 115 116 116 116 116 115 115 114 113 112 111 109 108 107 107 106 106 105 106 106 106 107 108 109 110 111 111 112 113 113 113 114 114 114 114 114 113 113 113 112 112 112 111 111 110 110 
-+206 206 206 206 206 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 191 188 186 184 181 179 176 174 171 169 166 164 161 159 156 154 152 150 148 146 144 142 140 139 137 136 135 133 132 131 129 128 127 125 124 123 122 120 119 118 116 115 113 112 110 109 108 107 106 105 104 104 103 103 103 103 103 104 104 105 106 106 107 108 108 109 109 110 110 110 110 110 110 110 109 109 108 107 106 105 104 103 101 100 99 98 97 97 96 96 95 95 95 95 95 95 95 95 95 95 94 94 93 92 91 90 89 88 88 87 86 86 85 85 85 85 85 86 86 87 87 88 89 89 90 90 90 91 91 91 90 90 90 89 89 88 87 87 86 86 85 84 83 82 82 81 80 80 79 79 79 79 79 79 79 79 80 80 80 81 82 82 83 84 85 86 87 88 89 90 92 93 94 96 97 99 100 102 104 106 108 111 113 116 118 120 122 124 125 127 128 129 130 131 131 132 133 133 134 135 136 136 137 137 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 128 128 127 127 128 128 129 130 131 132 134 135 136 137 138 138 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 136 136 135 135 134 134 134 134 133 133 132 132 131 130 130 129 128 126 125 125 124 123 122 122 121 120 119 118 116 115 113 110 108 105 103 100 98 96 94 92 91 90 88 87 86 85 84 83 82 80 79 77 76 74 73 72 70 69 69 68 68 67 68 68 68 68 69 69 70 70 71 72 73 73 74 75 76 77 78 79 79 80 81 81 81 82 82 83 83 84 84 85 86 87 88 90 91 93 95 97 99 101 103 105 107 109 110 112 113 114 115 116 117 117 118 119 119 120 120 121 121 121 121 121 120 120 119 118 117 116 116 115 115 114 114 114 115 115 115 116 116 116 116 115 115 114 113 112 111 109 108 107 107 106 106 105 106 106 106 107 108 109 110 111 111 112 113 113 113 114 114 114 114 114 113 113 113 112 112 112 111 111 110 110 
- 205 205 205 205 205 205 205 204 204 203 202 202 201 200 200 199 198 197 196 194 193 191 189 187 185 182 179 177 174 171 169 166 163 161 158 156 153 150 148 146 143 141 139 138 136 134 133 132 131 129 128 127 126 125 123 122 121 120 118 117 116 114 113 111 110 108 107 106 104 103 103 102 101 101 101 101 101 101 101 101 102 102 103 104 104 105 105 106 106 106 106 107 107 107 106 106 106 105 105 104 103 102 101 100 99 98 97 96 95 94 94 94 93 93 93 93 93 93 94 93 93 93 93 92 91 91 90 89 88 87 86 86 85 85 84 84 84 84 84 85 85 85 86 87 87 88 88 89 89 89 90 90 89 89 89 88 88 87 87 86 85 85 84 83 82 81 81 80 79 79 78 78 78 78 78 78 78 79 79 79 80 80 81 82 83 83 84 85 87 88 89 90 91 93 94 96 97 99 101 103 105 107 109 112 114 116 119 121 123 124 126 127 128 129 130 131 132 133 133 134 135 135 136 137 137 137 138 138 138 138 138 137 137 136 136 135 134 133 131 130 129 128 128 128 128 128 129 130 131 132 133 134 135 136 137 138 139 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 137 136 136 136 135 135 135 135 135 135 135 134 133 133 132 131 130 128 127 126 125 124 124 123 122 121 120 119 117 116 114 111 109 106 104 102 99 97 95 94 92 91 90 89 88 87 85 84 83 81 80 78 76 75 73 71 70 69 68 67 67 66 66 67 67 67 67 68 68 69 70 70 71 72 73 74 75 76 77 77 78 79 79 80 80 81 81 82 83 83 84 85 86 87 89 90 92 94 96 98 100 102 104 107 108 110 112 113 114 115 116 117 118 118 119 119 120 120 121 121 122 122 122 121 121 121 120 119 119 118 118 117 117 117 116 116 117 117 117 117 117 117 117 116 115 114 113 112 111 110 109 108 107 107 106 106 107 107 108 109 109 110 111 112 113 114 114 114 115 115 115 115 115 115 115 115 115 115 114 114 114 113 113 113 
- 203 203 203 203 203 203 203 203 203 202 201 201 200 199 198 198 197 196 194 193 191 190 187 185 183 180 178 175 172 169 166 164 161 158 155 152 150 147 144 142 139 137 135 133 132 130 129 128 127 126 125 124 123 122 120 119 118 117 115 114 113 111 110 108 107 105 104 103 102 101 100 99 99 99 98 98 98 99 99 99 100 100 101 101 101 102 102 102 103 103 103 103 103 103 103 103 102 102 102 101 100 99 99 98 97 96 95 94 93 93 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 88 87 86 85 85 84 84 83 83 83 83 83 84 84 84 85 85 86 86 87 87 88 88 88 89 89 88 88 88 87 87 86 85 85 84 83 82 81 81 80 79 78 78 78 77 77 77 78 78 78 78 79 79 80 80 81 82 82 83 84 85 87 88 89 90 91 93 94 96 97 99 101 103 106 108 110 112 115 117 119 121 123 125 127 128 129 130 131 132 133 133 134 135 135 136 136 137 137 138 138 138 138 138 137 137 136 136 135 134 133 132 131 130 129 129 128 128 128 129 130 131 132 133 134 135 136 137 138 139 139 140 140 140 140 140 140 140 140 140 140 139 139 139 138 138 138 137 137 137 137 137 137 137 137 137 137 137 136 136 135 135 134 133 131 130 129 128 126 125 124 124 123 122 121 119 118 116 114 112 110 107 105 103 100 98 97 95 94 92 91 90 89 88 87 85 84 82 81 79 77 75 73 71 70 68 67 67 66 66 65 65 66 66 66 67 67 68 68 69 70 70 71 72 73 74 75 76 76 77 78 78 79 80 80 81 82 83 84 85 87 88 90 91 93 95 97 100 102 104 106 108 110 112 114 115 116 117 118 119 119 120 120 121 121 122 122 123 123 123 123 123 123 123 122 122 122 121 121 120 120 120 120 120 120 120 120 120 120 119 119 118 117 116 115 114 112 111 110 110 109 109 109 109 109 110 110 111 112 113 114 115 116 116 117 117 117 118 118 118 118 118 118 118 118 118 117 117 117 116 116 116 
- 201 201 201 201 201 202 202 201 201 201 200 200 199 198 197 196 195 194 193 191 190 188 186 184 181 178 176 173 170 167 164 161 158 155 152 149 146 144 141 138 136 133 131 130 128 127 125 124 123 122 122 121 120 119 118 117 116 114 113 112 110 109 107 106 104 103 101 100 99 98 98 97 97 96 96 96 96 97 97 97 98 98 98 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 98 98 97 96 96 95 94 93 93 92 91 91 91 91 91 91 91 91 91 91 91 91 91 91 90 89 89 88 87 86 86 85 84 84 83 83 83 83 83 83 83 83 83 84 84 85 85 86 86 87 87 87 88 88 88 87 87 87 86 85 85 84 83 82 81 80 80 79 78 78 77 77 77 77 77 77 78 78 78 79 79 80 80 81 82 83 84 85 86 87 88 89 90 92 93 95 96 98 100 102 104 107 109 111 114 116 118 120 122 124 126 127 129 130 131 132 133 133 134 135 135 136 136 137 137 138 138 138 138 138 137 137 136 136 135 135 134 133 132 131 130 129 129 128 128 129 129 130 131 132 134 135 136 137 138 139 139 140 140 140 141 141 141 141 140 140 140 140 139 139 139 138 138 138 138 138 137 137 138 138 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 127 126 125 124 123 122 121 120 118 117 115 113 110 108 106 103 101 99 98 96 95 94 93 92 91 89 88 87 85 83 81 79 77 75 73 71 70 68 67 66 65 65 65 64 64 65 65 65 66 66 67 67 68 69 70 71 72 72 73 74 75 76 76 77 78 79 80 81 82 83 84 86 87 89 91 93 95 97 99 101 104 106 108 110 112 114 116 117 118 119 120 121 121 122 122 123 123 124 124 125 125 126 126 126 126 126 126 126 125 125 125 125 125 125 125 125 124 124 124 124 124 123 123 122 121 119 118 117 116 114 114 113 112 112 112 113 113 114 115 116 117 117 118 119 120 120 121 121 121 121 122 122 122 122 122 122 122 122 121 121 121 120 120 120 
-@@ -202,7 +202,7 @@
- 121 120 118 116 113 110 106 103 98 94 90 86 83 79 76 74 71 69 68 66 65 64 64 63 62 62 61 61 61 60 60 60 60 60 59 59 59 59 59 58 58 58 57 57 56 56 56 55 55 55 55 55 55 55 55 55 55 55 56 56 56 57 57 57 58 59 59 60 61 62 63 64 65 66 67 69 70 72 74 76 78 80 82 84 86 88 90 92 93 95 95 96 96 96 96 96 95 95 94 93 92 92 91 91 90 90 89 89 89 88 87 87 86 84 83 82 80 79 77 75 74 72 70 69 68 67 66 65 64 64 64 64 64 64 64 65 66 67 67 68 69 70 70 71 71 72 72 72 73 73 74 75 76 78 80 82 85 88 92 96 100 104 109 113 117 120 124 126 128 130 130 131 130 129 128 126 124 122 119 116 114 111 108 106 103 101 99 97 96 94 93 92 91 90 89 89 89 88 88 88 88 87 87 87 87 87 87 87 87 87 87 87 87 87 87 87 87 88 88 88 89 89 90 90 91 91 92 92 93 94 95 95 96 96 96 97 97 96 96 96 96 96 95 95 95 95 95 94 94 94 94 94 94 94 93 93 93 93 92 92 91 91 90 90 90 89 89 89 89 89 90 90 90 90 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 91 91 91 91 90 90 90 89 89 89 89 89 89 89 89 90 90 91 92 93 95 96 98 100 102 104 107 109 112 115 118 121 124 127 131 134 138 141 145 148 151 154 157 159 161 162 163 163 163 163 162 162 161 160 159 158 157 156 154 153 151 149 146 143 140 137 133 130 126 123 120 116 113 110 108 105 102 100 98 95 93 91 89 88 86 85 83 82 81 81 80 80 79 79 79 79 79 79 79 78 78 78 77 76 76 75 74 73 73 72 71 71 70 70 70 69 69 69 68 68 68 67 67 67 67 68 68 68 68 69 69 69 69 70 70 70 71 71 72 73 73 74 75 76 77 78 78 79 80 80 81 82 82 83 83 84 85 85 86 87 87 87 88 88 88 88 89 89 89 
- 120 120 118 116 113 110 107 103 99 95 90 87 83 79 76 74 71 70 68 67 65 64 64 63 62 62 61 61 60 60 60 60 59 59 59 59 58 58 58 58 57 57 57 56 56 55 55 55 55 54 54 54 54 54 54 54 55 55 55 56 56 56 57 57 58 58 59 60 61 62 62 64 65 66 67 69 70 72 74 75 78 80 82 84 86 88 90 92 93 94 95 96 96 96 96 96 95 94 94 93 92 91 90 90 89 88 88 87 87 86 85 85 84 83 81 80 78 77 75 74 72 70 69 68 66 65 64 63 63 62 62 62 62 63 63 64 65 66 66 67 68 69 69 70 70 71 71 71 72 72 73 74 75 77 79 81 84 88 91 95 99 104 108 112 116 120 123 125 127 129 130 130 130 129 127 126 123 121 118 116 113 110 108 105 103 101 99 97 95 94 93 92 91 90 89 89 89 88 88 88 88 88 88 87 87 87 87 87 87 87 87 87 87 87 87 88 88 88 89 89 89 90 90 91 91 92 92 93 94 94 95 96 96 97 97 97 97 97 97 96 96 96 96 96 95 95 95 95 94 94 94 94 94 94 93 93 93 93 92 92 92 91 91 90 90 90 90 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 89 89 88 88 88 89 89 90 90 91 92 93 95 96 98 99 101 104 106 108 111 114 117 120 124 127 131 134 138 142 145 149 152 154 157 159 160 161 162 162 162 162 161 161 160 160 159 158 157 156 154 153 150 148 145 142 138 135 131 127 124 121 117 114 111 109 106 104 101 99 97 95 93 91 89 87 86 84 83 82 81 80 80 79 79 79 79 78 78 78 78 78 77 77 77 76 75 75 74 74 73 73 72 72 71 71 71 70 70 69 69 68 68 68 67 67 67 67 67 67 68 68 68 68 68 68 68 69 69 70 70 71 72 73 74 75 75 76 77 77 78 79 79 80 81 81 82 83 83 84 85 85 86 86 87 87 87 87 87 87 
- 120 119 118 116 113 110 107 103 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 61 60 60 59 59 59 58 58 58 58 57 57 57 57 56 56 56 55 55 55 54 54 54 54 54 54 54 54 54 54 55 55 55 56 56 57 57 58 58 59 60 61 61 62 63 64 66 67 68 70 71 73 75 77 79 81 83 86 88 90 91 93 94 95 96 96 96 96 95 95 94 93 92 91 90 89 88 87 87 86 86 85 84 84 83 82 81 79 78 77 75 74 72 71 69 68 66 65 64 63 62 62 61 61 61 61 62 62 63 64 65 65 66 67 68 68 69 69 70 70 71 71 72 72 74 75 77 79 81 84 87 91 95 99 103 107 111 115 119 122 124 126 128 128 129 128 127 126 124 122 120 117 115 112 110 107 105 102 100 98 97 95 94 92 91 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 90 90 91 91 92 92 93 94 94 95 96 96 97 97 97 97 97 97 97 97 97 96 96 96 96 95 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 91 91 91 90 90 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 89 88 88 88 88 88 89 89 90 91 92 93 94 95 97 98 100 102 104 107 110 113 116 119 123 126 130 134 138 141 145 148 151 154 156 157 159 160 160 160 160 160 160 160 159 159 159 158 157 156 154 152 150 147 143 140 136 133 129 125 122 119 116 113 110 108 105 103 101 98 96 94 92 90 88 87 85 84 82 81 80 79 79 78 78 78 78 78 77 77 77 77 77 76 76 75 75 75 74 74 73 73 73 72 72 71 71 70 70 69 68 68 68 67 67 67 67 67 66 66 66 66 66 66 67 67 67 67 68 68 69 70 71 71 72 73 74 75 75 76 77 77 78 79 79 80 81 82 82 83 84 84 85 85 85 86 86 86 86 
--119 118 117 115 113 110 106 102 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 60 60 59 59 59 58 58 57 57 57 57 57 56 56 56 56 55 55 54 54 54 54 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 58 59 60 60 61 62 63 64 65 67 68 70 71 73 75 77 79 81 83 85 87 89 91 92 93 94 95 95 95 95 95 94 93 92 91 90 89 88 87 86 85 85 84 83 82 82 81 80 79 78 76 75 74 72 71 69 68 67 65 64 63 62 61 61 60 60 60 60 61 61 62 63 64 64 65 66 67 67 68 69 69 69 70 71 71 72 73 75 76 79 81 84 87 91 94 98 102 106 110 114 117 120 123 124 126 127 127 126 126 124 123 121 118 116 114 111 109 106 104 102 100 98 96 94 93 92 91 90 90 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 91 91 92 92 93 93 94 95 95 96 97 97 97 97 98 97 97 97 97 97 97 96 96 96 96 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 92 91 91 91 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 89 88 88 88 88 88 88 88 89 89 90 91 92 93 94 95 97 99 101 103 105 108 111 114 118 122 125 129 133 137 140 144 147 150 152 154 155 157 157 158 158 159 159 159 159 159 159 158 157 156 155 153 151 148 145 141 138 134 130 127 123 120 117 115 112 110 107 105 103 100 98 96 94 91 89 88 86 84 83 81 80 79 78 78 77 77 77 77 76 76 76 76 76 76 75 75 75 75 74 74 74 74 73 73 72 72 71 71 70 69 68 68 67 67 66 66 66 65 65 65 65 65 65 65 65 65 65 65 66 66 67 68 69 69 70 71 72 73 73 74 75 75 76 77 78 78 79 80 81 81 82 83 83 84 84 85 85 85 85 
-+119 118 117 115 113 110 106 102 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 60 60 59 59 59 58 58 57 57 57 57 57 56 56 56 56 55 55 54 54 54 54 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 58 59 60 60 61 62 63 64 65 67 68 70 71 73 75 77 79 81 83 85 87 89 91 92 93 94 95 95 95 95 95 94 93 92 91 90 89 88 87 86 85 85 84 83 82 82 81 80 79 78 76 75 74 72 71 69 68 67 65 64 63 62 61 61 60 60 60 60 61 61 62 63 64 64 65 66 67 67 68 69 69 69 70 71 71 72 73 75 76 79 81 84 87 91 94 98 102 106 110 114 117 120 123 124 126 127 127 126 126 124 123 121 118 116 114 111 109 106 104 102 100 98 96 94 93 92 91 90 90 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 91 91 92 92 93 93 94 95 95 96 97 97 97 97 97 97 97 97 97 97 97 96 96 96 96 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 92 91 91 91 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 89 88 88 88 88 88 88 88 89 89 90 91 92 93 94 95 97 99 101 103 105 108 111 114 118 122 125 129 133 137 140 144 147 150 152 154 155 157 157 158 158 159 159 159 159 159 159 158 157 156 155 153 151 148 145 141 138 134 130 127 123 120 117 115 112 110 107 105 103 100 98 96 94 91 89 88 86 84 83 81 80 79 78 78 77 77 77 77 76 76 76 76 76 76 75 75 75 75 74 74 74 74 73 73 72 72 71 71 70 69 68 68 67 67 66 66 66 65 65 65 65 65 65 65 65 65 65 65 66 66 67 68 69 69 70 71 72 73 73 74 75 75 76 77 78 78 79 80 81 81 82 83 83 84 84 85 85 85 85 
- 118 117 116 114 112 109 105 102 98 94 90 87 83 80 77 74 72 70 68 67 65 64 63 63 62 61 61 60 60 59 58 58 58 57 57 57 56 56 56 56 56 55 55 55 54 54 54 53 53 53 53 53 53 53 53 53 54 54 55 55 55 56 56 57 57 58 59 60 60 61 62 63 64 65 66 68 69 71 72 74 76 78 80 82 84 86 88 90 91 93 93 94 94 94 94 94 93 92 91 90 89 88 87 86 85 84 83 82 82 81 80 79 78 77 76 75 74 73 71 70 69 67 66 65 63 62 62 61 60 60 59 59 60 60 60 61 62 63 64 64 65 66 67 67 68 68 69 70 70 71 72 73 75 77 79 81 84 87 91 94 98 102 105 109 112 116 118 121 122 124 125 125 124 124 122 121 119 117 114 112 110 107 105 103 101 99 97 95 94 92 91 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 90 91 91 91 92 93 93 94 95 95 96 96 97 97 98 98 98 98 98 98 97 97 97 97 96 96 96 95 95 95 94 94 94 94 93 93 93 93 93 93 92 92 92 91 91 91 91 90 90 90 90 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 88 88 88 87 87 87 87 88 88 88 89 89 90 91 92 93 95 97 99 101 104 106 110 113 116 120 124 128 132 135 139 142 145 147 150 151 153 154 155 156 156 157 157 157 158 158 158 157 156 155 153 151 149 145 142 139 135 131 128 125 122 119 116 114 112 109 107 105 102 100 97 95 93 91 89 87 85 83 81 80 79 78 77 77 76 76 76 75 75 75 75 75 75 75 75 75 74 74 74 74 74 73 73 72 72 71 70 70 69 68 67 66 66 65 65 64 64 64 64 64 63 63 63 63 63 63 64 64 64 65 66 67 67 68 69 70 71 72 72 73 74 75 75 76 77 78 78 79 80 81 82 82 83 83 84 84 84 84 
- 116 115 114 112 110 107 104 101 97 94 90 86 83 80 77 74 72 70 68 66 65 64 63 62 62 61 60 60 59 59 58 57 57 57 56 56 56 56 55 55 55 55 55 54 54 54 54 53 53 53 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 59 59 60 61 62 63 64 65 66 67 69 70 72 74 75 77 79 81 83 85 87 89 90 92 92 93 93 93 93 93 92 91 90 89 88 87 85 84 83 83 82 81 80 80 79 78 77 76 75 74 73 72 70 69 68 67 65 64 63 62 61 60 60 59 59 59 59 59 60 60 61 62 63 64 65 65 66 67 67 68 69 70 70 71 73 74 75 77 79 82 84 87 91 94 97 101 104 108 111 114 117 119 120 122 122 122 122 121 120 119 117 115 113 110 108 106 104 102 100 98 96 95 93 92 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 89 90 90 90 91 91 91 92 92 93 94 94 95 96 96 97 97 98 98 98 98 98 98 98 98 97 97 97 97 96 96 96 95 95 94 94 94 94 93 93 93 93 93 93 92 92 92 92 91 91 91 91 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 88 88 87 87 87 87 87 87 87 87 87 87 88 89 89 90 92 93 95 97 99 102 105 108 111 115 118 122 126 130 133 136 139 142 145 147 148 150 151 152 153 154 155 155 156 156 156 156 156 154 153 151 148 145 142 139 136 132 129 126 123 121 118 116 114 111 109 107 104 102 99 97 94 92 90 87 85 83 82 80 79 78 77 76 75 75 74 74 74 74 74 74 74 74 74 74 74 74 74 73 73 73 72 72 71 70 70 69 68 67 66 65 64 64 63 63 63 62 62 62 62 62 62 61 61 62 62 62 63 63 64 65 66 66 67 68 69 70 71 71 72 73 74 75 76 76 77 78 79 80 80 81 82 82 83 83 84 84 
- 114 113 112 111 108 106 103 100 96 93 89 86 82 79 76 74 71 69 68 66 65 64 63 62 61 61 60 59 59 58 57 57 56 56 56 55 55 55 55 55 55 55 54 54 54 54 53 53 53 53 53 53 53 53 53 53 53 54 54 55 55 55 56 57 57 58 58 59 60 61 62 63 64 65 66 67 68 70 71 73 75 77 79 81 83 85 86 88 89 91 91 92 92 92 92 91 91 90 89 88 87 85 84 83 82 81 81 80 79 78 78 77 76 75 74 73 72 71 70 69 68 66 65 64 63 62 61 60 60 59 59 59 59 59 59 60 61 61 62 63 64 65 66 66 67 68 69 70 71 72 73 75 76 78 80 82 85 88 91 94 97 100 104 107 110 112 115 117 118 119 120 120 120 119 118 117 115 113 111 109 107 105 103 101 99 97 95 94 92 91 90 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 89 89 90 90 90 91 91 91 92 92 93 93 94 95 95 96 97 97 97 98 98 98 98 98 98 98 98 98 97 97 97 97 96 96 95 95 94 94 94 94 93 93 93 93 93 93 93 92 92 92 92 91 91 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 93 93 93 92 92 92 91 91 90 90 89 88 88 87 87 86 86 86 86 85 85 85 86 86 86 87 88 88 90 91 93 95 97 100 103 106 109 113 116 120 124 127 130 134 136 139 141 143 145 147 148 149 150 151 152 153 154 154 154 154 153 151 150 147 145 142 139 135 132 129 127 124 122 120 117 115 113 111 108 106 103 101 98 96 93 91 88 86 84 82 80 79 77 76 75 75 74 73 73 73 73 73 73 73 73 73 73 73 73 73 72 72 72 71 71 70 69 68 67 66 66 65 64 63 62 62 61 61 61 61 60 60 60 60 60 60 60 60 61 61 62 62 63 64 65 66 66 67 68 69 70 71 72 73 74 74 75 76 77 78 79 80 80 81 82 82 83 83 83 
-diff -ruN rodinia_3.1/cuda/srad/srad_v1/image.pgm rodinia_backup/cuda/srad/srad_v1/image.pgm
---- rodinia_3.1/cuda/srad/srad_v1/image.pgm	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v1/image.pgm	2024-09-26 12:55:55.463242012 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v1/image.pgm rodinia_3.1_new/cuda/srad/srad_v1/image.pgm
+--- rodinia_3.1/cuda/srad/srad_v1/image.pgm	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v1/image.pgm	2024-10-01 18:53:23.905277978 +0000
 @@ -0,0 +1,505 @@
 +P2
 +458 502
@@ -10555,9 +10745,30 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/image.pgm rodinia_backup/cuda/srad/srad_
 +51 49 52 54 56 54 50 46 43 45 48 50 49 47 44 45 48 52 55 55 54 52 52 51 50 49 47 44 41 48 55 63 66 63 61 56 50 44 39 42 46 49 50 50 49 49 47 46 46 49 54 58 62 64 68 71 73 75 76 77 76 76 75 71 67 63 67 74 81 85 88 90 91 88 86 84 84 85 86 82 71 59 48 52 55 59 60 61 61 63 65 67 70 72 75 77 76 72 69 66 62 58 53 55 57 60 63 66 69 72 81 89 96 98 95 94 93 93 94 94 88 81 74 75 80 85 89 89 89 90 91 93 95 101 111 122 130 132 132 134 137 141 146 143 138 132 128 123 117 112 107 103 99 98 100 104 108 102 97 91 89 92 94 97 104 112 118 118 114 112 108 100 95 90 93 96 101 106 109 114 115 117 116 117 123 129 136 141 145 150 157 164 172 179 178 174 171 164 151 140 135 144 153 163 173 186 198 202 198 195 192 188 187 184 182 185 183 183 182 182 179 179 175 171 170 169 167 162 148 137 124 137 148 162 173 182 192 198 202 205 204 204 203 202 198 192 183 178 175 171 169 165 161 157 151 143 133 126 122 119 116 119 126 135 141 150 158 164 157 149 142 133 125 117 110 105 101 97 93 89 84 78 71 65 60 64 69 75 73 69 67 66 67 70 71 79 86 93 94 92 90 89 86 83 80 78 76 75 75 78 82 84 82 80 79 80 83 85 88 87 87 87 86 88 87 86 84 82 83 86 90 94 98 103 108 111 114 117 119 117 115 113 111 107 105 105 107 109 108 102 96 89 88 88 87 84 80 77 73 72 71 70 68 67 65 64 64 63 63 61 60 58 60 63 67 68 65 63 60 60 61 62 63 63 64 65 69 73 77 75 71 67 66 69 73 76 76 76 76 74 73 72 71 67 64 62 59 56 53 50 49 46 45 47 49 50 50 50 49 51 52 54 55 51 49 45 43 41 39 38 41 44 46 45 45 45 44 43 42 41 39 38 36 35 35 34 36 39 43 45 46 47 48 48 48 48 48 50 
 +37 37 42 47 53 54 52 50 48 48 47 46 47 47 49 50 54 58 62 58 55 52 50 49 48 48 49 50 51 49 48 49 50 53 55 56 53 49 44 46 48 50 50 49 48 46 43 41 38 41 47 53 57 58 60 62 65 67 72 69 63 58 56 60 65 68 65 64 64 68 75 80 85 81 77 73 76 79 83 83 78 73 69 70 71 73 73 73 73 72 73 74 75 73 73 71 71 70 70 70 67 65 62 66 71 75 77 78 79 80 89 97 107 106 104 100 96 93 88 84 80 76 73 77 85 93 97 97 96 94 95 95 94 99 107 116 123 124 125 126 129 133 136 137 134 132 129 123 120 116 113 114 114 113 110 108 104 101 100 95 94 97 96 101 107 112 119 117 116 116 113 108 104 101 102 102 104 106 109 112 113 112 112 111 110 110 109 111 113 113 118 128 138 149 149 153 152 149 143 137 133 135 137 139 151 163 176 179 178 173 171 173 174 174 176 175 173 171 170 164 164 164 167 170 171 176 178 178 174 170 167 173 181 188 195 202 206 212 212 211 215 210 210 206 201 198 193 184 182 178 174 171 170 166 162 158 153 149 148 148 148 149 152 155 157 158 155 154 145 136 127 120 115 109 103 98 93 87 84 80 76 74 73 71 71 70 69 69 68 67 68 69 72 76 81 82 84 85 85 89 90 92 92 89 88 82 75 67 68 74 80 87 83 80 77 79 81 83 83 83 83 83 84 86 87 85 81 77 76 83 89 94 100 107 112 116 118 120 121 118 117 114 113 112 110 111 115 116 118 109 102 93 90 87 83 80 76 71 67 67 66 66 65 65 66 66 67 67 67 65 62 59 59 60 60 60 59 58 57 60 64 68 70 68 67 66 68 71 72 71 69 68 68 71 74 78 77 75 75 76 79 82 84 81 79 76 70 63 57 52 49 46 42 42 41 41 42 43 44 45 46 47 47 46 46 46 45 45 44 44 45 46 47 46 45 45 43 42 40 38 38 38 39 39 39 40 41 41 42 43 44 45 45 46 46 46 46 45 
 +12 14 16 19 22 23 23 22 22 23 23 24 25 27 29 32 36 40 44 42 40 38 38 38 38 39 44 48 52 46 40 33 36 43 51 55 57 59 60 59 56 55 53 52 50 49 51 52 53 55 58 61 62 62 61 61 59 58 57 57 56 54 55 57 59 62 61 58 56 58 62 67 71 71 71 70 72 74 76 78 80 80 82 83 84 85 85 84 82 82 82 81 81 75 68 63 65 70 74 78 76 75 74 81 87 95 96 93 91 89 93 96 100 105 109 115 114 110 103 99 91 83 76 78 82 87 91 94 96 97 97 99 100 105 111 117 122 125 127 130 132 134 137 137 135 132 129 124 121 115 116 117 119 118 113 109 105 104 102 101 101 102 103 104 109 112 117 118 118 118 118 117 115 113 112 111 111 114 113 116 116 113 112 109 103 97 92 87 84 81 85 97 109 122 126 130 134 136 135 134 132 126 121 115 126 138 153 155 153 147 147 153 160 165 164 162 161 155 152 147 144 151 160 166 174 183 191 197 205 211 217 218 219 219 221 222 222 223 224 223 223 219 214 207 206 201 197 193 190 183 178 175 177 175 175 173 172 172 174 176 179 178 177 176 171 163 156 149 137 126 115 108 106 103 100 93 87 81 78 75 73 73 75 79 80 75 71 67 66 67 67 69 74 80 84 81 80 77 79 83 86 90 91 91 93 84 76 68 68 74 80 84 80 75 71 74 79 82 84 83 82 81 82 83 84 79 73 67 66 73 81 90 95 99 103 106 110 115 116 113 111 107 109 113 116 118 117 118 117 111 105 97 93 89 84 79 74 70 65 63 61 59 60 63 65 68 68 69 70 67 64 60 57 56 55 55 55 55 55 59 65 70 71 70 67 65 66 68 69 68 66 65 64 67 70 72 72 73 74 75 78 80 80 77 75 72 67 63 58 53 48 43 38 37 35 33 34 35 36 38 38 39 39 42 44 47 49 49 49 47 46 44 43 41 39 37 35 32 30 27 27 27 27 26 26 25 25 24 23 22 22 22 21 21 20 19 19 18 
-diff -ruN rodinia_3.1/cuda/srad/srad_v1/main.cu rodinia_backup/cuda/srad/srad_v1/main.cu
---- rodinia_3.1/cuda/srad/srad_v1/main.cu	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v1/main.cu	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v1/image_out.pgm rodinia_3.1_new/cuda/srad/srad_v1/image_out.pgm
+--- rodinia_3.1/cuda/srad/srad_v1/image_out.pgm	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v1/image_out.pgm	2024-10-01 18:53:23.901277781 +0000
+@@ -104,7 +104,7 @@
+ 209 209 209 208 208 207 207 206 205 204 204 203 203 202 202 202 201 201 200 199 198 197 195 193 191 188 186 184 182 180 178 176 174 173 171 170 168 167 165 164 162 161 159 157 156 154 152 150 149 147 145 143 142 140 139 137 136 135 134 133 132 131 130 128 127 125 123 122 120 118 117 115 114 113 112 112 111 111 111 111 112 112 113 114 114 115 116 117 118 118 119 119 119 119 119 118 118 117 116 115 114 113 112 111 110 108 107 106 105 105 104 104 103 103 103 103 102 102 102 102 101 101 100 99 98 97 96 95 94 93 92 91 91 90 90 89 89 89 90 90 91 91 92 92 93 94 94 94 95 95 94 94 94 93 93 92 92 91 90 90 89 89 88 88 87 86 86 85 84 84 83 83 82 82 82 83 83 83 84 84 85 85 86 86 87 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 103 105 107 109 111 114 116 119 121 123 124 126 127 128 129 129 130 130 131 132 133 133 134 135 136 137 138 138 139 139 139 139 139 138 137 136 135 133 132 130 129 128 127 126 126 126 126 127 128 129 130 132 133 134 136 137 138 139 140 141 141 142 142 142 141 141 141 140 140 139 138 138 137 136 135 134 133 132 131 130 130 129 128 127 126 125 124 123 122 121 120 120 119 118 118 117 117 116 116 115 114 113 112 110 108 106 104 101 99 96 94 92 90 88 87 86 84 83 82 81 81 80 79 78 77 76 75 74 74 73 72 72 71 71 71 71 71 72 72 73 74 74 75 75 75 76 76 77 78 79 79 80 81 82 83 83 84 85 85 86 86 86 87 87 88 88 89 90 91 92 93 94 96 98 99 101 103 104 106 108 109 111 112 113 114 115 116 117 118 119 120 121 122 123 123 123 124 123 123 122 121 120 119 118 117 116 115 115 115 115 116 116 117 118 118 119 119 119 119 118 117 116 115 114 113 112 111 110 109 108 108 107 107 108 108 109 109 110 111 112 112 112 113 113 113 113 112 112 111 111 110 110 109 109 108 107 107 107 
+ 209 209 208 208 208 207 207 206 205 204 204 203 202 202 202 201 201 200 199 198 197 195 193 191 189 187 185 182 180 178 175 173 171 169 168 166 164 162 160 159 157 155 153 152 150 148 147 145 144 142 140 139 137 136 134 133 132 131 130 128 127 126 125 123 122 120 119 117 116 114 113 112 111 110 109 109 108 108 108 109 109 110 110 111 112 113 114 115 115 116 116 116 117 117 116 116 115 115 114 113 112 111 109 108 107 106 105 103 103 102 101 101 100 100 100 100 100 100 100 99 99 99 98 97 96 95 94 93 92 91 90 90 89 88 88 88 88 88 88 88 89 89 90 91 91 92 92 93 93 93 93 93 93 92 92 91 90 90 89 89 88 88 87 86 86 85 84 83 83 82 81 81 81 81 81 81 81 82 82 82 83 83 84 85 85 86 87 88 88 89 91 92 93 94 95 96 97 99 100 101 103 105 107 109 112 114 117 119 121 123 125 126 127 128 129 130 130 131 132 132 133 134 135 136 136 137 138 138 139 139 139 139 138 138 137 136 134 133 132 130 129 128 127 127 126 126 127 127 128 129 131 132 133 135 136 137 138 139 140 140 141 141 141 141 141 141 140 140 140 139 138 138 137 136 136 135 134 133 132 132 131 130 130 129 128 127 127 126 125 124 123 122 121 120 120 119 119 118 118 117 116 115 114 112 110 108 105 103 100 98 95 93 91 90 88 87 86 84 83 83 82 81 80 79 78 76 75 74 73 72 71 71 70 70 70 70 70 70 71 71 72 72 73 74 74 75 75 76 77 78 78 79 80 81 82 82 83 83 84 84 85 85 85 86 86 87 88 88 89 91 92 93 95 97 99 100 102 104 106 108 109 111 112 113 114 115 116 117 118 119 119 120 121 121 122 122 122 122 121 120 119 118 117 116 115 115 114 114 114 114 114 115 115 116 117 117 117 117 117 116 115 114 113 112 111 110 109 108 107 107 106 106 106 107 107 108 109 110 111 111 112 112 113 113 113 112 112 112 112 111 111 110 109 109 108 108 108 107 
+ 208 208 208 207 207 207 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 190 188 185 183 180 178 176 173 171 169 166 164 162 160 158 156 154 152 150 148 147 145 143 142 140 139 137 136 134 133 132 130 129 128 127 125 124 123 122 120 119 117 116 114 113 111 110 109 108 107 107 106 106 106 106 106 106 107 107 108 109 110 110 111 112 112 113 113 114 114 114 113 113 112 112 111 110 109 108 107 105 104 103 102 101 100 99 98 98 98 97 97 97 97 97 97 97 97 97 96 95 95 94 93 92 91 90 89 88 88 87 87 86 86 86 87 87 87 88 89 89 90 91 91 91 92 92 92 92 92 91 91 90 90 89 88 88 87 86 86 85 84 84 83 82 81 81 80 80 80 79 80 80 80 80 81 81 81 82 83 83 84 85 86 87 88 89 90 91 92 93 94 96 97 98 100 102 103 106 108 110 112 115 117 120 122 123 125 126 128 129 129 130 131 131 132 133 134 134 135 136 137 137 138 138 139 139 139 138 138 137 137 136 134 133 132 130 129 128 127 127 127 127 127 128 129 130 131 133 134 135 136 137 138 139 140 140 140 141 141 141 141 140 140 140 139 139 138 138 137 137 136 135 135 134 133 133 132 132 131 131 130 130 129 128 127 126 125 124 123 123 122 121 121 120 119 119 118 117 115 113 111 109 107 104 102 99 97 95 93 91 89 88 87 86 85 84 83 82 81 79 78 77 76 74 73 72 71 70 69 69 69 69 69 69 69 70 70 71 71 72 73 73 74 75 76 76 77 78 79 80 81 81 82 82 83 83 83 84 84 85 85 86 87 88 89 90 91 93 95 97 98 100 102 104 106 108 110 111 112 113 114 115 116 117 118 118 119 120 120 121 121 121 121 121 120 119 119 118 117 116 115 114 114 114 113 114 114 114 115 115 116 116 116 116 115 115 114 113 111 110 109 108 107 106 106 106 105 106 106 107 107 108 109 110 111 111 112 112 113 113 113 113 113 112 112 112 111 111 110 110 109 109 109 108 
+-206 206 206 206 206 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 191 188 186 184 181 179 176 174 171 169 166 164 161 159 156 154 152 150 148 146 144 142 140 139 137 136 135 133 132 131 129 128 127 125 124 123 122 120 119 118 116 115 113 112 110 109 108 107 106 105 104 104 103 103 103 103 103 104 104 105 106 106 107 108 108 109 109 110 110 110 110 110 110 110 109 109 108 107 106 105 104 103 101 100 99 98 97 97 96 96 95 95 95 95 95 95 95 95 95 95 94 94 93 92 91 90 89 88 88 87 86 86 85 85 85 85 85 86 86 87 87 88 89 89 90 90 90 91 91 91 90 90 90 89 89 88 87 87 86 86 85 84 83 82 82 81 80 80 79 79 79 79 79 79 79 79 80 80 80 81 82 82 83 84 85 86 87 88 89 90 92 93 94 96 97 99 100 102 104 106 108 111 113 116 118 120 122 124 125 127 128 129 130 131 131 132 133 133 134 135 136 136 137 137 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 128 128 127 127 128 128 129 130 131 132 134 135 136 137 138 138 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 136 136 135 135 134 134 134 134 133 133 133 132 131 130 130 129 128 126 125 125 124 123 122 122 121 120 119 118 116 115 113 110 108 105 103 100 98 96 94 92 91 90 88 87 86 85 84 83 82 80 79 77 76 74 73 72 70 69 69 68 68 67 68 68 68 68 69 69 70 70 71 72 73 73 74 75 76 77 78 79 79 80 81 81 81 82 82 83 83 84 84 85 86 87 88 90 91 93 95 97 99 101 103 105 107 109 110 112 113 114 115 116 117 117 118 119 119 120 120 121 121 121 121 121 120 120 119 118 117 116 116 115 115 114 114 114 115 115 115 116 116 116 116 115 115 114 113 112 111 109 108 107 107 106 106 105 106 106 106 107 108 109 110 111 111 112 113 113 113 114 114 114 114 114 113 113 113 112 112 112 111 111 110 110 
++206 206 206 206 206 206 206 205 204 204 203 202 202 201 200 200 199 198 197 196 194 192 191 188 186 184 181 179 176 174 171 169 166 164 161 159 156 154 152 150 148 146 144 142 140 139 137 136 135 133 132 131 129 128 127 125 124 123 122 120 119 118 116 115 113 112 110 109 108 107 106 105 104 104 103 103 103 103 103 104 104 105 106 106 107 108 108 109 109 110 110 110 110 110 110 110 109 109 108 107 106 105 104 103 101 100 99 98 97 97 96 96 95 95 95 95 95 95 95 95 95 95 94 94 93 92 91 90 89 88 88 87 86 86 85 85 85 85 85 86 86 87 87 88 89 89 90 90 90 91 91 91 90 90 90 89 89 88 87 87 86 86 85 84 83 82 82 81 80 80 79 79 79 79 79 79 79 79 80 80 80 81 82 82 83 84 85 86 87 88 89 90 92 93 94 96 97 99 100 102 104 106 108 111 113 116 118 120 122 124 125 127 128 129 130 131 131 132 133 133 134 135 136 136 137 137 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 128 128 127 127 128 128 129 130 131 132 134 135 136 137 138 138 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 136 136 135 135 134 134 134 134 133 133 132 132 131 130 130 129 128 126 125 125 124 123 122 122 121 120 119 118 116 115 113 110 108 105 103 100 98 96 94 92 91 90 88 87 86 85 84 83 82 80 79 77 76 74 73 72 70 69 69 68 68 67 68 68 68 68 69 69 70 70 71 72 73 73 74 75 76 77 78 79 79 80 81 81 81 82 82 83 83 84 84 85 86 87 88 90 91 93 95 97 99 101 103 105 107 109 110 112 113 114 115 116 117 117 118 119 119 120 120 121 121 121 121 121 120 120 119 118 117 116 116 115 115 114 114 114 115 115 115 116 116 116 116 115 115 114 113 112 111 109 108 107 107 106 106 105 106 106 106 107 108 109 110 111 111 112 113 113 113 114 114 114 114 114 113 113 113 112 112 112 111 111 110 110 
+ 205 205 205 205 205 205 205 204 204 203 202 202 201 200 200 199 198 197 196 194 193 191 189 187 185 182 179 177 174 171 169 166 163 161 158 156 153 150 148 146 143 141 139 138 136 134 133 132 131 129 128 127 126 125 123 122 121 120 118 117 116 114 113 111 110 108 107 106 104 103 103 102 101 101 101 101 101 101 101 101 102 102 103 104 104 105 105 106 106 106 106 107 107 107 106 106 106 105 105 104 103 102 101 100 99 98 97 96 95 94 94 94 93 93 93 93 93 93 94 93 93 93 93 92 91 91 90 89 88 87 86 86 85 85 84 84 84 84 84 85 85 85 86 87 87 88 88 89 89 89 90 90 89 89 89 88 88 87 87 86 85 85 84 83 82 81 81 80 79 79 78 78 78 78 78 78 78 79 79 79 80 80 81 82 83 83 84 85 87 88 89 90 91 93 94 96 97 99 101 103 105 107 109 112 114 116 119 121 123 124 126 127 128 129 130 131 132 133 133 134 135 135 136 137 137 137 138 138 138 138 138 137 137 136 136 135 134 133 131 130 129 128 128 128 128 128 129 130 131 132 133 134 135 136 137 138 139 139 140 140 140 140 140 140 140 140 140 139 139 139 138 138 137 137 137 136 136 136 135 135 135 135 135 135 135 134 133 133 132 131 130 128 127 126 125 124 124 123 122 121 120 119 117 116 114 111 109 106 104 102 99 97 95 94 92 91 90 89 88 87 85 84 83 81 80 78 76 75 73 71 70 69 68 67 67 66 66 67 67 67 67 68 68 69 70 70 71 72 73 74 75 76 77 77 78 79 79 80 80 81 81 82 83 83 84 85 86 87 89 90 92 94 96 98 100 102 104 107 108 110 112 113 114 115 116 117 118 118 119 119 120 120 121 121 122 122 122 121 121 121 120 119 119 118 118 117 117 117 116 116 117 117 117 117 117 117 117 116 115 114 113 112 111 110 109 108 107 107 106 106 107 107 108 109 109 110 111 112 113 114 114 114 115 115 115 115 115 115 115 115 115 115 114 114 114 113 113 113 
+ 203 203 203 203 203 203 203 203 203 202 201 201 200 199 198 198 197 196 194 193 191 190 187 185 183 180 178 175 172 169 166 164 161 158 155 152 150 147 144 142 139 137 135 133 132 130 129 128 127 126 125 124 123 122 120 119 118 117 115 114 113 111 110 108 107 105 104 103 102 101 100 99 99 99 98 98 98 99 99 99 100 100 101 101 101 102 102 102 103 103 103 103 103 103 103 103 102 102 102 101 100 99 99 98 97 96 95 94 93 93 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 88 87 86 85 85 84 84 83 83 83 83 83 84 84 84 85 85 86 86 87 87 88 88 88 89 89 88 88 88 87 87 86 85 85 84 83 82 81 81 80 79 78 78 78 77 77 77 78 78 78 78 79 79 80 80 81 82 82 83 84 85 87 88 89 90 91 93 94 96 97 99 101 103 106 108 110 112 115 117 119 121 123 125 127 128 129 130 131 132 133 133 134 135 135 136 136 137 137 138 138 138 138 138 137 137 136 136 135 134 133 132 131 130 129 129 128 128 128 129 130 131 132 133 134 135 136 137 138 139 139 140 140 140 140 140 140 140 140 140 140 139 139 139 138 138 138 137 137 137 137 137 137 137 137 137 137 137 136 136 135 135 134 133 131 130 129 128 126 125 124 124 123 122 121 119 118 116 114 112 110 107 105 103 100 98 97 95 94 92 91 90 89 88 87 85 84 82 81 79 77 75 73 71 70 68 67 67 66 66 65 65 66 66 66 67 67 68 68 69 70 70 71 72 73 74 75 76 76 77 78 78 79 80 80 81 82 83 84 85 87 88 90 91 93 95 97 100 102 104 106 108 110 112 114 115 116 117 118 119 119 120 120 121 121 122 122 123 123 123 123 123 123 123 122 122 122 121 121 120 120 120 120 120 120 120 120 120 120 119 119 118 117 116 115 114 112 111 110 110 109 109 109 109 109 110 110 111 112 113 114 115 116 116 117 117 117 118 118 118 118 118 118 118 118 118 117 117 117 116 116 116 
+ 201 201 201 201 201 202 202 201 201 201 200 200 199 198 197 196 195 194 193 191 190 188 186 184 181 178 176 173 170 167 164 161 158 155 152 149 146 144 141 138 136 133 131 130 128 127 125 124 123 122 122 121 120 119 118 117 116 114 113 112 110 109 107 106 104 103 101 100 99 98 98 97 97 96 96 96 96 97 97 97 98 98 98 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 98 98 97 96 96 95 94 93 93 92 91 91 91 91 91 91 91 91 91 91 91 91 91 91 90 89 89 88 87 86 86 85 84 84 83 83 83 83 83 83 83 83 83 84 84 85 85 86 86 87 87 87 88 88 88 87 87 87 86 85 85 84 83 82 81 80 80 79 78 78 77 77 77 77 77 77 78 78 78 79 79 80 80 81 82 83 84 85 86 87 88 89 90 92 93 95 96 98 100 102 104 107 109 111 114 116 118 120 122 124 126 127 129 130 131 132 133 133 134 135 135 136 136 137 137 138 138 138 138 138 137 137 136 136 135 135 134 133 132 131 130 129 129 128 128 129 129 130 131 132 134 135 136 137 138 139 139 140 140 140 141 141 141 141 140 140 140 140 139 139 139 138 138 138 138 138 137 137 138 138 138 138 138 138 138 138 138 137 136 135 134 133 132 130 129 127 126 125 124 123 122 121 120 118 117 115 113 110 108 106 103 101 99 98 96 95 94 93 92 91 89 88 87 85 83 81 79 77 75 73 71 70 68 67 66 65 65 65 64 64 65 65 65 66 66 67 67 68 69 70 71 72 72 73 74 75 76 76 77 78 79 80 81 82 83 84 86 87 89 91 93 95 97 99 101 104 106 108 110 112 114 116 117 118 119 120 121 121 122 122 123 123 124 124 125 125 126 126 126 126 126 126 126 125 125 125 125 125 125 125 125 124 124 124 124 124 123 123 122 121 119 118 117 116 114 114 113 112 112 112 113 113 114 115 116 117 117 118 119 120 120 121 121 121 121 122 122 122 122 122 122 122 122 121 121 121 120 120 120 
+@@ -202,7 +202,7 @@
+ 121 120 118 116 113 110 106 103 98 94 90 86 83 79 76 74 71 69 68 66 65 64 64 63 62 62 61 61 61 60 60 60 60 60 59 59 59 59 59 58 58 58 57 57 56 56 56 55 55 55 55 55 55 55 55 55 55 55 56 56 56 57 57 57 58 59 59 60 61 62 63 64 65 66 67 69 70 72 74 76 78 80 82 84 86 88 90 92 93 95 95 96 96 96 96 96 95 95 94 93 92 92 91 91 90 90 89 89 89 88 87 87 86 84 83 82 80 79 77 75 74 72 70 69 68 67 66 65 64 64 64 64 64 64 64 65 66 67 67 68 69 70 70 71 71 72 72 72 73 73 74 75 76 78 80 82 85 88 92 96 100 104 109 113 117 120 124 126 128 130 130 131 130 129 128 126 124 122 119 116 114 111 108 106 103 101 99 97 96 94 93 92 91 90 89 89 89 88 88 88 88 87 87 87 87 87 87 87 87 87 87 87 87 87 87 87 87 88 88 88 89 89 90 90 91 91 92 92 93 94 95 95 96 96 96 97 97 96 96 96 96 96 95 95 95 95 95 94 94 94 94 94 94 94 93 93 93 93 92 92 91 91 90 90 90 89 89 89 89 89 90 90 90 90 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 91 91 91 91 90 90 90 89 89 89 89 89 89 89 89 90 90 91 92 93 95 96 98 100 102 104 107 109 112 115 118 121 124 127 131 134 138 141 145 148 151 154 157 159 161 162 163 163 163 163 162 162 161 160 159 158 157 156 154 153 151 149 146 143 140 137 133 130 126 123 120 116 113 110 108 105 102 100 98 95 93 91 89 88 86 85 83 82 81 81 80 80 79 79 79 79 79 79 79 78 78 78 77 76 76 75 74 73 73 72 71 71 70 70 70 69 69 69 68 68 68 67 67 67 67 68 68 68 68 69 69 69 69 70 70 70 71 71 72 73 73 74 75 76 77 78 78 79 80 80 81 82 82 83 83 84 85 85 86 87 87 87 88 88 88 88 89 89 89 
+ 120 120 118 116 113 110 107 103 99 95 90 87 83 79 76 74 71 70 68 67 65 64 64 63 62 62 61 61 60 60 60 60 59 59 59 59 58 58 58 58 57 57 57 56 56 55 55 55 55 54 54 54 54 54 54 54 55 55 55 56 56 56 57 57 58 58 59 60 61 62 62 64 65 66 67 69 70 72 74 75 78 80 82 84 86 88 90 92 93 94 95 96 96 96 96 96 95 94 94 93 92 91 90 90 89 88 88 87 87 86 85 85 84 83 81 80 78 77 75 74 72 70 69 68 66 65 64 63 63 62 62 62 62 63 63 64 65 66 66 67 68 69 69 70 70 71 71 71 72 72 73 74 75 77 79 81 84 88 91 95 99 104 108 112 116 120 123 125 127 129 130 130 130 129 127 126 123 121 118 116 113 110 108 105 103 101 99 97 95 94 93 92 91 90 89 89 89 88 88 88 88 88 88 87 87 87 87 87 87 87 87 87 87 87 87 88 88 88 89 89 89 90 90 91 91 92 92 93 94 94 95 96 96 97 97 97 97 97 97 96 96 96 96 96 95 95 95 95 94 94 94 94 94 94 93 93 93 93 92 92 92 91 91 90 90 90 90 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 89 89 88 88 88 89 89 90 90 91 92 93 95 96 98 99 101 104 106 108 111 114 117 120 124 127 131 134 138 142 145 149 152 154 157 159 160 161 162 162 162 162 161 161 160 160 159 158 157 156 154 153 150 148 145 142 138 135 131 127 124 121 117 114 111 109 106 104 101 99 97 95 93 91 89 87 86 84 83 82 81 80 80 79 79 79 79 78 78 78 78 78 77 77 77 76 75 75 74 74 73 73 72 72 71 71 71 70 70 69 69 68 68 68 67 67 67 67 67 67 68 68 68 68 68 68 68 69 69 70 70 71 72 73 74 75 75 76 77 77 78 79 79 80 81 81 82 83 83 84 85 85 86 86 87 87 87 87 87 87 
+ 120 119 118 116 113 110 107 103 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 61 60 60 59 59 59 58 58 58 58 57 57 57 57 56 56 56 55 55 55 54 54 54 54 54 54 54 54 54 54 55 55 55 56 56 57 57 58 58 59 60 61 61 62 63 64 66 67 68 70 71 73 75 77 79 81 83 86 88 90 91 93 94 95 96 96 96 96 95 95 94 93 92 91 90 89 88 87 87 86 86 85 84 84 83 82 81 79 78 77 75 74 72 71 69 68 66 65 64 63 62 62 61 61 61 61 62 62 63 64 65 65 66 67 68 68 69 69 70 70 71 71 72 72 74 75 77 79 81 84 87 91 95 99 103 107 111 115 119 122 124 126 128 128 129 128 127 126 124 122 120 117 115 112 110 107 105 102 100 98 97 95 94 92 91 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 90 90 91 91 92 92 93 94 94 95 96 96 97 97 97 97 97 97 97 97 97 96 96 96 96 95 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 91 91 91 90 90 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 89 88 88 88 88 88 89 89 90 91 92 93 94 95 97 98 100 102 104 107 110 113 116 119 123 126 130 134 138 141 145 148 151 154 156 157 159 160 160 160 160 160 160 160 159 159 159 158 157 156 154 152 150 147 143 140 136 133 129 125 122 119 116 113 110 108 105 103 101 98 96 94 92 90 88 87 85 84 82 81 80 79 79 78 78 78 78 78 77 77 77 77 77 76 76 75 75 75 74 74 73 73 73 72 72 71 71 70 70 69 68 68 68 67 67 67 67 67 66 66 66 66 66 66 67 67 67 67 68 68 69 70 71 71 72 73 74 75 75 76 77 77 78 79 79 80 81 82 82 83 84 84 85 85 85 86 86 86 86 
+-119 118 117 115 113 110 106 102 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 60 60 59 59 59 58 58 57 57 57 57 57 56 56 56 56 55 55 54 54 54 54 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 58 59 60 60 61 62 63 64 65 67 68 70 71 73 75 77 79 81 83 85 87 89 91 92 93 94 95 95 95 95 95 94 93 92 91 90 89 88 87 86 85 85 84 83 82 82 81 80 79 78 76 75 74 72 71 69 68 67 65 64 63 62 61 61 60 60 60 60 61 61 62 63 64 64 65 66 67 67 68 69 69 69 70 71 71 72 73 75 76 79 81 84 87 91 94 98 102 106 110 114 117 120 123 124 126 127 127 126 126 124 123 121 118 116 114 111 109 106 104 102 100 98 96 94 93 92 91 90 90 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 91 91 92 92 93 93 94 95 95 96 97 97 97 97 98 97 97 97 97 97 97 96 96 96 96 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 92 91 91 91 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 89 88 88 88 88 88 88 88 89 89 90 91 92 93 94 95 97 99 101 103 105 108 111 114 118 122 125 129 133 137 140 144 147 150 152 154 155 157 157 158 158 159 159 159 159 159 159 158 157 156 155 153 151 148 145 141 138 134 130 127 123 120 117 115 112 110 107 105 103 100 98 96 94 91 89 88 86 84 83 81 80 79 78 78 77 77 77 77 76 76 76 76 76 76 75 75 75 75 74 74 74 74 73 73 72 72 71 71 70 69 68 68 67 67 66 66 66 65 65 65 65 65 65 65 65 65 65 65 66 66 67 68 69 69 70 71 72 73 73 74 75 75 76 77 78 78 79 80 81 81 82 83 83 84 84 85 85 85 85 
++119 118 117 115 113 110 106 102 99 95 91 87 83 80 77 74 72 70 68 67 65 64 64 63 62 62 61 60 60 59 59 59 58 58 57 57 57 57 57 56 56 56 56 55 55 54 54 54 54 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 58 59 60 60 61 62 63 64 65 67 68 70 71 73 75 77 79 81 83 85 87 89 91 92 93 94 95 95 95 95 95 94 93 92 91 90 89 88 87 86 85 85 84 83 82 82 81 80 79 78 76 75 74 72 71 69 68 67 65 64 63 62 61 61 60 60 60 60 61 61 62 63 64 64 65 66 67 67 68 69 69 69 70 71 71 72 73 75 76 79 81 84 87 91 94 98 102 106 110 114 117 120 123 124 126 127 127 126 126 124 123 121 118 116 114 111 109 106 104 102 100 98 96 94 93 92 91 90 90 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 91 91 92 92 93 93 94 95 95 96 97 97 97 97 97 97 97 97 97 97 97 96 96 96 96 95 95 95 94 94 94 94 94 93 93 93 93 93 92 92 92 91 91 91 90 90 90 90 90 90 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 89 88 88 88 88 88 88 88 89 89 90 91 92 93 94 95 97 99 101 103 105 108 111 114 118 122 125 129 133 137 140 144 147 150 152 154 155 157 157 158 158 159 159 159 159 159 159 158 157 156 155 153 151 148 145 141 138 134 130 127 123 120 117 115 112 110 107 105 103 100 98 96 94 91 89 88 86 84 83 81 80 79 78 78 77 77 77 77 76 76 76 76 76 76 75 75 75 75 74 74 74 74 73 73 72 72 71 71 70 69 68 68 67 67 66 66 66 65 65 65 65 65 65 65 65 65 65 65 66 66 67 68 69 69 70 71 72 73 73 74 75 75 76 77 78 78 79 80 81 81 82 83 83 84 84 85 85 85 85 
+ 118 117 116 114 112 109 105 102 98 94 90 87 83 80 77 74 72 70 68 67 65 64 63 63 62 61 61 60 60 59 58 58 58 57 57 57 56 56 56 56 56 55 55 55 54 54 54 53 53 53 53 53 53 53 53 53 54 54 55 55 55 56 56 57 57 58 59 60 60 61 62 63 64 65 66 68 69 71 72 74 76 78 80 82 84 86 88 90 91 93 93 94 94 94 94 94 93 92 91 90 89 88 87 86 85 84 83 82 82 81 80 79 78 77 76 75 74 73 71 70 69 67 66 65 63 62 62 61 60 60 59 59 60 60 60 61 62 63 64 64 65 66 67 67 68 68 69 70 70 71 72 73 75 77 79 81 84 87 91 94 98 102 105 109 112 116 118 121 122 124 125 125 124 124 122 121 119 117 114 112 110 107 105 103 101 99 97 95 94 92 91 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 90 90 90 91 91 91 92 93 93 94 95 95 96 96 97 97 98 98 98 98 98 98 97 97 97 97 96 96 96 95 95 95 94 94 94 94 93 93 93 93 93 93 92 92 92 91 91 91 91 90 90 90 90 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 91 90 90 89 89 88 88 88 87 87 87 87 88 88 88 89 89 90 91 92 93 95 97 99 101 104 106 110 113 116 120 124 128 132 135 139 142 145 147 150 151 153 154 155 156 156 157 157 157 158 158 158 157 156 155 153 151 149 145 142 139 135 131 128 125 122 119 116 114 112 109 107 105 102 100 97 95 93 91 89 87 85 83 81 80 79 78 77 77 76 76 76 75 75 75 75 75 75 75 75 75 74 74 74 74 74 73 73 72 72 71 70 70 69 68 67 66 66 65 65 64 64 64 64 64 63 63 63 63 63 63 64 64 64 65 66 67 67 68 69 70 71 72 72 73 74 75 75 76 77 78 78 79 80 81 82 82 83 83 84 84 84 84 
+ 116 115 114 112 110 107 104 101 97 94 90 86 83 80 77 74 72 70 68 66 65 64 63 62 62 61 60 60 59 59 58 57 57 57 56 56 56 56 55 55 55 55 55 54 54 54 54 53 53 53 53 53 53 53 53 53 54 54 54 55 55 56 56 57 57 58 59 59 60 61 62 63 64 65 66 67 69 70 72 74 75 77 79 81 83 85 87 89 90 92 92 93 93 93 93 93 92 91 90 89 88 87 85 84 83 83 82 81 80 80 79 78 77 76 75 74 73 72 70 69 68 67 65 64 63 62 61 60 60 59 59 59 59 59 60 60 61 62 63 64 65 65 66 67 67 68 69 70 70 71 73 74 75 77 79 82 84 87 91 94 97 101 104 108 111 114 117 119 120 122 122 122 122 121 120 119 117 115 113 110 108 106 104 102 100 98 96 95 93 92 91 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 89 90 90 90 91 91 91 92 92 93 94 94 95 96 96 97 97 98 98 98 98 98 98 98 98 97 97 97 97 96 96 96 95 95 94 94 94 94 93 93 93 93 93 93 92 92 92 92 91 91 91 91 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 91 91 90 90 89 89 88 88 87 87 87 87 87 87 87 87 87 87 88 89 89 90 92 93 95 97 99 102 105 108 111 115 118 122 126 130 133 136 139 142 145 147 148 150 151 152 153 154 155 155 156 156 156 156 156 154 153 151 148 145 142 139 136 132 129 126 123 121 118 116 114 111 109 107 104 102 99 97 94 92 90 87 85 83 82 80 79 78 77 76 75 75 74 74 74 74 74 74 74 74 74 74 74 74 74 73 73 73 72 72 71 70 70 69 68 67 66 65 64 64 63 63 63 62 62 62 62 62 62 61 61 62 62 62 63 63 64 65 66 66 67 68 69 70 71 71 72 73 74 75 76 76 77 78 79 80 80 81 82 82 83 83 84 84 
+ 114 113 112 111 108 106 103 100 96 93 89 86 82 79 76 74 71 69 68 66 65 64 63 62 61 61 60 59 59 58 57 57 56 56 56 55 55 55 55 55 55 55 54 54 54 54 53 53 53 53 53 53 53 53 53 53 53 54 54 55 55 55 56 57 57 58 58 59 60 61 62 63 64 65 66 67 68 70 71 73 75 77 79 81 83 85 86 88 89 91 91 92 92 92 92 91 91 90 89 88 87 85 84 83 82 81 81 80 79 78 78 77 76 75 74 73 72 71 70 69 68 66 65 64 63 62 61 60 60 59 59 59 59 59 59 60 61 61 62 63 64 65 66 66 67 68 69 70 71 72 73 75 76 78 80 82 85 88 91 94 97 100 104 107 110 112 115 117 118 119 120 120 120 119 118 117 115 113 111 109 107 105 103 101 99 97 95 94 92 91 90 90 89 89 89 88 88 88 88 88 88 88 88 88 88 88 88 88 88 89 89 89 89 89 89 90 90 90 91 91 91 92 92 93 93 94 95 95 96 97 97 97 98 98 98 98 98 98 98 98 98 97 97 97 97 96 96 95 95 94 94 94 94 93 93 93 93 93 93 93 92 92 92 92 91 91 91 91 91 91 91 91 91 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 92 93 93 93 92 92 92 91 91 90 90 89 88 88 87 87 86 86 86 86 85 85 85 86 86 86 87 88 88 90 91 93 95 97 100 103 106 109 113 116 120 124 127 130 134 136 139 141 143 145 147 148 149 150 151 152 153 154 154 154 154 153 151 150 147 145 142 139 135 132 129 127 124 122 120 117 115 113 111 108 106 103 101 98 96 93 91 88 86 84 82 80 79 77 76 75 75 74 73 73 73 73 73 73 73 73 73 73 73 73 73 72 72 72 71 71 70 69 68 67 66 66 65 64 63 62 62 61 61 61 61 60 60 60 60 60 60 60 60 61 61 62 62 63 64 65 66 66 67 68 69 70 71 72 73 74 74 75 76 77 78 79 80 80 81 82 82 83 83 83 
+diff -ruN rodinia_3.1/cuda/srad/srad_v1/main.cu rodinia_3.1_new/cuda/srad/srad_v1/main.cu
+--- rodinia_3.1/cuda/srad/srad_v1/main.cu	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v1/main.cu	2024-10-01 18:53:23.905277978 +0000
 @@ -24,7 +24,7 @@
  #include <stdlib.h>
  #include <math.h>
@@ -10683,10 +10894,9 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/main.cu rodinia_backup/cuda/srad/srad_v1
  
  	time12 = get_time();
  
-Binary files rodinia_3.1/cuda/srad/srad_v1/main.o and rodinia_backup/cuda/srad/srad_v1/main.o differ
-diff -ruN rodinia_3.1/cuda/srad/srad_v1/makefile rodinia_backup/cuda/srad/srad_v1/makefile
---- rodinia_3.1/cuda/srad/srad_v1/makefile	2015-12-11 07:46:15.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v1/makefile	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v1/makefile rodinia_3.1_new/cuda/srad/srad_v1/makefile
+--- rodinia_3.1/cuda/srad/srad_v1/makefile	2015-12-11 15:46:15.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v1/makefile	2024-10-01 18:53:23.905277978 +0000
 @@ -1,8 +1,6 @@
  include ../../../common/make.config
  
@@ -10719,10 +10929,9 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/makefile rodinia_backup/cuda/srad/srad_v
  
  # delete all object files
  clean:
-Binary files rodinia_3.1/cuda/srad/srad_v1/srad and rodinia_backup/cuda/srad/srad_v1/srad differ
-diff -ruN rodinia_3.1/cuda/srad/srad_v2/Makefile rodinia_backup/cuda/srad/srad_v2/Makefile
---- rodinia_3.1/cuda/srad/srad_v2/Makefile	2015-12-11 07:46:16.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v2/Makefile	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v2/Makefile rodinia_3.1_new/cuda/srad/srad_v2/Makefile
+--- rodinia_3.1/cuda/srad/srad_v2/Makefile	2015-12-11 15:46:16.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v2/Makefile	2024-10-01 18:53:23.905277978 +0000
 @@ -1,24 +1,22 @@
  include ../../../common/make.config
  
@@ -10753,10 +10962,9 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v2/Makefile rodinia_backup/cuda/srad/srad_v
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo result.txt
-Binary files rodinia_3.1/cuda/srad/srad_v2/srad and rodinia_backup/cuda/srad/srad_v2/srad differ
-diff -ruN rodinia_3.1/cuda/srad/srad_v2/srad.cu rodinia_backup/cuda/srad/srad_v2/srad.cu
---- rodinia_3.1/cuda/srad/srad_v2/srad.cu	2015-12-11 07:46:16.000000000 -0800
-+++ rodinia_backup/cuda/srad/srad_v2/srad.cu	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/srad/srad_v2/srad.cu rodinia_3.1_new/cuda/srad/srad_v2/srad.cu
+--- rodinia_3.1/cuda/srad/srad_v2/srad.cu	2015-12-11 15:46:16.000000000 +0000
++++ rodinia_3.1_new/cuda/srad/srad_v2/srad.cu	2024-10-01 18:53:23.905277978 +0000
 @@ -6,7 +6,7 @@
  #include "srad.h"
  
@@ -10827,9 +11035,9 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v2/srad.cu rodinia_backup/cuda/srad/srad_v2
  #endif 
  	free(c);
    
-diff -ruN rodinia_3.1/cuda/streamcluster/Makefile rodinia_backup/cuda/streamcluster/Makefile
---- rodinia_3.1/cuda/streamcluster/Makefile	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/streamcluster/Makefile	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/streamcluster/Makefile rodinia_3.1_new/cuda/streamcluster/Makefile
+--- rodinia_3.1/cuda/streamcluster/Makefile	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/streamcluster/Makefile	2024-10-01 18:53:23.905277978 +0000
 @@ -1,8 +1,6 @@
  include ../../common/make.config
  
@@ -10856,9 +11064,9 @@ diff -ruN rodinia_3.1/cuda/streamcluster/Makefile rodinia_backup/cuda/streamclus
  	
  
  clean:
-diff -ruN rodinia_3.1/cuda/streamcluster/setup.ini rodinia_backup/cuda/streamcluster/setup.ini
---- rodinia_3.1/cuda/streamcluster/setup.ini	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/cuda/streamcluster/setup.ini	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/streamcluster/setup.ini rodinia_3.1_new/cuda/streamcluster/setup.ini
+--- rodinia_3.1/cuda/streamcluster/setup.ini	1970-01-01 00:00:00.000000000 +0000
++++ rodinia_3.1_new/cuda/streamcluster/setup.ini	2024-10-01 18:53:23.905277978 +0000
 @@ -0,0 +1,7 @@
 +[DEFAULT]
 +compile = make
@@ -10868,9 +11076,9 @@ diff -ruN rodinia_3.1/cuda/streamcluster/setup.ini rodinia_backup/cuda/streamclu
 +llvm_pass = make INJECT_CODE_LLVM=1
 +clean = make clean
 \ No newline at end of file
-diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu rodinia_backup/cuda/streamcluster/streamcluster_cuda.cu
---- rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/streamcluster/streamcluster_cuda.cu	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu rodinia_3.1_new/cuda/streamcluster/streamcluster_cuda.cu
+--- rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/streamcluster/streamcluster_cuda.cu	2024-10-01 18:53:23.905277978 +0000
 @@ -1,3 +1,4 @@
 +#include "hip/hip_runtime.h"
  /***********************************************
@@ -11098,9 +11306,9 @@ diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu rodinia_backup/cu
  	*free_t += (double) tmp_t;
  #endif
  	iter++;
-diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_header.cu rodinia_backup/cuda/streamcluster/streamcluster_header.cu
---- rodinia_3.1/cuda/streamcluster/streamcluster_header.cu	2015-12-11 07:46:09.000000000 -0800
-+++ rodinia_backup/cuda/streamcluster/streamcluster_header.cu	2024-09-26 12:55:55.464242061 -0700
+diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_header.cu rodinia_3.1_new/cuda/streamcluster/streamcluster_header.cu
+--- rodinia_3.1/cuda/streamcluster/streamcluster_header.cu	2015-12-11 15:46:09.000000000 +0000
++++ rodinia_3.1_new/cuda/streamcluster/streamcluster_header.cu	2024-10-01 18:53:23.906278027 +0000
 @@ -26,7 +26,7 @@
  #include <sys/resource.h>
  #include <limits.h>
@@ -11110,15 +11318,3 @@ diff -ruN rodinia_3.1/cuda/streamcluster/streamcluster_header.cu rodinia_backup/
  
  #ifdef ENABLE_PARSEC_HOOKS
  #include <hooks.h>
-diff -ruN rodinia_3.1/.gitattributes rodinia_backup/.gitattributes
---- rodinia_3.1/.gitattributes	1969-12-31 16:00:00.000000000 -0800
-+++ rodinia_backup/.gitattributes	2024-09-26 12:55:55.235230740 -0700
-@@ -0,0 +1,8 @@
-+openmp/leukocyte/testfile.avi filter=lfs diff=lfs merge=lfs -text
-+openmp/kmeans/kdd_cup filter=lfs diff=lfs merge=lfs -text
-+openmp/heartwall/test.avi filter=lfs diff=lfs merge=lfs -text
-+openmp/hotspot3D/temp_512x8 filter=lfs diff=lfs merge=lfs -text
-+openmp/hotspot3D/power_512x8 filter=lfs diff=lfs merge=lfs -text
-+openmp/hotspot/output.out filter=lfs diff=lfs merge=lfs -text
-+openmp/hotspot/temp_1024 filter=lfs diff=lfs merge=lfs -text
-+openmp/hotspot/power_1024 filter=lfs diff=lfs merge=lfs -text
