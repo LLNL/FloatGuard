@@ -1,0 +1,1 @@
+python3 ../gdb_script/exception_control.py -p div0
