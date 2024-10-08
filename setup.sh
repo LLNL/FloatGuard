@@ -1,7 +1,4 @@
 # NPB-GPU
-apt update
-apt install -y unzip
-
 cd ~/FloatGuard/benchmarks
 git clone https://github.com/GMAP/NPB-GPU
 cd NPB-GPU
