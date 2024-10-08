@@ -1,7 +1,7 @@
-docker container ls -a | grep 'hipec' &> /dev/null
+docker container ls -a | grep 'FloatGuard' &> /dev/null
 if [ $? == 0 ]; then
-    docker start hipec
-    docker exec -it --user root hipec bash
+    docker start FloatGuard
+    docker exec -it --user root FloatGuard bash
 else
-    docker run -it -v "$PWD":/root/hipec --device /dev/kfd --device /dev/dri --security-opt seccomp=unconfined --name hipec ucdavisplse/hipec:latest
+    docker run -it -v "$PWD":/root/FloatGuard --device /dev/kfd --device /dev/dri --security-opt seccomp=unconfined --name FloatGuard ucdavisplse/floatguard:latest
 fi

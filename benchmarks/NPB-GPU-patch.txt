@@ -8036,10 +8036,10 @@ index bdc3180..5ad6500 100644
  
 -REGISTERS = 
 +ifeq ($(INJECT_CODE_LLVM), 1)
-+INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/hipec/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
++INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
 +			 -DEXP_FLAG_TOTAL=0x5F2F0
 +else
-+INST_FLAGS = -Wno-everything -g -include ${HOME}/hipec/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
++INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
 +			 -DEXP_FLAG_TOTAL=0x5F2F0
 +endif
  
@@ -8055,7 +8055,7 @@ index bdc3180..5ad6500 100644
  
 -CPP_14 = -std=c++14
 +ifeq ($(INJECT_CODE_CLANG), 1)
-+INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang hipec-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
++INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
 +endif
  
 -NO_NPB_CPP_CONVENTIONS = -DDO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION
@@ -8091,7 +8091,7 @@ index bdc3180..5ad6500 100644
  # These macros are passed to the linker 
  #---------------------------------------------------------------------------
 -C_LIB = -lm 
-+C_LIB  = ${HOME}/hipec/inst_pass/Inst/InstStub.o -lm 
++C_LIB  = ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -lm 
  
  #---------------------------------------------------------------------------
  # These macros are passed to the compiler 

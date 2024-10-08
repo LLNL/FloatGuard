@@ -3,7 +3,7 @@
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
-cd $SCRIPTPATH/clang-examples/hipec-plugin
+cd $SCRIPTPATH/clang-examples/FloatGuard-plugin
 if [ $1 == "clean" ]; then
     make clean
 else

@@ -33,18 +33,18 @@ SHARED_LIB_OPT  = -shared
 # Installation path
 prefix		= /lib/
 
-PROG		= hipec-plugin.so
+PROG		= FloatGuard-plugin.so
 
 all: $(PROG)
 
 source:
-	$(CXX) $(CXXFLAGS) -o hipec-plugin.o -c hipec-plugin.cpp
+	$(CXX) $(CXXFLAGS) -o FloatGuard-plugin.o -c FloatGuard-plugin.cpp
 	$(CXX) $(CXXFLAGS) -o TransformMutations.o -c TransformMutations.cpp
 	$(CXX) $(CXXFLAGS) -o utils.o -c utils.cpp
 	
 	
 $(PROG): source
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SHARED_LIB_OPT) -o $(PROG) hipec-plugin.o TransformMutations.o utils.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SHARED_LIB_OPT) -o $(PROG) FloatGuard-plugin.o TransformMutations.o utils.o
 
 	@echo "Clang plugin build success."
 

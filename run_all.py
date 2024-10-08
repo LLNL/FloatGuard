@@ -63,5 +63,5 @@ for exp_path in all_paths:
     print("testing", exp_path)
     current_path = os.getcwd()
     os.chdir(exp_path)
-    os.system("python3 -u ~/hipec/gdb_script/time_measure.py")
+    os.system("python3 -u ~/FloatGuard/gdb_script/time_measure.py")
     os.chdir(current_path)

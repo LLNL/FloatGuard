@@ -101,7 +101,7 @@ if __name__ == "__main__":
     starttime = time.time()
     capture_output = ""
     for run_command in run_command_list:
-        capture_command = ['python3', '-u', os.path.join(home, "hipec", "gdb_script", "exception_capture_light.py")]
+        capture_command = ['python3', '-u', os.path.join(home, "FloatGuard", "gdb_script", "exception_capture_light.py")]
         capture_command.extend(['-p', run_command[0]])
         if len(run_command) > 1:   
             capture_command.append('-a') 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     else:
         prog_input = "(multiple)"
 
-    with open(os.path.join(home, "hipec", prog_name + "_output.txt"), "w") as f:
+    with open(os.path.join(home, "FloatGuard", prog_name + "_output.txt"), "w") as f:
         f.write(capture_output + "\n")
 
     num_exceptions = capture_output.count("EXCEPTION CAPTURED")
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     output_array = [prog_name, prog_input, str(runs)]
     output_array.extend(time_array)
     output_array.append(str(num_exceptions))
-    with open(os.path.join(home, "hipec", "results.csv"), "a") as f:
+    with open(os.path.join(home, "FloatGuard", "results.csv"), "a") as f:
         f.write(",".join(output_array) + "\n")
 
     os.system(clean_command)
