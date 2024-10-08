@@ -105,7 +105,7 @@ def PrintAddr(fptype, addr):
 
 def extract_kernel_names(name):
     kernels = set()
-    disasm = subprocess.check_output(["llvm-objdump", "-d", "--demangle", name]).decode()
+    disasm = subprocess.check_output(["/opt/rocm/llvm/bin/llvm-objdump", "-d", "--demangle", name]).decode()
     lines = disasm.splitlines()    
     for line in lines:
         m = re.search("[0-9a-f]+\s<(__device_stub__[A-Za-z0-9_]+)\([^\)]+\)>:", line)

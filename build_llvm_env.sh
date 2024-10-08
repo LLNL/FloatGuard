@@ -9,17 +9,7 @@ apt-get install -y python3 python3-pip \
                     cmake \
                     libboost-all-dev \
                     lsb-release \
-                    software-properties-common
+                    software-properties-common \
+                    rocm-llvm-dev
 
 pip3 install pexpect
-git clone https://github.com/ROCm/llvm-project/ /root/llvm-project
-cd /root/llvm-project
-git checkout tags/rocm-6.1.2
-
-mkdir build
-cd build
-cmake -DLLVM_BUILD_EXAMPLES=1 -DCLANG_BUILD_EXAMPLES=1 -DLLVM_ENABLE_PROJECTS="clang;lld;lldb" -DCMAKE_INSTALL_PREFIX="" -DCMAKE_BUILD_TYPE="Release" -G "Unix Makefiles" ../llvm
-make -j8
-make install
-
-rm -r /root/llvm-project
