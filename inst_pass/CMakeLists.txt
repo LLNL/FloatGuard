@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.12)
 project(civ-pass)
 
+execute_process(COMMAND which hipcc
+                OUTPUT_VARIABLE HIPCC_PATH
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+file(REAL_PATH ${HIPCC_PATH} HIPCC_REAL_PATH)
+
 # we need LLVM_HOME in order to automatically set LLVM_DIR
 set(CMAKE_CXX_COMPILER hipcc)
 set(LLVM_ROOT "/opt/rocm/llvm")
 find_package(LLVM REQUIRED CONFIG)
+string(REPLACE "/bin/hipcc" " " HIPCC_ROCM_PATH ${HIPCC_REAL_PATH})
+message(STATUS "rocm path = ${HIPCC_ROCM_PATH}") 
 
 set(LLVM_INCLUDE_DIRS "/opt/rocm/llvm/include")
 set(LLVM_LIBRARY_DIRS "/opt/rocm/llvm/lib")

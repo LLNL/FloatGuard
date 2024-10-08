@@ -109,7 +109,8 @@ def PrintAddr(fptype, addr):
 
 def extract_kernel_names(name):
     kernels = set()
-    disasm = subprocess.check_output(["/opt/rocm/llvm/bin/llvm-objdump", "-d", "--demangle", name]).decode()
+    hipcc_rocm_path = os.path.realpath(subprocess.check_output(["which", "hipcc"]).decode().strip()).replace("/bin/hipcc", "")
+    disasm = subprocess.check_output([hipcc_rocm_path + "/llvm/bin/llvm-objdump", "-d", "--demangle", name]).decode()
     lines = disasm.splitlines()    
     for line in lines:
         m = re.search("[0-9a-f]+\s<(__device_stub__[A-Za-z0-9_]+)\([^\)]*\)>:", line)
