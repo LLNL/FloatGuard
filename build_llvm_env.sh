@@ -1,5 +1,5 @@
 apt-get update -y
-apt-get install -y apt-utils
+apt-get install -y apt-utils unzip dos2unix
 DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 apt-get upgrade -y
 apt-get install -y python3=3.10.6-1~22.04.1 python3-pip=22.0.2+dfsg-1ubuntu0.4 \

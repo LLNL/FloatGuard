@@ -18,4 +18,20 @@ cp rodinia_3.1/data/nn/*.db rodinia_3.1/data/nn/filelist.txt rodinia_3.1/cuda/nn
 rm rodinia_3.1/cuda/hotspot3D/output.out
 rm -r rodinia_3.1/data
 
-patch -p0 < rodinia_patch.txt
+dos2unix ./rodinia_3.1/cuda/hotspot/hotspot.cu
+dos2unix ./rodinia_3.1/cuda/srad/srad_v2/srad.cu
+dos2unix ./rodinia_3.1/cuda/streamcluster/streamcluster_header.cu
+dos2unix ./rodinia_3.1/cuda/streamcluster/streamcluster_cuda.cu
+dos2unix ./rodinia_3.1/cuda/streamcluster/Makefile
+dos2unix ./rodinia_3.1/cuda/lavaMD/util/device/device.cu
+dos2unix ./rodinia_3.1/cuda/myocyte/main.cu
+dos2unix ./rodinia_3.1/cuda/myocyte/file.c
+dos2unix ./rodinia_3.1/cuda/myocyte/master.cu
+dos2unix ./rodinia_3.1/cuda/backprop/backprop_cuda.cu
+dos2unix ./rodinia_3.1/cuda/backprop/backprop_cuda_kernel.cu
+dos2unix ./rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_naive_seq.cu
+dos2unix ./rodinia_3.1/cuda/particlefilter/ex_particle_CUDA_float_seq.cu
+dos2unix ./rodinia_3.1/cuda/particlefilter/Makefile
+dos2unix ./rodinia_3.1/cuda/nw/needle.cu
+
+patch -p0 -l < rodinia_patch.txt
