@@ -152,6 +152,73 @@ make
 $HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
 ```
 
+## Running FloatGuard on a benchmark program
+
+We provide 41 benchmark programs besides the sample programs, which can 
+be used to validate your FloatGuard installation and compare the results
+to our findings in our publication.
+
+First, run `setup.sh` to download and unpack these benchmark programs.
+The directories of these programs are listed below:
+
+```
+benchmarks/rodinia_3.1/cuda/backprop
+benchmarks/rodinia_3.1/cuda/cfd
+benchmarks/rodinia_3.1/cuda/gaussian
+benchmarks/rodinia_3.1/cuda/heartwall
+benchmarks/rodinia_3.1/cuda/hotspot
+benchmarks/rodinia_3.1/cuda/hotspot3D
+benchmarks/rodinia_3.1/cuda/lavaMD
+benchmarks/rodinia_3.1/cuda/lud
+benchmarks/rodinia_3.1/cuda/myocyte
+benchmarks/rodinia_3.1/cuda/nn
+benchmarks/rodinia_3.1/cuda/nw
+benchmarks/rodinia_3.1/cuda/particlefilter
+benchmarks/rodinia_3.1/cuda/streamcluster
+benchmarks/NPB-GPU/CUDA/BT
+benchmarks/NPB-GPU/CUDA/CG
+benchmarks/NPB-GPU/CUDA/EP
+benchmarks/NPB-GPU/CUDA/FT
+benchmarks/NPB-GPU/CUDA/LU
+benchmarks/NPB-GPU/CUDA/MG
+benchmarks/NPB-GPU/CUDA/SP
+benchmarks/PolyBench-ACC-0.1/CUDA/datamining/correlation
+benchmarks/PolyBench-ACC-0.1/CUDA/datamining/covariance
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/2mm
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/3mm
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/atax
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/bicg
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/doitgen
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/gemm
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/gemver
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/gesummv
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/mvt
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/syr2k
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/kernels/syrk
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/solvers/gramschmidt
+benchmarks/PolyBench-ACC-0.1/CUDA/linear-algebra/solvers/lu
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/adi
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/convolution-2d
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/convolution-3d
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/fdtd-2d
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/jacobi-1d-imper
+benchmarks/PolyBench-ACC-0.1/CUDA/stencils/jacobi-2d-imper
+```
+
+To run a benchmark program, change current directory to one of them,
+then run the following command. The `time_measure.py` script automatically
+runs the command lines as described in the prevous section for these benchmark
+programs, 
+
+```
+python3 $HOME/FloatGuard/gdb_script/time_measure.py
+```
+
+Log files containing details on the floating-point exceptions found are
+outputted as `[experiment]_output.txt` file in the FloatGuard code repo directory.
+Also `result.csv` updates the running time statistics and the number of
+exceptions found.
+
 ## Try out our demo in a Docker container 
 
 If you do not want to install software on your system or just want to
@@ -223,15 +290,12 @@ source setup.sh
 
 ### Run an individual experiment
 
-Run the following command in the directory of the benchmark program:
+Run the following command in the directory of the benchmark program. The
+directory for these programs are listed in a previous section.
 
 ```
 python3 ~/FloatGuard/gdb_test/time_measure.py
 ```
-
-The benchmarks are all inside the `benchmarks` folder, which was downloaded when
-`setup.sh` is run. All directories that can run the Python command has a
-`setup.ini` file, which contains instructions for FloatGuard.
 
 Log files containing details on the floating-point exceptions found are
 outputted as `[experiment]_output.txt` file in the FloatGuard code repo directory.
