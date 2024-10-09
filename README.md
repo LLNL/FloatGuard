@@ -28,8 +28,19 @@ information on how to install AMD ROCm. Specifically, make sure both `rocm` and
 git clone https://github.com/LLNL/FloatGuard $HOME/FloatGuard
 ```
 
-2. Run `build_single_plugin.sh` in the code repository directory to build the
-library, Clang plugin and LLVM pass used in the tool.
+2. Run the following commands to build the Clang plugin used in the tool.
+
+```
+cd $HOME/FloatGuard/clang-examples/FloatGuard-plugin
+make
+```
+
+3. Run the following commands to build the library and LLVM pass used in the tool.
+
+```
+cd $HOME/FloatGuard/inst_pass
+make
+```
 
 ## How to Use FloatGuard to capture floating-point exceptions
 

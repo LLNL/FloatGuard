@@ -7,7 +7,7 @@ cd $SCRIPTPATH/clang-examples/FloatGuard-plugin
 if [ $1 == "clean" ]; then
     make clean
 else
-    make $1 && make install
+    make $1
 fi
 
 cd $SCRIPTPATH/inst_pass
