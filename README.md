@@ -10,36 +10,51 @@ registers, and a novel algorithm that adapts to the hardware properties of AMD
 GPUs, in order to detect as many source code locations that cause floating-point
 exceptions as possible. 
 
-## Build and Run
+## Build FloatGuard
 
 ### Prerequisites
 
 1. Linux system. We have tested on Ubuntu 22.04.
 2. AMD GPU with ROCm installed. Tested on ROCm 6.1.2 with AMD Clang 17.0.0.
-When you run `rocminfo` and `hipcc -v` in command line, it shows system, GPU and
-compiler attributes normally. Follow
-https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
-information on how to install AMD ROCm. Please make sure there is only AMD Clang
-present in your system, as it would interfere with other copies of Clang.
+Follow https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
+information on how to install AMD ROCm. Specifically, make sure both `rocm` and 
+`rocm-llvm-dev` packages are installed.
 
 ### Build
 
 1. Clone this GitHub repository to a local directory of your choice.
 
 ```
-git clone https://github.com/LLNL/FloatGuard [FloatGuard directory]
+git clone https://github.com/LLNL/FloatGuard $HOME/FloatGuard
 ```
 
 2. Run `build_single_plugin.sh` in the code repository directory to build the
 library, Clang plugin and LLVM pass used in the tool.
 
-### How to Use FloatGuard to capture floating-point exceptions
+## How to Use FloatGuard to capture floating-point exceptions
 
-FloatGuard supports using Clang plugin or LLVM pass to inject code into the target
-program to capture floating-point exceptions. The following are instructions
-for both methods, using a sample program found in `samples/div0` as example:
+FloatGuard supports using Clang plugin or LLVM pass to inject code into the
+target program to capture floating-point exceptions. The following are
+instructions for both methods.
 
-#### Clang plugin
+### Prerequisites for both methods
+
+1. Create a RANDINT macro in your build system with the following shell command,
+which is required for FloatGuard to differentiate between different source files.
+The following is example code for Makefiles:
+
+```
+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
+```
+
+2. Add the following command line options to the regular compilation
+options of each source file in the build script,
+
+```
+-include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h 
+```
+
+### Clang plugin
 
 1. Create a configuration in the build script of the target program that appends
 the following command line options to the C++ compilation command of each source file.
@@ -48,41 +63,94 @@ the following command line options to the C++ compilation command of each source
 -emit-llvm -Xclang -load -Xclang [FloatGuard directory]/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
 ```
 
-You can check out how this is implemented in the sample program in `Makefile`
-with `INJECT_CODE_CLANG` flag set to 1. For CMake codebase, you can append these
-command line options to `CMAKE_CXX_FLAGS`.
-
-2. Next, add the following command line options to the regular compilation
-options of each source file in the build script, so that the header files for
-FloatGuard is included. You can check out how this is implemented in the sample
-program in `Makefile` as well. for CMake codebase, you can append these command
-line options to `CMAKE_CXX_FLAGS`.
-
-```
--include [FloatGuard directory]/inst_pass/Inst/InstStub.h 
-```
-
 3. Also, add the following object file name to the link command of the targeted
-program, so that the code library is linked. You can also find it in the
-`Makefile` in the sample program. In CMake codebase, you can append it to
-`CMAKE_EXE_LINKER_FLAGS`, or `CMAKE_SHARED_LINKER_FLAGS` if you are building a
-shared library.
+program, so that the code library is linked.
 
 ```
 ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
 ```
 
 4. Run the build script of the target program with the configuration you just
-created. In the sample program, this is done by calling `make
-INJECT_CODE_CLANG=1`. The Clang plugin will inject calls to control
-floating-point exception handling to the source code of the target program.
-When this step is finished, there will be a link error at the end, which can be
-ignored.
+created.
 
 5. Build the targeted program normally. In the sample program, this is done by
 simply calling `make`.
 
-6. Once you have a []
+6. Run the following command to capture floating-point exceptions on the injected
+target program.
+
+```
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p [program binary] -a [arguments]
+```
+
+### LLVM pass
+
+1. Create a configuration in the build script of the target program that appends
+the following command line options to the C++ compilation command of each source file.
+
+```
+-fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so
+```
+
+2. Run the build script of the target program with the configuration you just
+created, so that executable binary is created with 
+
+3. Run the following command to capture floating-point exceptions on the injected
+target program.
+
+```
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p [program binary] -a [arguments]
+```
+
+### Samples for make and CMake projects
+
+We provide two example projects, `samples/div0` and `samples/div0_cmake`, for developers
+to better understand the setup required for your own HIP code to work with FloatGuard.
+You can refer to `samples/div0/Makefile` and `samples/div0_cmake/CMakeLists.txt` for examples
+of the steps described in previous sections. The following are instructions on how to
+capture floating-point exceptions for these sample programs, starting from each diretory:
+
+#### samples/div0
+
+Clang plugin:
+
+```
+make INJECT_CODE_CLANG=1
+make clean
+make
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
+```
+
+LLVM pass:
+```
+make INJECT_CODE_LLVM=1
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
+```
+
+#### samples/div0_cmake
+
+Clang plugin:
+
+```
+mkdir build
+cd build
+cmake -DINJECT_CODE_CLANG=1 ..
+make
+rm -r *
+cmake ..
+make
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
+```
+
+LLVM pass:
+
+```
+mkdir build
+cd build
+cmake -DINJECT_CODE_LLVM=1 ..
+make
+$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
+```
 
 ## Try out our demo in a Docker container 
 
