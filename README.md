@@ -20,7 +20,7 @@ Follow https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
 information on how to install AMD ROCm. Specifically, make sure both `rocm` and 
 `rocm-llvm-dev` packages are installed.
 
-### Build
+### Build & Clean
 
 1. Clone this GitHub repository with the following command.
 
@@ -295,7 +295,7 @@ required by FloatGuard to run.
 ```
 cd root/FloatGuard
 source setup.sh
-./build_single_plugin.sh
+make
 ```
 
 ### Run an individual experiment

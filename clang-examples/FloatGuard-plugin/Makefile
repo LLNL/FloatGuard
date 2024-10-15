@@ -56,4 +56,7 @@ install:
 	@echo "Clang plugin installation success."
 
 clean:
-	$(RM) *.o $(PROG)
+	$(RM) *.o
+
+cleanall:
+	$(RM) *.0 $(PROG)
