@@ -15,7 +15,8 @@ exceptions as possible.
 ### Prerequisites
 
 1. Linux system. We have tested on Ubuntu 22.04 and TOSS 4.
-2. AMD GPU with ROCm installed. Tested on ROCm 6.1.2 with AMD Clang 17.0.0.
+2. Python 3.10 installed.
+3. AMD GPU with ROCm installed. Tested on ROCm 6.1.2 with AMD Clang 17.0.0.
 Follow https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
 information on how to install AMD ROCm. Specifically, make sure both `rocm` and 
 `rocm-llvm-dev` packages are installed.
