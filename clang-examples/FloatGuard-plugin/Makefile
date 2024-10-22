@@ -59,4 +59,4 @@ clean:
 	$(RM) *.o
 
 cleanall:
-	$(RM) *.0 $(PROG)
+	$(RM) *.o $(PROG)
