@@ -1,5 +1,7 @@
 #include "hip/hip_runtime.h"
 
+#ifndef _INST_STUB_H_
+#define _INST_STUB_H_
 
 #define ENABLE_FP_EXCEPTION_INTERNAL(_x) enable_fp_exception_##_x()
 #define ENABLE_FP_EXCEPTION(_x) ENABLE_FP_EXCEPTION_INTERNAL(_x)
@@ -44,3 +46,5 @@ static void set_fp_exception_enabled(char* func)
     //printf("set fp exception enabled: %d %x\n", (bool)param, __builtin_return_address(0));
     hipMemcpyToSymbol(HIP_SYMBOL(FP_EXCEPTION_ENABLED_CONSTANT(RANDINT)), &param, sizeof(param));    
 }
+
+#endif //_INST_STUB_H_
