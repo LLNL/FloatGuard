@@ -1,7 +1,6 @@
 #----------------------------------------
-HIPCC    = hipcc
-RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
-HIPFLAGS = -g -O3 -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h 
+HIPCC    = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
+HIPFLAGS = -g -O3
 LINKFLAGS = -fgpu-rdc --hip-link 
 #----------------------------------------
 
@@ -14,7 +13,7 @@ HIPFLAGS += -c -emit-llvm -Xclang -load -Xclang ${HOME}/FloatGuard/clang-example
 endif
 
 div0: div0.cpp
-	${HIPCC} ${HIPFLAGS} -DRANDINT=${RANDINT} -c div0.cpp -o div0.o
+	${HIPCC} ${HIPFLAGS} -c div0.cpp -o div0.o
 	${HIPCC} ${LINKFLAGS} div0.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o div0
 
 .PHONY: clean
