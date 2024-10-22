@@ -9,16 +9,16 @@ diff -ruN rodinia_3.1/common/make.config rodinia_3.1_new/common/make.config
 \ No newline at end of file
 +#endif
 +
-+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
++
 +
 +ifndef $(INJECT_CODE_CLANG)
 +INJECT_CODE_CLANG = 0
 +endif
 +
 +ifeq ($(INJECT_CODE_CLANG), 1)
-+INST_FLAGS = -g -c -emit-llvm -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x5F2F0 -Xclang -load -Xclang ${HOME}/FloatGuard/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
++INST_FLAGS = -g -c -emit-llvm -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DEXP_FLAG_TOTAL=0x5F2F0 -Xclang -load -Xclang ${HOME}/FloatGuard/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
 +else
-+INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} -DEXP_FLAG_TOTAL=0x5F2F0 #-fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so
++INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DEXP_FLAG_TOTAL=0x5F2F0 #-fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so
 +endif
 +
 +ifndef $(INJECT_CODE_LLVM)
@@ -38,7 +38,7 @@ diff -ruN rodinia_3.1/cuda/backprop/Makefile rodinia_3.1_new/cuda/backprop/Makef
  # CUDA compiler
 -NVCC = $(CUDA_DIR)/bin/nvcc
 -NVCC_FLAGS = -I$(CUDA_DIR)/include
-+NVCC = hipcc
++NVCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 +NVCC_FLAGS = $(INST_FLAGS)
  
  # 'make dbg=1' enables NVCC debugging
@@ -202,20 +202,20 @@ diff -ruN rodinia_3.1/cuda/cfd/Makefile rodinia_3.1_new/cuda/cfd/Makefile
  
  euler3d: euler3d.cu
 -	nvcc $(KERNEL_DIM) -O2 -Xptxas -v --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d.cu -o euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
  
  euler3d_double: euler3d_double.cu
 -	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d_double.cu -o euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
 -
-+	hipcc $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -g -O3 euler3d_double.cu -o euler3d_double 
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -g -O3 euler3d_double.cu -o euler3d_double 
  
  pre_euler3d: pre_euler3d.cu
 -	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d.cu -o pre_euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) -O3 pre_euler3d.cu -o pre_euler3d 
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) -O3 pre_euler3d.cu -o pre_euler3d 
  
  pre_euler3d_double: pre_euler3d_double.cu
 -	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d_double.cu -o pre_euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	hipcc $(INST_FLAGS) -O3 pre_euler3d_double.cu -o pre_euler3d_double 
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) -O3 pre_euler3d_double.cu -o pre_euler3d_double 
  
  
  clean:
@@ -7955,7 +7955,7 @@ diff -ruN rodinia_3.1/cuda/gaussian/Makefile rodinia_3.1_new/cuda/gaussian/Makef
  include ../../common/make.config
  
 -CC := $(CUDA_DIR)/bin/nvcc
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
 -INCLUDE := $(CUDA_DIR)/include
 +INCLUDE := 
@@ -8569,7 +8569,7 @@ diff -ruN rodinia_3.1/cuda/hotspot/Makefile rodinia_3.1_new/cuda/hotspot/Makefil
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  SRC = hotspot.cu
  
@@ -8723,7 +8723,7 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/Makefile rodinia_3.1_new/cuda/hotspot3D/Mak
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  SRC = 3D.cu
  
@@ -8971,7 +8971,7 @@ diff -ruN rodinia_3.1/cuda/lavaMD/makefile rodinia_3.1_new/cuda/lavaMD/makefile
  OMP_FLAG = -fopenmp
  
 -CUD_C = $(CUDA_DIR)/bin/nvcc
-+CUD_C = hipcc $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
++CUD_C = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
  # OMP_FLAG = 	-Xcompiler paste_one_here
 -CUDA_FLAG = -arch sm_13
 +CUDA_FLAG = 
@@ -9078,7 +9078,7 @@ diff -ruN rodinia_3.1/cuda/lud/cuda/Makefile rodinia_3.1_new/cuda/lud/cuda/Makef
 +
  CC = gcc
 -NVCC = nvcc
-+NVCC = hipcc
++NVCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  DEFS += \
  		-DGPU_TIMER \
@@ -9356,7 +9356,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefil
 -				-I/usr/local/cuda/include \
 -				-L/usr/local/cuda/lib \
 -				-lm -lcuda -lcudart \
-+	hipcc main.o \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o \
                                  -o myocyte.out
  
  # compile main function file into object (binary)
@@ -9365,7 +9365,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefil
  				file.c \
  				timer.c
 -	nvcc	main.cu \
-+	hipcc	$(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o main.cu \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh	$(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o main.cu \
  				-c -O3 -g
  
  # delete all object files
@@ -9664,7 +9664,7 @@ diff -ruN rodinia_3.1/cuda/nn/Makefile rodinia_3.1_new/cuda/nn/Makefile
  
  LOCAL_CC = gcc -g -O3 -Wall
 -CC := $(CUDA_DIR)/bin/nvcc
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  all : nn hurricane_gen
  
@@ -9808,7 +9808,7 @@ diff -ruN rodinia_3.1/cuda/nw/Makefile rodinia_3.1_new/cuda/nw/Makefile
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  SRC = needle.cu
  
@@ -9909,7 +9909,7 @@ diff -ruN rodinia_3.1/cuda/particlefilter/Makefile rodinia_3.1_new/cuda/particle
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  all: naive float
  
@@ -10903,7 +10903,7 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/makefile rodinia_3.1_new/cuda/srad/srad_
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  # Example
  # target: dependencies
@@ -10924,7 +10924,7 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v1/makefile rodinia_3.1_new/cuda/srad/srad_
  				compress_kernel.cu
 -	nvcc	main.cu \
 -				-c -O3 -arch sm_35
-+	hipcc	$(INST_FLAGS) main.cu \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh	$(INST_FLAGS) main.cu \
 +				-c -O3
  
  # delete all object files
@@ -10938,7 +10938,7 @@ diff -ruN rodinia_3.1/cuda/srad/srad_v2/Makefile rodinia_3.1_new/cuda/srad/srad_
 -CC := $(CUDA_DIR)/bin/nvcc
 -
 -INCLUDE := $(CUDA_DIR)/include
-+CC := hipcc
++CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  SRC = srad.cu
  
@@ -11044,7 +11044,7 @@ diff -ruN rodinia_3.1/cuda/streamcluster/Makefile rodinia_3.1_new/cuda/streamclu
 -NVCC = $(CUDA_DIR)/bin/nvcc
 -
 -NVCC_FLAGS = -I$(CUDA_DIR)/include
-+NVCC = hipcc
++NVCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
  
  TARGET_G = sc_gpu
  

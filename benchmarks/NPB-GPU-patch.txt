@@ -8003,7 +8003,7 @@ index dcde956..ff96398 100644
 +#define wtime wtime
  #endif
 diff --git a/CUDA/config/make.def b/CUDA/config/make.def
-index bdc3180..5ad6500 100644
+index bdc3180..980c595 100644
 --- a/CUDA/config/make.def
 +++ b/CUDA/config/make.def
 @@ -1,5 +1,12 @@
@@ -8032,51 +8032,51 @@ index bdc3180..5ad6500 100644
 +endif
  
 -OPENMP = -Xcompiler -fopenmp -lgomp
-+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
  
 -REGISTERS = 
+ 
+-####-maxrregcount 50
 +ifeq ($(INJECT_CODE_LLVM), 1)
-+INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
++INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so \
 +			 -DEXP_FLAG_TOTAL=0x5F2F0
 +else
-+INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
++INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h \
 +			 -DEXP_FLAG_TOTAL=0x5F2F0
 +endif
  
--####-maxrregcount 50
+-OPTIMIZATIONS = -use_fast_math -Xptxas --preserve-relocs -Xptxas -O3
 +ifdef $(NO_BRANCH)
 +INST_FLAGS += -DNO_BRANCH=1
 +endif
  
--OPTIMIZATIONS = -use_fast_math -Xptxas --preserve-relocs -Xptxas -O3
+-CPP_14 = -std=c++14
 +ifndef $(INJECT_CODE_CLANG)
 +INJECT_CODE_CLANG = 0
 +endif
  
--CPP_14 = -std=c++14
+-NO_NPB_CPP_CONVENTIONS = -DDO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION
 +ifeq ($(INJECT_CODE_CLANG), 1)
-+INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
++INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang ${HOME}/FloatGuard/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
 +endif
  
--NO_NPB_CPP_CONVENTIONS = -DDO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION
- 
 -PROFILING = -DPROFILING
+ 
+-EXTRA_STUFF = ${COMPUTE_CAPABILITY} ${OPENMP} ${OPTIMIZATIONS} ${REGISTERS}
 +#---------------------------------------------------------------------------
 +# This is the C compiler used for OpenMP programs
 +#---------------------------------------------------------------------------
 +COMPUTE_CAPABILITY=
 +# ${COMPUTE_CAPABILITY}
  
--EXTRA_STUFF = ${COMPUTE_CAPABILITY} ${OPENMP} ${OPTIMIZATIONS} ${REGISTERS}
+-NVCC = nvcc
 +OPENMP_ENABLE=
 +# ${OPENMP_ENABLE}
  
--NVCC = nvcc
+-CC = ${NVCC} ${EXTRA_STUFF}
 +EXTRA_STUFF=-O3 -ffast-math
 +# ${EXTRA_STUFF}
- 
--CC = ${NVCC} ${EXTRA_STUFF}
-+CC = hipcc ${COMPUTE_CAPABILITY} ${OPENMP_ENABLE} ${EXTRA_STUFF} ${INST_FLAGS}
++
++CC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${COMPUTE_CAPABILITY} ${OPENMP_ENABLE} ${EXTRA_STUFF} ${INST_FLAGS}
 +
 +#backup old command
 +#CC = nvcc -rdc=true -std=c++14 -gencode arch=compute_61,code=sm_61 -Xcompiler -fopenmp -lgomp -Xcompiler -mcmodel=medium
@@ -8180,7 +8180,7 @@ index 578cc41..abb3a28 100644
  ${COMMON}/wtime.o: ${COMMON}/${WTIME}
  	cd ${COMMON}; ${CCOMPILE} ${MACHINE} ${COMMON}/${WTIME}
 diff --git a/CUDA/sys/setparams.cpp b/CUDA/sys/setparams.cpp
-index 7fa832c..80b8277 100644
+index 7fa832c..93c78d2 100644
 --- a/CUDA/sys/setparams.cpp
 +++ b/CUDA/sys/setparams.cpp
 @@ -84,19 +84,12 @@
@@ -8224,6 +8224,15 @@ index 7fa832c..80b8277 100644
  void put_string(FILE *fp, char *name, char *val);
  void put_def_string(FILE *fp, char *name, char *val);
  void put_def_variable(FILE *fp, char *name, char *val);
+@@ -136,7 +125,7 @@ int ilog2(int i);
+ 
+ enum benchmark_types {SP, BT, LU, MG, FT, IS, EP, CG, DC};
+ 
+-main(int argc, char *argv[]){
++int main(int argc, char *argv[]){
+ 	int type;
+ 	char class_npb, class_old;
+ 
 @@ -195,222 +184,6 @@ main(int argc, char *argv[]){
  	exit(0);
  }

@@ -2026,17 +2026,17 @@ diff -ruN PolyBench-ACC-0.1/CUDA/utilities/common.mk PolyBench-backup/CUDA/utili
 --- PolyBench-ACC-0.1/CUDA/utilities/common.mk	2014-09-25 18:30:56.000000000 -0700
 +++ PolyBench-backup/CUDA/utilities/common.mk	2024-09-26 12:55:55.235230740 -0700
 @@ -1,4 +1,25 @@
-+RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
++
 +
 +ifndef $(INJECT_CODE_LLVM)
 +INJECT_CODE_LLVM = 0
 +endif
 +
 +ifeq ($(INJECT_CODE_LLVM), 1)
-+INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so -DRANDINT=${RANDINT} \
++INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so \
 +			 -DEXP_FLAG_TOTAL=0x0005F2F0
 +else
-+INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -DRANDINT=${RANDINT} \
++INST_FLAGS = -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h \
 +			 -DEXP_FLAG_TOTAL=0x0005F2F0
 +endif
 +
@@ -2044,11 +2044,11 @@ diff -ruN PolyBench-ACC-0.1/CUDA/utilities/common.mk PolyBench-backup/CUDA/utili
 +
  all:
 -	nvcc -O3 ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE} 
-+	hipcc ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_mini ${INST_FLAGS} ${FP_FLAGS} -DMINI_DATASET
-+	hipcc ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_small ${INST_FLAGS} ${FP_FLAGS} -DSMALL_DATASET
-+	hipcc ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_standard ${INST_FLAGS} ${FP_FLAGS} -DSTANDARD_DATASET
-+	hipcc ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_large ${INST_FLAGS} ${FP_FLAGS} -DLARGE_DATASET
-+	hipcc ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_extralarge ${INST_FLAGS} ${FP_FLAGS} -DEXTRALARGE_DATASET
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_mini ${INST_FLAGS} ${FP_FLAGS} -DMINI_DATASET
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_small ${INST_FLAGS} ${FP_FLAGS} -DSMALL_DATASET
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_standard ${INST_FLAGS} ${FP_FLAGS} -DSTANDARD_DATASET
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_large ${INST_FLAGS} ${FP_FLAGS} -DLARGE_DATASET
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_extralarge ${INST_FLAGS} ${FP_FLAGS} -DEXTRALARGE_DATASET
 +	
  clean:
 -	rm -f *~ *.exe
