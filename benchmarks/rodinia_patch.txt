@@ -9093,7 +9093,8 @@ diff -ruN rodinia_3.1/cuda/lud/cuda/Makefile rodinia_3.1_new/cuda/lud/cuda/Makef
  			 $(SPACE)
  
 @@ -34,11 +35,11 @@
- 	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
+-	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
++	$(CC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
  
  %.o:	%.cu 
 -	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
@@ -9356,7 +9357,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefil
 -				-I/usr/local/cuda/include \
 -				-L/usr/local/cuda/lib \
 -				-lm -lcuda -lcudart \
-+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o \
                                  -o myocyte.out
  
  # compile main function file into object (binary)
@@ -9365,7 +9366,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefil
  				file.c \
  				timer.c
 -	nvcc	main.cu \
-+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh	$(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o main.cu \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh	$(INST_FLAGS) main.cu \
  				-c -O3 -g
  
  # delete all object files
