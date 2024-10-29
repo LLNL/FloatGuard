@@ -23,6 +23,12 @@ using namespace llvm::legacy;
 
 #define DEBUG_PRINT 0
 
+#if LLVM_VERSION_MAJOR >= 15
+#define GET_PTR_TY builder.getPtrTy()
+#else
+#define GET_PTR_TY Type::getInt8PtrTy(module->getContext())
+#endif
+
 namespace {
 
   inline std::string demangle(const char* name) 
@@ -48,7 +54,7 @@ namespace {
     builder.SetInsertPoint(&I);
     // Declare C standard library printf 
     Type *intType = Type::getInt32Ty(module->getContext());
-    std::vector<Type *> printfArgsTypes({Type::getInt8PtrTy(module->getContext())});
+    std::vector<Type *> printfArgsTypes({GET_PTR_TY});
     FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, true);
     FunctionCallee printfFunc = module->getOrInsertFunction("printf", printfType);
     std::string printStr = "ins ";
@@ -70,7 +76,7 @@ namespace {
     builder.SetInsertPoint(&I);
     // Declare C standard library printf 
     Type *intType = Type::getInt32Ty(module->getContext());
-    std::vector<Type *> printfArgsTypes({Type::getInt8PtrTy(module->getContext())});
+    std::vector<Type *> printfArgsTypes({GET_PTR_TY});
     FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, true);
     FunctionCallee printfFunc = module->getOrInsertFunction("init_fp_exception_sequence", printfType);
     std::vector<Value *> argsV;
@@ -92,7 +98,7 @@ namespace {
     builder.SetInsertPoint(&I);
     // Declare C standard library printf 
     Type *intType = Type::getVoidTy(module->getContext());
-    std::vector<Type *> printfArgsTypes({Type::getInt8PtrTy(module->getContext())});
+    std::vector<Type *> printfArgsTypes({GET_PTR_TY});
     FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, false);
     FunctionCallee printfFunc = module->getOrInsertFunction(enableFpExceptionFuncName, printfType);
     std::vector<Value *> argsV;
@@ -121,7 +127,7 @@ namespace {
             builder.SetInsertPoint(&I);
             // Declare C standard library printf 
             Type *intType = Type::getVoidTy(module->getContext());
-            std::vector<Type *> printfArgsTypes({Type::getInt8PtrTy(module->getContext())});
+            std::vector<Type *> printfArgsTypes({GET_PTR_TY});
             FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, false);
             FunctionCallee printfFunc = module->getOrInsertFunction(mangledFuncNames["set_fp_exception_enabled(char*)"], printfType);
             std::string printStr = demangle(F.getName().str().c_str());
