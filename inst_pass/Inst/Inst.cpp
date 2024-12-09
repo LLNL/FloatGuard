@@ -18,6 +18,8 @@
 #include <memory>
 #include <string>
 #include <cxxabi.h>
+#include <fstream>
+#include <cstdlib>
 using namespace llvm;
 using namespace llvm::legacy;
 
@@ -49,6 +51,8 @@ namespace {
 
   std::map<std::string, std::string> mangledFuncNames;
   std::string enableFpExceptionFuncName = "";
+
+  std::set<std::string> locs;
 
   void injectFPProfileCall(Instruction& I, BasicBlock& BB, IRBuilder<>& builder, Module* module) {
     builder.SetInsertPoint(&I);
@@ -151,6 +155,25 @@ namespace {
 
     errs() << "function name:" << func_name << " type: " << (int)F.getCallingConv() << "\n";
     mangledFuncNames[func_name] = F.getName().str();
+
+    if (locs.size() == 0) {
+      // read saved locs
+      std::ifstream loc_file("loc.txt");
+      if (loc_file.is_open()) {
+        std::string str;
+        std::getline(loc_file, str);
+        str.erase(std::remove(str.begin(), str.end(), '\n'),
+            str.end());
+        int num_locs = atoi(str.c_str());
+        for (int i = 0; i < num_locs; i++) {
+          std::getline(loc_file, str);
+          str.erase(std::remove(str.begin(), str.end(), '\n'),
+              str.end());
+          locs.insert(str);
+          errs() << "read loc:" << str << "\n";
+        }
+      }
+    }
 
     if (func_name == "main") {
       processMain(F, module, builder);
