@@ -172,10 +172,13 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
             startcopy = False
             print("----------------- EXCEPTION CAPTURED -----------------")
             for line in outlines:
-                if "Arithmetic exception" in line:
-                    startcopy = True
-                if startcopy:
-                    print(line.strip())
+                pattern = r'at\s+([\w\.]+):(\d+)'
+                match = re.search(pattern, line)
+
+                if match:
+                    filename = match.group(1)
+                    line_number = match.group(2)
+                    print(f"File: {filename}, Line: {line_number}")
             trapsts = (int)(send(gdb, "p", "$trapsts&0x1ff").strip().split("=")[1].strip()) & exception_flags
             if trapsts & 0x01:
                 print("trapsts: invalid")
