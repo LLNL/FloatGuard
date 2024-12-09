@@ -13,6 +13,8 @@ bool InjectExceptionVisitor::VisitFunctionDecl(FunctionDecl* func) {
         return true;
     }
 
+    string funcName = func->getNameInfo().getName().getAsString();
+
     // check function signature (host/global/device) and determine the types to use for replacement
     bool isKernelFunc = false;
     SourceRange declRange = clang::SourceRange(func->getSourceRange().getBegin(), func->getBody()->getSourceRange().getBegin());
@@ -28,8 +30,18 @@ bool InjectExceptionVisitor::VisitFunctionDecl(FunctionDecl* func) {
         FileID fileID = astContext->getSourceManager().getFileID(startingPoint);
         sourceFiles[fileName] = fileID;
         PrintSourceLocation(startingPoint, astContext);
-        rewriter.InsertText(startingPoint, "ENABLE_FP_EXCEPTION(RANDINT);\n");
+        rewriter.InsertText(startingPoint, "SET_FP_EXCEPTION(RANDINT);\n");
         return true;
+    }
+    else if (funcName == "main") {
+        const CompoundStmt *fBody = dyn_cast<CompoundStmt>(func->getBody());        
+        SourceLocation startingPoint = astContext->getSourceManager().getFileLoc(fBody->body_front()->getBeginLoc());
+        std::string fileName = astContext->getSourceManager().getFilename(startingPoint).str();
+        FileID fileID = astContext->getSourceManager().getFileID(startingPoint);
+        sourceFiles[fileName] = fileID;
+        PrintSourceLocation(startingPoint, astContext);
+        rewriter.InsertText(startingPoint, "init_fp_exception_sequence();\n");
+        return true;        
     }
     else {
         return true;

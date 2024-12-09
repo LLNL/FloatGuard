@@ -155,7 +155,8 @@ namespace {
     if (func_name == "main") {
       processMain(F, module, builder);
     }
-    else if (func_name.find("enable_fp_exception") != std::string::npos) {
+    else if (func_name.find("setfpexception") != std::string::npos) {
+      errs() << "found exception kernel func\n";
       enableFpExceptionFuncName = func_name;
     }
     else if (F.getCallingConv() == llvm::CallingConv::AMDGPU_KERNEL) {

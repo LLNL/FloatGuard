@@ -3,8 +3,14 @@
 #ifndef _INST_STUB_H_
 #define _INST_STUB_H_
 
-#define ENABLE_FP_EXCEPTION_INTERNAL(_x) enable_fp_exception_##_x()
+#define SET_FP_EXCEPTION_INTERNAL(_x) setfpexception_##_x()
+#define SET_FP_EXCEPTION(_x) SET_FP_EXCEPTION_INTERNAL(_x)
+
+#define ENABLE_FP_EXCEPTION_INTERNAL(_x) enablefpexception_##_x()
 #define ENABLE_FP_EXCEPTION(_x) ENABLE_FP_EXCEPTION_INTERNAL(_x)
+
+#define DISABLE_FP_EXCEPTION_INTERNAL(_x) disablefpexception_##_x()
+#define DISABLE_FP_EXCEPTION(_x) DISABLE_FP_EXCEPTION_INTERNAL(_x)
 
 #define FP_EXCEPTION_ENABLED_CONSTANT_INTERNAL(_x) fp_exception_enabled_##_x
 #define FP_EXCEPTION_ENABLED_CONSTANT(_x) FP_EXCEPTION_ENABLED_CONSTANT_INTERNAL(_x)
@@ -21,7 +27,7 @@ __device__ int FP_EXCEPTION_ENABLED_CONSTANT(RANDINT)[1];
 
 extern "C"
 {
-  __device__ void ENABLE_FP_EXCEPTION(RANDINT)
+  __device__ void SET_FP_EXCEPTION(RANDINT)
   {
     uint32_t total = (1 - FP_EXCEPTION_ENABLED_CONSTANT(RANDINT) [0]) * 0x02F0 + FP_EXCEPTION_ENABLED_CONSTANT(RANDINT) [0] * EXP_FLAG_TOTAL;
     #ifndef NO_BRANCH
@@ -31,6 +37,18 @@ extern "C"
     #ifndef NO_BRANCH
     }
     #endif
+  }
+
+  __device__ void ENABLE_FP_EXCEPTION(RANDINT)
+  {
+    uint32_t total = EXP_FLAG_TOTAL;
+    asm volatile ("s_setreg_b32 hwreg(HW_REG_MODE, 0, 32), %0" : "=s"(total));
+  }
+
+  __device__ void DISABLE_FP_EXCEPTION(RANDINT)
+  {
+    uint32_t total = 0x02F0;
+    asm volatile ("s_setreg_b32 hwreg(HW_REG_MODE, 0, 32), %0" : "=s"(total));
   }
 
   extern int get_fp_exception_enabled(char* func, void* rip);
