@@ -127,7 +127,7 @@ def send_param(gdb, param):
         send(gdb, "p param=" + str(param))
         LastParam = param
 
-def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
+def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs):
     gdb = pexpect.spawn('rocgdb', timeout=3600)
     gdb.delaybeforesend = None
     gdb.delayafterread = None
@@ -151,6 +151,12 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
         f.write(str(len(saved_rips)) + "\n")
         for rip in saved_rips:
             f.write(rip + "\n")
+    
+    loc_file = os.path.join(os.getcwd(), "loc.txt")
+    with open(loc_file, "w") as f:
+        f.write(str(len(saved_locs)) + "\n")
+        for loc in saved_locs:
+            f.write(loc+ "\n")
 
     #for kernel in kernel_names:
     #    send(gdb, "b", kernel)
@@ -166,10 +172,12 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
         if "SIGABRT" in output:
             print("abort! 3")
             gdb.close()
-            return kernel_seq, saved_rips, True
+            return kernel_seq, saved_rips, saved_locs, True
         if "Arithmetic exception" in output:
             outlines = output.splitlines()
             startcopy = False
+            filename = "(none)"
+            line_number = -1
             print("----------------- EXCEPTION CAPTURED -----------------")
             for line in outlines:
                 pattern = r'at\s+([\w\.]+):(\d+)'
@@ -210,6 +218,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
                     rips_text = send(gdb, "p/x", "current_rips[" + str(idx) + "]").splitlines()[-1].strip().split()[-1]
                     saved_rips.append(rips_text)
                     break
+            saved_locs.append(filename + ":" + str(line_number))
             #while True:
             #    instr = input("(gdb) ")
             #    if instr.strip() == "skip":
@@ -219,7 +228,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
 
             gdb.close()
 
-            return kernel_seq, saved_rips, False
+            return kernel_seq, saved_rips, saved_locs, False
         else:
             print("other exceptions?") 
             print("-----------------")
@@ -230,7 +239,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips):
         print("abort! 4")
 
     gdb.close()
-    return kernel_seq, saved_rips, True
+    return kernel_seq, saved_rips, saved_locs, True
 
 if __name__ == "__main__":
     if StepLine:
@@ -299,9 +308,10 @@ if __name__ == "__main__":
 
     kernel_seq = []
     saved_rips = []
+    saved_locs = []
     end_of_prog = False
     while not end_of_prog:
         LastParam = -1
-        kernel_seq, saved_rips, end_of_prog = test_program(ProgramName, kernel_names, kernel_seq, saved_rips)
-        print("saved_rips:", saved_rips)
+        kernel_seq, saved_rips, saved_locs, end_of_prog = test_program(ProgramName, kernel_names, kernel_seq, saved_rips, saved_locs)
+        print("saved_locs:", saved_locs)
  
