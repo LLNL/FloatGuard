@@ -25,6 +25,17 @@ __device__ int FP_EXCEPTION_ENABLED_CONSTANT(RANDINT)[1];
 #define EXP_FLAG_TOTAL 0x0004D2F0
 #endif
 
+#ifndef EXP_FLAG_LOW 
+#define EXP_FLAG_LOW (EXP_FLAG_TOTAL & 0x0000FFFF)
+#endif
+
+#ifndef EXP_FLAG_HIGH
+#define EXP_FLAG_HIGH (EXP_FLAG_TOTAL & 0xFFFF0000)
+#endif
+
+#define ASM_SET_EXCEPTION_INTERNAL(LOW, HIGH) "s_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " #LOW "\ns_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " #HIGH " "
+#define ASM_SET_EXCEPTION(_LOW, _HIGH) ASM_SET_EXCEPTION_INTERNAL(_LOW, _HIGH)
+
 extern "C"
 {
   __device__ void SET_FP_EXCEPTION(RANDINT)
@@ -41,14 +52,16 @@ extern "C"
 
   __device__ void ENABLE_FP_EXCEPTION(RANDINT)
   {
-    uint32_t total = EXP_FLAG_TOTAL;
-    asm volatile ("s_setreg_b32 hwreg(HW_REG_MODE, 0, 32), %0" : "=s"(total));
+      asm volatile (
+        ASM_SET_EXCEPTION(EXP_FLAG_LOW, EXP_FLAG_HIGH)
+      );
   }
 
   __device__ void DISABLE_FP_EXCEPTION(RANDINT)
   {
-    uint32_t total = 0x02F0;
-    asm volatile ("s_setreg_b32 hwreg(HW_REG_MODE, 0, 32), %0" : "=s"(total));
+      asm volatile (
+        ASM_SET_EXCEPTION(0x02F0, 0x0000)
+      );
   }
 
   extern int get_fp_exception_enabled(char* func, void* rip);
