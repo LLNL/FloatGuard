@@ -35,10 +35,10 @@ namespace {
 
   inline std::string demangle(const char* name) 
   {
-          int status = -1; 
+    int status = -1; 
 
-          std::unique_ptr<char, void(*)(void*)> res { abi::__cxa_demangle(name, NULL, NULL, &status), std::free };
-          return (status == 0) ? res.get() : std::string(name);
+    std::unique_ptr<char, void(*)(void*)> res { abi::__cxa_demangle(name, NULL, NULL, &status), std::free };
+    return (status == 0) ? res.get() : std::string(name);
   }
 
   StringRef getFunctionName(CallInst *call) {
@@ -50,24 +50,9 @@ namespace {
   }
 
   std::map<std::string, std::string> mangledFuncNames;
-  std::string enableFpExceptionFuncName = "";
+  std::string setFpExceptionFuncName = "";
 
   std::set<std::string> locs;
-
-  void injectFPProfileCall(Instruction& I, BasicBlock& BB, IRBuilder<>& builder, Module* module) {
-    builder.SetInsertPoint(&I);
-    // Declare C standard library printf 
-    Type *intType = Type::getInt32Ty(module->getContext());
-    std::vector<Type *> printfArgsTypes({GET_PTR_TY});
-    FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, true);
-    FunctionCallee printfFunc = module->getOrInsertFunction("printf", printfType);
-    std::string printStr = "ins ";
-    printStr += I.getOpcodeName();
-    printStr += "\n";
-    Value *str = builder.CreateGlobalStringPtr(printStr.c_str(), printStr.c_str());
-    std::vector<Value *> argsV({str});
-    builder.CreateCall(printfFunc, argsV, "calltmp");
-  }
 
   bool processOthers(Function &F, Module* module, IRBuilder<>& builder);
 
@@ -179,10 +164,10 @@ namespace {
       processMain(F, module, builder);
     }
     else if (func_name.find("setfpexception") != std::string::npos) {
-      errs() << "found exception kernel func\n";
-      enableFpExceptionFuncName = func_name;
+      errs() << "found exception kernel func 1\n";
+      setFpExceptionFuncName = func_name;
     }
-    else if (F.getCallingConv() == llvm::CallingConv::AMDGPU_KERNEL) {
+    else if (F.getCallingConv() == llvm::CallingConv::AMDGPU_KERNEL) {  
       processKernel(F, module, builder);
     }
     else {
@@ -191,19 +176,6 @@ namespace {
 
     return false;    
   }
-
-  struct InstPass : public FunctionPass {
-    static char ID;
-    InstPass() : FunctionPass(ID) {}
-
-    virtual bool runOnFunction(Function &F) {
-		  return instFunction(F);
-    }
-
-    virtual bool doFinalization(Module& M) {
-      return false;
-    }
-  };
 
   struct Inst : public PassInfoMixin<Inst> {
     PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
@@ -224,7 +196,7 @@ PassPluginLibraryInfo getInstPassPluginInfo() {
         [&](ModulePassManager &MPM, OptimizationLevel opt) {
 		      errs() << "opt:" << opt.getSpeedupLevel() << "\n";
           MPM.addPass(createModuleToFunctionPassAdaptor(Inst()));
-        });
+        });        
   };
 
   return {LLVM_PLUGIN_API_VERSION, "name", "0.0.1", callback};

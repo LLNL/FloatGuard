@@ -30,7 +30,7 @@ __device__ int FP_EXCEPTION_ENABLED_CONSTANT(RANDINT)[1];
 #endif
 
 #ifndef EXP_FLAG_HIGH
-#define EXP_FLAG_HIGH (EXP_FLAG_TOTAL & 0xFFFF0000)
+#define EXP_FLAG_HIGH ((EXP_FLAG_TOTAL & 0xFFFF0000) >> 16)
 #endif
 
 #define ASM_SET_EXCEPTION_INTERNAL(LOW, HIGH) "s_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " #LOW "\ns_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " #HIGH " "
