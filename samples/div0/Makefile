@@ -19,4 +19,4 @@ div0: div0.cpp
 .PHONY: clean
 
 clean:
-	rm -f div0 *.o *.bc *.ll
+	rm -f div0 *.o *.bc *.ll *.s
