@@ -89,7 +89,7 @@ namespace {
     Type *intType = Type::getVoidTy(module->getContext());
     std::vector<Type *> printfArgsTypes({GET_PTR_TY});
     FunctionType *printfType = FunctionType::get(intType, printfArgsTypes, false);
-    FunctionCallee printfFunc = module->getOrInsertFunction(enableFpExceptionFuncName, printfType);
+    FunctionCallee printfFunc = module->getOrInsertFunction(setFpExceptionFuncName, printfType);
     std::vector<Value *> argsV;
     builder.CreateCall(printfFunc, argsV, "calltmp");    
     return false;    
