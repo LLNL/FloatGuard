@@ -127,7 +127,11 @@ def send_param(gdb, param):
         send(gdb, "p param=" + str(param))
         LastParam = param
 
-def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs):
+def get_address_from_line(line):
+    match = re.search(r'0x[0-9a-fA-F]+', line)
+    return int(match.group(0), 16) if match else float('inf')
+
+def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs, kernel_disassemble):
     gdb = pexpect.spawn('rocgdb', timeout=3600)
     gdb.delaybeforesend = None
     gdb.delayafterread = None
@@ -172,21 +176,26 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         if "SIGABRT" in output:
             print("abort! 3")
             gdb.close()
-            return kernel_seq, saved_rips, saved_locs, True
+            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, True
         if "Arithmetic exception" in output:
             outlines = output.splitlines()
             startcopy = False
             filename = "(none)"
             line_number = -1
+            error_loc = "(none)"
             print("----------------- EXCEPTION CAPTURED -----------------")
             for line in outlines:
                 pattern = r'at\s+([\w\.]+):(\d+)'
                 match = re.search(pattern, line)
-
                 if match:
                     filename = match.group(1)
                     line_number = match.group(2)
                     print(f"File: {filename}, Line: {line_number}")
+
+                match = re.search(r'=>\s+(0x[0-9a-fA-F]+)', line)
+                if match:
+                    error_loc = match.group(1)
+                    print("error loc:", error_loc)
             trapsts = (int)(send(gdb, "p", "$trapsts&0x1ff").strip().split("=")[1].strip()) & exception_flags
             if trapsts & 0x01:
                 print("trapsts: invalid")
@@ -203,7 +212,6 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             if trapsts & 0x40:
                 print("trapsts: integer divide by zero")
             bt_list = send(gdb, "bt", display=True).splitlines()
-            print("----------------- EXCEPTION CAPTURE END -----------------")     
             idx = len(bt_list) - 1
             while idx >= 0:
                 line = bt_list[idx].strip()
@@ -211,7 +219,8 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                 if m:
                     exception_kernel_name = m.group(1)
                     break
-                idx -= 1                       
+                idx -= 1         
+            print("exception kernel name:", exception_kernel_name)              
             for idx in range(8):
                 func_name = send(gdb, "p", "current_func[" + str(idx) + "]")
                 if "__device_stub__" + exception_kernel_name + "(" in func_name:
@@ -219,6 +228,23 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     saved_rips.append(rips_text)
                     break
             saved_locs.append(filename + ":" + str(line_number))
+            if not exception_kernel_name in kernel_disassemble:
+                kernel_disassemble[exception_kernel_name] = send(gdb, "disassemble", exception_kernel_name).replace("=>", "  ").splitlines()
+            ins_index = 0
+            ins_strings = []
+            for line in kernel_disassemble[exception_kernel_name]:
+                match = re.search(r'^\s*(0x[0-9a-fA-F]+)', line)
+                if match:
+                    ins_strings.append(line)
+            ins_strings = sorted(ins_strings, key=get_address_from_line)
+            #print(*ins_strings, sep="\n")
+            for line in ins_strings:
+                if error_loc in line:
+                    break
+                ins_index += 1
+            print("ins_index:", ins_index)
+            print("----------------- EXCEPTION CAPTURE END -----------------")     
+
             #while True:
             #    instr = input("(gdb) ")
             #    if instr.strip() == "skip":
@@ -228,7 +254,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
 
             gdb.close()
 
-            return kernel_seq, saved_rips, saved_locs, False
+            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, False
         else:
             print("other exceptions?") 
             print("-----------------")
@@ -239,7 +265,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         print("abort! 4")
 
     gdb.close()
-    return kernel_seq, saved_rips, saved_locs, True
+    return kernel_seq, saved_rips, saved_locs, kernel_disassemble, True
 
 if __name__ == "__main__":
     if StepLine:
@@ -309,9 +335,10 @@ if __name__ == "__main__":
     kernel_seq = []
     saved_rips = []
     saved_locs = []
+    kernel_disassemble = {}
     end_of_prog = False
     while not end_of_prog:
         LastParam = -1
-        kernel_seq, saved_rips, saved_locs, end_of_prog = test_program(ProgramName, kernel_names, kernel_seq, saved_rips, saved_locs)
+        kernel_seq, saved_rips, saved_locs, kernel_disassemble, end_of_prog = test_program(ProgramName, kernel_names, kernel_seq, saved_rips, saved_locs, kernel_disassemble)
         print("saved_locs:", saved_locs)
  
