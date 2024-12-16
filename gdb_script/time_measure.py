@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         runs = 1
 
-    os.system("rm seq.txt")
+    os.system("rm seq.txt exp_flag.txt inject_points.txt")
     clean_command = config['DEFAULT']['clean']
     os.system(clean_command)
     time_array = []
