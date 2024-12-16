@@ -86,11 +86,12 @@ if __name__ == "__main__":
 
     if not disable_all and link_time and not build_lib and len(inject_points) > 0:
         for assembly in assembly_list:
+            injected_lines = []
             # read assembly file from name
             with open(assembly, "r") as f:
                 lines = f.readlines()
-                injected_lines = []
 
+                prev_injected_code = False
                 func_name = ""
                 func_index = -1
                 match_indices = set()
@@ -110,23 +111,43 @@ if __name__ == "__main__":
                             if kernel_name == core_name:
                                 func_name = kernel_name
                                 func_index = 0
-                                match_indices.add(ins_index)                        
+                                match_indices.add(ins_index) 
+                        injected_lines.append(line)
+                        continue  
+
+                    if func_name == "":
+                        injected_lines.append(line)
+                        continue                     
 
                     if "s_endpgm" in line:
                         func_name = ""
                         func_index = -1
                         match_indices = set()
-                    elif not line.strip().startswith(";") and not line.strip().startswith("."):
-                        if func_index in match_indices:
-                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
-                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
-                            injected_lines.append(line)
-                            print("injected line:", line.strip())
-                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
-                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                    elif "; injected code start" in line:
+                        print(line.strip())
+                        prev_injected_code = True
+                    elif "; injected code end" in line:
                         if func_index >= 0:
                             func_index += 1
-                        continue
+                        print(line.strip())
+                        prev_injected_code = False
+                    elif not line.strip().startswith(";") and not line.strip().startswith("."):
+                        if not prev_injected_code:
+                            if func_index in match_indices:
+                                injected_lines.append("; injected code start\n")
+                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
+                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
+                                injected_lines.append(line)
+                                print("injected line:", line.strip())
+                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                                injected_lines.append("; injected code end\n")
+                            if func_index >= 0:
+                                func_index += 1
                     injected_lines.append(line)
+
+            if len(injected_lines) > 0:
+                with open(assembly, "w") as f:
+                    f.writelines(injected_lines)
 
     subprocess.run(replaced_argv)   
