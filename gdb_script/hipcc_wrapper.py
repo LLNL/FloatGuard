@@ -39,9 +39,9 @@ if __name__ == "__main__":
             # no EXP_FLAG_TOTAL flag anywhere, use default
             exp_flag_str = "0x4D2F0"           
             exp_flag = 0x0004D2F0
-    print("exp_flag_str:", exp_flag_str)
-    exp_flag_low = exp_flag & 0x0000FFFF
-    exp_flag_high = (exp_flag & 0xFFFF0000) >> 16
+    exp_flag_low = str(exp_flag & 0x0000FFFF)
+    exp_flag_high = str((exp_flag & 0xFFFF0000) >> 16)
+    print("exp_flag_str:", exp_flag_low, exp_flag_high)
 
     # write EXP_FLAG_TOTAL flag if the file does not exist
     if not os.path.exists("exp_flag.txt"):
@@ -53,8 +53,6 @@ if __name__ == "__main__":
     inject_points = []
     if link_time and os.path.exists("inject_points.txt"):
         with open("inject_points.txt", "r") as f:
-            exp_flag = f.readline()
-
             while True:
                 line = f.readline()
                 if not line:
@@ -97,32 +95,38 @@ if __name__ == "__main__":
                 func_index = -1
                 match_indices = set()
                 for line in lines:
-                    if func_name == "":
-                        func_m = re.search("^([A-Za-z0-9_]+):", line)
-                        if func_m:
-                            demangled_name = demangle_name(func_m.group(1))
-                            for inj in inject_points:
-                                kernel_name = inj[0]
-                                ins_index = inj[1]
-                                if kernel_name == demangled_name:
-                                    func_name = kernel_name
-                                    func_index = 0
-                                    match_indices.insert(ins_index)
-                        else:
-                            injected_lines.append(line)
-                    else:
-                        if "s_endpgm" in line:
-                            func_name = ""
-                            func_index = -1
-                            match_indices = set()
-                        elif not line.strip().startswith(";") and not line.strip().startswith("."):
-                            if func_index in match_indices:
-                                injected_lines.append("s_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
-                                injected_lines.append("s_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
-                                injected_lines.append(line)
+                    func_m = re.search("^([A-Za-z0-9_]+):", line)
+                    if func_m:
+                        func_name = ""
+                        func_index = -1
+                        demangled_name = demangle_name(func_m.group(1))
+                        print("name:", func_m.group(1), demangled_name)
+                        core_name = demangled_name
+                        if "(" in demangled_name:
+                            core_name = demangled_name.split("(")[0]
+                        for inj in inject_points:
+                            kernel_name = inj[0]
+                            ins_index = inj[1]
+                            if kernel_name == core_name:
+                                func_name = kernel_name
+                                func_index = 0
+                                match_indices.add(ins_index)                        
 
+                    if "s_endpgm" in line:
+                        func_name = ""
+                        func_index = -1
+                        match_indices = set()
+                    elif not line.strip().startswith(";") and not line.strip().startswith("."):
+                        if func_index in match_indices:
+                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
+                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
+                            injected_lines.append(line)
+                            print("injected line:", line.strip())
+                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                            injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                        if func_index >= 0:
                             func_index += 1
-                            continue
-                        injected_lines.append(line)
+                        continue
+                    injected_lines.append(line)
 
     subprocess.run(replaced_argv)   
