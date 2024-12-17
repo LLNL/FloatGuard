@@ -7,6 +7,7 @@ import pexpect
 import argparse
 import subprocess
 import configparser
+import hashlib
 from enum import Enum
 from ast import literal_eval 
 
@@ -17,6 +18,8 @@ PrintTrace = False
 PrintCurInst = False
 
 StepLine = True 
+
+NumInjectedLines = 4
 
 class FPType(Enum):
     ScalarSingle = 0
@@ -131,7 +134,12 @@ def get_address_from_line(line):
     match = re.search(r'0x[0-9a-fA-F]+', line)
     return int(match.group(0), 16) if match else float('inf')
 
-def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs, kernel_disassemble):
+def get_key_from_kernel_ins_tuple(inj):
+    sha1_hash = hashlib.sha1(inj[0].encode('utf-8')).hexdigest()
+    sha1_num_hash = int(sha1_hash[:8], 16)
+    return (sha1_num_hash << 32) + inj[1]
+
+def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points):
     gdb = pexpect.spawn('rocgdb', timeout=3600)
     gdb.delaybeforesend = None
     gdb.delayafterread = None
@@ -162,6 +170,16 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         for loc in saved_locs:
             f.write(loc+ "\n")
 
+    if len(injected_points) > 0:
+        inj_file = os.path.join(os.getcwd(), "inject_points.txt")
+        with open(inj_file, "w") as f:
+            for inj in injected_points:
+                f.write(inj[0] + "," + str(inj[1]) + "\n")
+
+        # TODO: recompile the program
+        #if use_clang:
+
+
     #for kernel in kernel_names:
     #    send(gdb, "b", kernel)
     #send(gdb, "b", "set_fp_exception_enabled")
@@ -176,7 +194,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         if "SIGABRT" in output:
             print("abort! 3")
             gdb.close()
-            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, True
+            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points, True
         if "Arithmetic exception" in output:
             outlines = output.splitlines()
             startcopy = False
@@ -242,6 +260,18 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                 if error_loc in line:
                     break
                 ins_index += 1
+
+            # adjustment from previous injected code
+            for inj in injected_points:
+                if exception_kernel_name == inj[0] and ins_index > inj[1]:
+                    ins_index -= NumInjectedLines
+
+            # TODO: assume signal is one instruction ago; if not, may need to specify a range
+            ins_index -= 1
+
+            injected_points.append((exception_kernel_name, ins_index))
+            injected_points = sorted(injected_points, key=get_key_from_kernel_ins_tuple)
+
             print("ins_index:", ins_index)
             print("----------------- EXCEPTION CAPTURE END -----------------")     
 
@@ -254,7 +284,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
 
             gdb.close()
 
-            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, False
+            return kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points, False
         else:
             print("other exceptions?") 
             print("-----------------")
@@ -265,7 +295,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         print("abort! 4")
 
     gdb.close()
-    return kernel_seq, saved_rips, saved_locs, kernel_disassemble, True
+    return kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points, True
 
 if __name__ == "__main__":
     if StepLine:
@@ -279,6 +309,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--program", type=str, help="the program to be tested", required=True)
     parser.add_argument("-a", "--args", nargs='*', help="Program arguments")
     parser.add_argument("-c", "--config", type=str, help="config file")
+    parser.add_argument("-u", "--useclang", dest='useclang', action='store_true', help='use clang instead of llvm pass')
     parser.add_argument("-v", "--verbose", type=int, choices=[0, 1, 2, 3], default=2, help="set output verbosity (0=error, 1=warning, 2=info, 3=low priority info)")
     stripped_argv = []
     remaining = []
@@ -296,8 +327,11 @@ if __name__ == "__main__":
     ProgramName = args.program
     Arguments = remaining
     Skip = args.skip
+    use_clang = False
+    if args.useclang:
+        use_clang = True
 
-    print("program:", ProgramName, "args:", Arguments)
+    print("program:", ProgramName, "args:", Arguments, "useclang:", use_clang)
 
     kernel_names = extract_kernel_names(ProgramName)
     exception_flags = 0x7F
@@ -335,10 +369,12 @@ if __name__ == "__main__":
     kernel_seq = []
     saved_rips = []
     saved_locs = []
+    injected_points = []
     kernel_disassemble = {}
     end_of_prog = False
     while not end_of_prog:
         LastParam = -1
-        kernel_seq, saved_rips, saved_locs, kernel_disassemble, end_of_prog = test_program(ProgramName, kernel_names, kernel_seq, saved_rips, saved_locs, kernel_disassemble)
-        print("saved_locs:", saved_locs)
+        kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points, end_of_prog = test_program(ProgramName, \
+            kernel_names, kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points)
+        print("injected_points:", injected_points)
  

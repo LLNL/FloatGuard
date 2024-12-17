@@ -10,6 +10,8 @@ import configparser
 from enum import Enum
 from ast import literal_eval 
 
+NumInsInRange = 3
+
 def demangle_name(name):
     result = subprocess.run(['c++filt', name], capture_output=True, text=True)
     return result.stdout.strip()
@@ -117,7 +119,9 @@ if __name__ == "__main__":
 
                     if func_name == "":
                         injected_lines.append(line)
-                        continue                     
+                        continue             
+
+                    written_ins = False        
 
                     if "s_endpgm" in line:
                         func_name = ""
@@ -133,18 +137,22 @@ if __name__ == "__main__":
                         prev_injected_code = False
                     elif not line.strip().startswith(";") and not line.strip().startswith("."):
                         if not prev_injected_code:
-                            if func_index in match_indices:
-                                injected_lines.append("; injected code start\n")
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
-                                injected_lines.append(line)
-                                print("injected line:", line.strip())
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
-                                injected_lines.append("; injected code end\n")
+                            for index in match_indices:
+                                if index - func_index == NumInsInRange:                               
+                                    injected_lines.append("; injected code start\n")
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")                                    
+                                elif index - func_index == 0:
+                                    injected_lines.append(line)
+                                    print("injected line:", line.strip())
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                                    injected_lines.append("; injected code end\n")
+                                    written_ins = True
                             if func_index >= 0:
                                 func_index += 1
-                    injected_lines.append(line)
+                    if not written_ins:
+                        injected_lines.append(line)
 
             if len(injected_lines) > 0:
                 with open(assembly, "w") as f:

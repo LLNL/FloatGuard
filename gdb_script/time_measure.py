@@ -102,6 +102,8 @@ if __name__ == "__main__":
     capture_output = ""
     for run_command in run_command_list:
         capture_command = ['python3', '-u', os.path.join(home, "FloatGuard", "gdb_script", "exception_capture_light.py")]
+        if use_clang:
+            capture_command.append('-u')        
         capture_command.extend(['-p', run_command[0]])
         if len(run_command) > 1:   
             capture_command.append('-a') 
