@@ -39,8 +39,8 @@ if __name__ == "__main__":
             # no EXP_FLAG_TOTAL flag anywhere, use default
             exp_flag_str = "0x4D2F0"           
             exp_flag = 0x0004D2F0
-    exp_flag_low = str(exp_flag & 0x0000FFFF)
-    exp_flag_high = str((exp_flag & 0xFFFF0000) >> 16)
+    exp_flag_low = hex(exp_flag & 0x0000FFFF)
+    exp_flag_high = hex((exp_flag & 0xFFFF0000) >> 16)
     print("exp_flag_str:", exp_flag_low, exp_flag_high)
 
     # write EXP_FLAG_TOTAL flag if the file does not exist
