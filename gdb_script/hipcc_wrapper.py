@@ -45,11 +45,6 @@ if __name__ == "__main__":
     exp_flag_high = hex((exp_flag & 0xFFFF0000) >> 16)
     print("exp_flag_str:", exp_flag_low, exp_flag_high)
 
-    # write EXP_FLAG_TOTAL flag if the file does not exist
-    if not os.path.exists("exp_flag.txt"):
-        with open("exp_flag.txt", "w") as f:
-            f.write(exp_flag_str + "\n")
-
     # read inject points
     # (kernel name, instruction index) tuples
     inject_points = []
@@ -82,6 +77,11 @@ if __name__ == "__main__":
                 replaced_argv.append(arg)
         else:
             replaced_argv.append(arg)
+
+    # write EXP_FLAG_TOTAL flag if the file does not exist
+    if not build_lib and not os.path.exists("exp_flag.txt"):
+        with open("exp_flag.txt", "w") as f:
+            f.write(exp_flag_str + "\n")
 
     if not disable_all and not link_time and not build_lib:
         replaced_argv.append("-S")
