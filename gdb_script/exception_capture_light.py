@@ -177,8 +177,14 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                 f.write(inj[0] + "," + str(inj[1]) + "\n")
 
         # TODO: recompile the program
-        #if use_clang:
-
+        clean_command = conf['DEFAULT']['clean']
+        os.system(clean_command)        
+        if use_clang:
+            compile_command = conf['DEFAULT']['compile'].split()
+            subprocess.run(compile_command, stdout=subprocess.PIPE)            
+        else:
+            llvm_pass_command = conf['DEFAULT']['llvm_pass'].split()
+            subprocess.run(llvm_pass_command, stdout=subprocess.PIPE)
 
     #for kernel in kernel_names:
     #    send(gdb, "b", kernel)
@@ -246,8 +252,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     saved_rips.append(rips_text)
                     break
             saved_locs.append(filename + ":" + str(line_number))
-            if not exception_kernel_name in kernel_disassemble:
-                kernel_disassemble[exception_kernel_name] = send(gdb, "disassemble", exception_kernel_name).replace("=>", "  ").splitlines()
+            kernel_disassemble[exception_kernel_name] = send(gdb, "disassemble", exception_kernel_name).replace("=>", "  ").splitlines()
             ins_index = 0
             ins_strings = []
             for line in kernel_disassemble[exception_kernel_name]:
@@ -256,18 +261,19 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     ins_strings.append(line)
             ins_strings = sorted(ins_strings, key=get_address_from_line)
             #print(*ins_strings, sep="\n")
-            for line in ins_strings:
+            for idx, line in enumerate(ins_strings):
                 if error_loc in line:
+                    if "s_setreg_imm32_b32" in line:
+                        ins_index -= 1
+                        if "s_setreg_imm32_b32" in ins_strings[idx-1]:
+                            ins_index -= 1
                     break
                 ins_index += 1
-
+            print("ins_index_old:", ins_index)
             # adjustment from previous injected code
             for inj in injected_points:
                 if exception_kernel_name == inj[0] and ins_index > inj[1]:
                     ins_index -= NumInjectedLines
-
-            # TODO: assume signal is one instruction ago; if not, may need to specify a range
-            ins_index -= 1
 
             injected_points.append((exception_kernel_name, ins_index))
             injected_points = sorted(injected_points, key=get_key_from_kernel_ins_tuple)
@@ -275,12 +281,12 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             print("ins_index:", ins_index)
             print("----------------- EXCEPTION CAPTURE END -----------------")     
 
-            #while True:
-            #    instr = input("(gdb) ")
-            #    if instr.strip() == "skip":
-            #        break
-            #    else:
-            #        send(gdb, instr, display=True)
+            while True:
+                instr = input("(gdb) ")
+                if instr.strip() == "skip":
+                    break
+                else:
+                    send(gdb, instr, display=True)
 
             gdb.close()
 
@@ -308,7 +314,6 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--skip", dest="skip", action='store_true', help="skip mode; only finds one exception in one kernel")
     parser.add_argument("-p", "--program", type=str, help="the program to be tested", required=True)
     parser.add_argument("-a", "--args", nargs='*', help="Program arguments")
-    parser.add_argument("-c", "--config", type=str, help="config file")
     parser.add_argument("-u", "--useclang", dest='useclang', action='store_true', help='use clang instead of llvm pass')
     parser.add_argument("-v", "--verbose", type=int, choices=[0, 1, 2, 3], default=2, help="set output verbosity (0=error, 1=warning, 2=info, 3=low priority info)")
     stripped_argv = []
@@ -336,31 +341,8 @@ if __name__ == "__main__":
     kernel_names = extract_kernel_names(ProgramName)
     exception_flags = 0x7F
 
-    if args.config:
-        conf = configparser.ConfigParser()
-        conf.read(args.config)
-        if "DEFAULT" in conf:
-            if "ExcludedFuncs" in conf["DEFAULT"]:
-                funcs = conf['DEFAULT']['ExcludedFuncs'].split(";")
-                for func in funcs:
-                    kernel_names.remove(func)
-            if "ExcludedExceptions" in conf["DEFAULT"]:
-                excs = conf['DEFAULT']['ExcludedExceptions'].split(";")
-                for exc in excs:
-                    if exc == "invalid":
-                        exception_flags &= ~(1 << 0)     
-                    if exc == "inputDenormal":
-                        exception_flags &= ~(1 << 1)
-                    if exc == "float_div0":
-                        exception_flags &= ~(1 << 2)
-                    if exc == "overflow":
-                        exception_flags &= ~(1 << 3)
-                    if exc == "underflow":
-                        exception_flags &= ~(1 << 4)
-                    if exc == "inexact":
-                        exception_flags &= ~(1 << 5)
-                    if exc == "int_div0":
-                        exception_flags &= ~(1 << 6)
+    conf = configparser.ConfigParser()
+    conf.read("setup.ini")
 
     for kernel in kernel_names:
         print("kernel name:", kernel)            

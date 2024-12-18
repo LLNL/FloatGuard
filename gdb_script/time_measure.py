@@ -108,11 +108,11 @@ if __name__ == "__main__":
         if len(run_command) > 1:   
             capture_command.append('-a') 
             capture_command.extend(run_command[1:])
-        # Example
         for path in execute(capture_command):
             capture_output += path
             #print(path, end="")
-        #output = subprocess.check_output(capture_command).decode()
+        #subprocess.run(capture_command)
+        #capture_output = ""
     totaltime = time.time() - starttime
     time_array.append(str(totaltime))
     print("total time for exception capture:", totaltime)    
