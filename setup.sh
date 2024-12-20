@@ -1,3 +1,13 @@
+#!/bin/bash
+
+# Check if the script is running as root
+if [ $EUID -ne 0 ]; then
+    sudo apt update && sudo apt install dos2unix unzip
+    exit 1
+else
+    apt update && apt install dos2unix unzip
+fi
+
 # NPB-GPU
 cd benchmarks
 git clone https://github.com/GMAP/NPB-GPU
