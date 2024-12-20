@@ -1,5 +1,5 @@
 #----------------------------------------
-HIPCC    = hipcc #${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
+HIPCC    = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 HIPFLAGS = -g -O3
 LINKFLAGS = -fgpu-rdc --hip-link 
 #----------------------------------------
