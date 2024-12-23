@@ -18,5 +18,8 @@ div0: div0.cpp
 
 .PHONY: clean
 
-clean:
-	rm -f div0 *.o *.bc *.ll *.s
+clean_base:
+	rm -f div0 *.o *.bc *.ll *.s 
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt
