@@ -22,4 +22,4 @@ clean_base:
 	rm -f div0 *.o *.bc *.ll *.s 
 
 clean: clean_base
-	rm -f exp_flag.txt seq.txt inject_points.txt
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

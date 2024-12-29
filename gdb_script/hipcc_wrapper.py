@@ -183,6 +183,9 @@ if __name__ == "__main__":
                                 #    written_ins = True
                             if func_index >= 0:
                                 func_index += 1
+                    elif line.strip().startswith(".LBB"):
+                        # start of a basic block
+                        last_br_index = len(injected_lines) + 1
                     if written_ins:
                         last_br_index = len(injected_lines)
                     else:
