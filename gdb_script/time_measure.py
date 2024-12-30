@@ -110,7 +110,6 @@ if __name__ == "__main__":
             capture_command.extend(run_command[1:])
         for path in execute(capture_command):
             capture_output += path
-            #print(path, end="")
         #subprocess.run(capture_command)
         #capture_output = ""
     totaltime = time.time() - starttime

@@ -39,5 +39,8 @@ imagenet.o: imagenet.c backprop.h
 	$(CC) $(CC_FLAGS) imagenet.c -c
 
 
-clean:
-	rm -f *.o *~ backprop backprop_cuda.linkinfo
+clean_base:
+	rm -f *.o *.s *~ backprop backprop_cuda.linkinfo
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

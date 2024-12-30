@@ -27,6 +27,7 @@ def is_branch_ins(ins):
 
 if __name__ == "__main__":
     link_time = False
+    compile_time = False
     exp_flag_str = None
     argv = sys.argv
     for arg in argv:
@@ -36,6 +37,11 @@ if __name__ == "__main__":
         # find EXP_FLAG_TOTAL flag
         if arg.startswith("-DEXP_FLAG_TOTAL="):
             exp_flag_str = arg.strip().split("=")[1]
+        if arg == "-c":
+            compile_time = True
+    
+    if link_time == False and compile_time == False:
+        link_time = True
 
     if exp_flag_str:
         exp_flag = int(exp_flag_str, 0)
