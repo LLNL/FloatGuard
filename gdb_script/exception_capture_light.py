@@ -281,12 +281,12 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             print("ins_index:", ins_index)
             print("----------------- EXCEPTION CAPTURE END -----------------")     
 
-            while True:
-                instr = input("(gdb) ")
-                if instr.strip() == "skip":
-                    break
-                else:
-                    send(gdb, instr, display=True)
+            #while True:
+            #    instr = input("(gdb) ")
+            #    if instr.strip() == "skip":
+            #        break
+            #    else:
+            #        send(gdb, instr, display=True)
 
             gdb.close()
 
