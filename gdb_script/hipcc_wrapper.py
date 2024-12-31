@@ -25,6 +25,31 @@ def is_branch_ins(ins):
         
     return False
 
+def is_executable_compilation(command):
+    # Recognize common source file extensions
+    source_file_pattern = re.compile(r'.*\.(c|cpp|cxx|cc|cu|hip|C)$', re.IGNORECASE)
+    source_files = [arg for arg in command if source_file_pattern.match(arg)]
+    
+    # Check if the command includes flags that suppress linking
+    suppress_linking_flags = {'-c', '-E', '-S'}
+    if any(flag in command for flag in suppress_linking_flags):
+        return False, source_files
+    
+    # Check if the command has exactly one source file
+    if len(source_files) != 1:
+        return False, source_files
+    
+    # If `-o` is present, ensure it’s not targeting an object file or library
+    if '-o' in command:
+        output_index = command.index('-o') + 1
+        if output_index < len(command):
+            output_file = command[output_index]
+            if output_file.endswith(('.o', '.so', '.a')):
+                return False, source_files
+    
+    # If all conditions pass, it is likely compiling a single source file into an executable
+    return True, source_files
+
 if __name__ == "__main__":
     link_time = False
     compile_time = False
@@ -42,6 +67,37 @@ if __name__ == "__main__":
     
     if link_time == False and compile_time == False:
         link_time = True
+    
+    single_source_link_time, source_files = is_executable_compilation(argv[1:])
+    
+    if single_source_link_time:
+        extra_compile_argv = ["hipcc", "-c", "-S"]
+        prev_is_object = False
+        for arg in argv[1:]:
+            if not "InstStub.o" in arg:
+                if arg == "-o":
+                    prev_is_object = True
+                    extra_compile_argv.append(arg)
+                elif prev_is_object:
+                    prev_is_object = False
+                    arg_s = arg.split(".")[0] + ".s"
+                    extra_compile_argv.append(arg_s)
+                else:
+                    extra_compile_argv.append(arg)
+
+        subprocess.run(extra_compile_argv)
+
+        # replace argv with a link-only version
+        extra_compile_argv = ["hipcc"]
+        for arg in argv[1:]:
+            if arg in source_files:
+                arg_s = arg.split(".")[0] + ".s"
+                extra_compile_argv.append(arg_s)
+            else:
+                extra_compile_argv.append(arg)
+
+        argv = extra_compile_argv
+
 
     if exp_flag_str:
         exp_flag = int(exp_flag_str, 0)
