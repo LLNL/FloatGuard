@@ -26,5 +26,8 @@ pre_euler3d_double: pre_euler3d_double.cu
 	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) -O3 pre_euler3d_double.cu -o pre_euler3d_double 
 
 
-clean:
-	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo *.o *.bc density density_energy momentum
+clean_base:
+	rm -f euler3d euler3d_double pre_euler3d pre_euler3d_double *.linkinfo *.o *.s *.bc density density_energy momentum
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

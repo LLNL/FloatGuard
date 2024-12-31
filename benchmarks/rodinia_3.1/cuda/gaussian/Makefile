@@ -10,5 +10,8 @@ EXE = gaussian
 release: $(SRC)
 	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
 
-clean:
-	rm gaussian
+clean_base:
+	-rm gaussian *.s *.o
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
