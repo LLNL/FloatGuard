@@ -21,5 +21,8 @@ debug: $(SRC)
 debugenum: $(SRC)
 	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(FLAGS) -g -deviceemu $(SRC) -o $(EXE)
 
-clean: $(SRC)
-	rm -f $(EXE) $(EXE).linkinfo $(OUTPUT) 
+clean_base: $(SRC)
+	-rm -f *.s $(EXE) $(EXE).linkinfo $(OUTPUT) 
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

@@ -54,11 +54,15 @@ if __name__ == "__main__":
     link_time = False
     compile_time = False
     exp_flag_str = None
+    has_link_param = 0
     argv = sys.argv
     for arg in argv:
         # determine link time
         if arg == "--hip-link":
             link_time = True
+            has_link_param += 1
+        if arg == "-fgpu-rdc":
+            has_link_param += 2
         # find EXP_FLAG_TOTAL flag
         if arg.startswith("-DEXP_FLAG_TOTAL="):
             exp_flag_str = arg.strip().split("=")[1]
@@ -97,7 +101,7 @@ if __name__ == "__main__":
                 extra_compile_argv.append(arg)
 
         argv = extra_compile_argv
-
+        link_time = True
 
     if exp_flag_str:
         exp_flag = int(exp_flag_str, 0)
@@ -133,6 +137,11 @@ if __name__ == "__main__":
     disable_all = False
     build_lib = False
     replaced_argv = ["hipcc"]
+    if link_time:
+        if has_link_param == 0 or has_link_param == 1:
+            replaced_argv.append("-fgpu-rdc")
+        if has_link_param == 0 or has_link_param == 2:
+            replaced_argv.append("--hip-link")
     assembly_list = []
     for arg in argv[1:]:
         if "InstStub.cpp" in arg:

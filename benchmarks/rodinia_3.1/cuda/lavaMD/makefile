@@ -26,7 +26,7 @@ a.out:		main.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
 			./util/device/device.o
-	$(CUD_C)	$(KERNEL_DIM) main.o \
+	$(CUD_C)  $(KERNEL_DIM) main.o \
 			./kernel/kernel_gpu_cuda_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
@@ -81,10 +81,13 @@ main.o:		main.h \
 						-O3
 
 # delete all object and executable files
-clean:
-	rm	*.o \
-		./kernel/*.o \
-		./util/num/*.o \
-		./util/timer/*.o \
-		./util/device/*.o \
+clean_base:
+	-rm	*.o *.s \
+		./kernel/*.o ./kernel/*.s \
+		./util/num/*.o ./util/num/*.s \
+		./util/timer/*.o ./util/timer/*.s \
+		./util/device/*.o ./util/device/*.s \
 		lavaMD
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
