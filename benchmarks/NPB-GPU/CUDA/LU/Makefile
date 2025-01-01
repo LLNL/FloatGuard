@@ -17,4 +17,7 @@ lu.o:		lu.cu npbparams.hpp
 
 clean:
 	- /bin/rm -f npbparams.hpp
-	- /bin/rm -f *.o *.bc seq.txt *~
+	- /bin/rm -f *.o *.s *.bc seq.txt *~
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

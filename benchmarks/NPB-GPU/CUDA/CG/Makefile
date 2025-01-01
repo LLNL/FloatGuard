@@ -16,5 +16,8 @@ cg.o:             cg.cu npbparams.hpp
 	${CCOMPILE} cg.cu
 
 clean:
-	- rm -f *.o *.bc seq.txt *~ 
+	- rm -f *.o *.s *.bc seq.txt *~ 
 	- rm -f npbparams.hpp core
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

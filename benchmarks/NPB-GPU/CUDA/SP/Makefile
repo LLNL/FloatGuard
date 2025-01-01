@@ -16,5 +16,8 @@ sp.o:		sp.cu npbparams.hpp
 	${CCOMPILE} sp.cu
 
 clean:
-	- rm -f *.o *.bc seq.txt *~ mputil*
+	- rm -f *.o *.s *.bc seq.txt *~ mputil*
 	- rm -f npbparams.hpp core
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

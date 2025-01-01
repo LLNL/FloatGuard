@@ -16,5 +16,8 @@ ft.o:             ft.cu npbparams.hpp
 	${CCOMPILE} ft.cu
 
 clean:
-	- rm -f *.o *.bc seq.txt *~ mputil*
+	- rm -f *.o *.s *.bc seq.txt *~ mputil*
 	- rm -f ft npbparams.hpp core
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
