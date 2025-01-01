@@ -53,6 +53,7 @@ def is_executable_compilation(command):
 if __name__ == "__main__":
     link_time = False
     compile_time = False
+    clang_pass = False
     exp_flag_str = None
     has_link_param = 0
     argv = sys.argv
@@ -63,18 +64,24 @@ if __name__ == "__main__":
             has_link_param += 1
         if arg == "-fgpu-rdc":
             has_link_param += 2
+        if "emit-llvm" in arg:
+            clang_pass = True
         # find EXP_FLAG_TOTAL flag
         if arg.startswith("-DEXP_FLAG_TOTAL="):
             exp_flag_str = arg.strip().split("=")[1]
         if arg == "-c":
             compile_time = True
-    
+
     if link_time == False and compile_time == False:
         link_time = True
-    
+
+    disable_all = False
+    if clang_pass:
+        disable_all = True
+
     single_source_link_time, source_files = is_executable_compilation(argv[1:])
     
-    if single_source_link_time:
+    if not disable_all and single_source_link_time:
         extra_compile_argv = ["hipcc", "-c", "-S"]
         prev_is_object = False
         for arg in argv[1:]:
@@ -134,7 +141,6 @@ if __name__ == "__main__":
                     ins_index = int(line.strip().split(",")[1])
                     inject_points.append((kernel_name, ins_index))
 
-    disable_all = False
     build_lib = False
     replaced_argv = ["hipcc"]
     if link_time:
