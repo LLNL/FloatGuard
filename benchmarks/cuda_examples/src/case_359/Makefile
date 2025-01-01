@@ -1,6 +1,6 @@
 #----------------------------------------
 HIPCC    = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
-HIPFLAGS = -g -O3
+HIPFLAGS = -g -O3 -DEXP_FLAG_TOTAL=0x0005F2F0
 LINKFLAGS = -fgpu-rdc --hip-link 
 #----------------------------------------
 
