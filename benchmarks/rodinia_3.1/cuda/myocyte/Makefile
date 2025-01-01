@@ -36,5 +36,8 @@ main.o:	define.c \
 				-c -O3 -g
 
 # delete all object files
-clean:
-	rm *.o *.out output.txt
+clean_base:
+	-rm *.o *.s *.out output.txt
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

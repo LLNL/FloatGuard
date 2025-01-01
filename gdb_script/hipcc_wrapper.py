@@ -81,11 +81,11 @@ if __name__ == "__main__":
             if not "InstStub.o" in arg:
                 if arg == "-o":
                     prev_is_object = True
-                    extra_compile_argv.append(arg)
+                    #extra_compile_argv.append(arg)
                 elif prev_is_object:
                     prev_is_object = False
-                    arg_s = arg.split(".")[0] + ".s"
-                    extra_compile_argv.append(arg_s)
+                    #arg_s = arg.split(".")[0] + ".s"
+                    #extra_compile_argv.append(arg_s)
                 else:
                     extra_compile_argv.append(arg)
 

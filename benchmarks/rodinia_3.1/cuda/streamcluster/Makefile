@@ -18,10 +18,15 @@ ifeq ($(emu),1)
 endif
 
 
-$(TARGET_G): streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu
-	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu -o $(TARGET_G)
+$(TARGET_G):
+	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda_cpu.cpp 
+	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda.cu 
+	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_header.cu 
+	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda_cpu.o streamcluster_cuda.o streamcluster_header.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o $(TARGET_G)
 	
 
-clean:
-	rm -f *.o *~ *.txt $(TARGET_G) *.linkinfo
+clean_base:
+	-rm -f *.o *.s *~ *.txt $(TARGET_G) *.linkinfo
 	
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

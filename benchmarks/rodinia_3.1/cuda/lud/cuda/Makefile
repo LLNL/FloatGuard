@@ -41,5 +41,8 @@ all : $(EXECUTABLE)
 $(EXECUTABLE) : $(OBJS)
 	$(NVCC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(NVCCFLAGS) -o $@  $?
 
-clean:
-	rm -f $(EXECUTABLE) $(OBJS) *.linkinfo
+clean_base:
+	-rm -f *.s *.o $(EXECUTABLE) $(OBJS) *.linkinfo
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt

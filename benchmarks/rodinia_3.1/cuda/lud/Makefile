@@ -5,3 +5,6 @@ lud_cuda:
 
 clean:
 	cd cuda; make clean
+
+clean_base:
+	cd cuda; make clean_base

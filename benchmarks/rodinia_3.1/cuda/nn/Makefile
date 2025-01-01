@@ -5,8 +5,11 @@ CC := ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 
 all : nn hurricane_gen
 
-clean :
-	rm -rf *.o nn hurricane_gen
+clean_base:
+	-rm -rf *.s *.o nn hurricane_gen
+
+clean: clean_base
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
 
 nn : nn_cuda.cu
 	$(CC) -c $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o nn_cuda.cu
