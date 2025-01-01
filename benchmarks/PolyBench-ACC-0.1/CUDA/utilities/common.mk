@@ -22,4 +22,7 @@ all:
 	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -O3 -ffast-math ${CUFILES} -I${PATH_TO_UTILS} -o ${EXECUTABLE}_extralarge ${INST_FLAGS} ${FP_FLAGS} -DEXTRALARGE_DATASET
 	
 clean:
-	rm -f *~ *.exe* seq.txt
+	rm -f *~ *.s *.exe* seq.txt 
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
