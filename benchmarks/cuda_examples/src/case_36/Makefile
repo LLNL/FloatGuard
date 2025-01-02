@@ -23,3 +23,6 @@ run:
 
 clean:
 	rm -f test *.o *.bc *.ll *.s
+
+cleanall: clean
+	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
