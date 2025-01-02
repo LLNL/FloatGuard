@@ -24,7 +24,7 @@ def run_commands(commands):
     starttime = time.time()
     output = ""
     for command in commands:
-        output += subprocess.check_output(command).decode() + "\n"
+        output += subprocess.check_output(' '.join(command), shell=True).decode() + "\n"
     totaltime = time.time() - starttime
     return totaltime, output
     
