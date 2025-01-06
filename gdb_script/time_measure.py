@@ -11,6 +11,24 @@ from enum import Enum
 from ast import literal_eval 
 from pathlib import Path
 
+def process_output(captured_output):
+    captured_lines = captured_output.splitlines()
+    filtered_lines = []
+    in_exception = False
+    for line in captured_lines:
+        if "----------------- EXCEPTION CAPTURED -----------------" in line:
+            in_exception = True
+        elif "----------------- EXCEPTION CAPTURE END -----------------" in line:
+            in_exception = False
+        elif not in_exception:
+            if  not line.startswith("program:") and \
+                not line.startswith("kernel name:") and \
+                not line.startswith("total kernels:"):
+                continue
+        filtered_lines.append(line.strip())
+
+    return "\n".join(filtered_lines)    
+
 def execute(cmd):
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
     for stdout_line in iter(popen.stdout.readline, ""):
@@ -115,6 +133,8 @@ if __name__ == "__main__":
     totaltime = time.time() - starttime
     time_array.append(str(totaltime))
     print("total time for exception capture:", totaltime)    
+
+    capture_output = process_output(capture_output)
 
     prog_name = os.path.basename(os.path.normpath(dir))
     if len(run_command_list) == 1:

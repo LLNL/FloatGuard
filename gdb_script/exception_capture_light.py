@@ -244,7 +244,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     exception_kernel_name = m.group(1)
                     break
                 idx -= 1         
-            print("exception kernel name:", exception_kernel_name)              
+            #print("exception kernel name:", exception_kernel_name)              
             for idx in range(8):
                 func_name = send(gdb, "p", "current_func[" + str(idx) + "]")
                 if "__device_stub__" + exception_kernel_name + "(" in func_name:
@@ -269,7 +269,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                             ins_index -= 1
                     break
                 ins_index += 1
-            print("ins_index_old:", ins_index)
+            #print("ins_index_old:", ins_index)
             # adjustment from previous injected code
             for inj in injected_points:
                 if exception_kernel_name == inj[0] and ins_index > inj[1]:
@@ -278,7 +278,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             injected_points.append((exception_kernel_name, ins_index))
             injected_points = sorted(injected_points, key=get_key_from_kernel_ins_tuple)
 
-            print("ins_index:", ins_index)
+            #print("ins_index:", ins_index)
             print("----------------- EXCEPTION CAPTURE END -----------------")     
 
             #while True:
