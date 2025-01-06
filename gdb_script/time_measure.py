@@ -25,6 +25,9 @@ def process_output(captured_output):
                 not line.startswith("kernel name:") and \
                 not line.startswith("total kernels:"):
                 continue
+        else:
+            if line.startswith("text:"):
+                continue
         filtered_lines.append(line.strip())
 
     return "\n".join(filtered_lines)    

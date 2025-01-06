@@ -19,7 +19,7 @@ PrintCurInst = False
 
 StepLine = True 
 
-NumInjectedLines = 4
+NumInjectedLines = 5
 
 class FPType(Enum):
     ScalarSingle = 0
@@ -219,22 +219,22 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                 match = re.search(r'=>\s+(0x[0-9a-fA-F]+)', line)
                 if match:
                     error_loc = match.group(1)
-                    print("error loc:", error_loc)
+                    #print("error loc:", error_loc)
             trapsts = (int)(send(gdb, "p", "$trapsts&0x1ff").strip().split("=")[1].strip()) & exception_flags
             if trapsts & 0x01:
-                print("trapsts: invalid")
+                print("exception type: invalid")
             if trapsts & 0x02:
-                print("trapsts: input denormal")                                
+                print("exception type: input denormal")                                
             if trapsts & 0x04:
-                print("trapsts: divide by zero")
+                print("exception type: divide by zero")
             if trapsts & 0x08:
-                print("trapsts: overflow")
+                print("exception type: overflow")
             if trapsts & 0x10:
-                print("trapsts: underflow")
+                print("exception type: underflow")
             if trapsts & 0x20:
-                print("trapsts: inexact")
+                print("exception type: inexact")
             if trapsts & 0x40:
-                print("trapsts: integer divide by zero")
+                print("exception type: integer divide by zero")
             bt_list = send(gdb, "bt", display=True).splitlines()
             idx = len(bt_list) - 1
             while idx >= 0:

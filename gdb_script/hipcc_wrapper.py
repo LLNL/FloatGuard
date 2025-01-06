@@ -235,7 +235,7 @@ if __name__ == "__main__":
                                     if last_br_index == -1:
                                         injected_lines.append("; injected code start\n")
                                         injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
-                                        injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")                                                                                   
+                                        injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")          
                                     else:
                                         injected_lines.insert(last_br_index, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
                                         injected_lines.insert(last_br_index, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
@@ -243,6 +243,7 @@ if __name__ == "__main__":
 
                                     injected_lines.append(line)
                                     print("injected line:", line.strip())
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS, 0, 9), 0\n")                                                                                   
                                     injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
                                     injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
                                     injected_lines.append("; injected code end\n")  
