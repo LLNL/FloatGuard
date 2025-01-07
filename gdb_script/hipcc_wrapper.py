@@ -235,13 +235,16 @@ if __name__ == "__main__":
                                 if not is_nop and func_index >= 0:
                                     func_index += 1                            
                         else:
-                            if is_branch_ins(line):
-                                last_insert_index = len(injected_lines) + 1
-                                last_br_index = last_insert_index - 1
-                                last_br_func_index = func_index
-                            elif "s_setreg_b32" in line:
-                                last_insert_index = len(injected_lines) + 1
-                            if func_index in match_indices:                         
+                            ins_to_disable = func_index in match_indices
+                            is_branch = is_branch_ins(line)
+                            if not ins_to_disable:
+                                if is_branch:
+                                    last_insert_index = len(injected_lines) + 1
+                                    last_br_index = last_insert_index - 1
+                                    last_br_func_index = func_index
+                                elif "s_setreg_b32" in line:
+                                    last_insert_index = len(injected_lines) + 1
+                            else:                                                      
                                 if last_insert_index == -1:
                                     injected_lines.append("; injected code start\n")
                                     injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
@@ -253,21 +256,29 @@ if __name__ == "__main__":
 
                                 # crash location too close to branch; could be instruction before branch that cause issues
                                 print("current index, last_br_index:", func_index, last_br_func_index)
-                                if func_index - last_br_func_index <= NumInsInRange:                                        
+                                if func_index - last_br_func_index <= NumInsInRange:               
+                                    injected_lines.insert(last_br_index, "; injected code end\n")                                           
                                     injected_lines.insert(last_br_index, "\ts_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS, 0, 9), 0\n")                                                                                   
                                     injected_lines.insert(last_br_index, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
                                     injected_lines.insert(last_br_index, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")                                        
-                                    injected_lines.insert(last_br_index, "; injected code end\n")                                           
                                     injected_lines.insert(last_br_index - NumInsInRange, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), 0\n")
                                     injected_lines.insert(last_br_index - NumInsInRange, "\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), 0x2F0\n")
                                     injected_lines.insert(last_br_index - NumInsInRange, "; injected code start\n")           
 
-                                injected_lines.append(line)#.rstrip() + "\t; " + str(func_index) + "\n")
-                                print("injected line:", line.strip())
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS, 0, 9), 0\n")                                                                                   
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
-                                injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
-                                injected_lines.append("; injected code end\n")  
+                                if is_branch:
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS, 0, 9), 0\n")                                                                                   
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                                    injected_lines.append("; injected code end\n")   
+                                    injected_lines.append(line)#.rstrip() + "\t; " + str(func_index) + "\n")
+                                    print("injected line:", line.strip())                                                                      
+                                else:
+                                    injected_lines.append(line)#.rstrip() + "\t; " + str(func_index) + "\n")
+                                    print("injected line:", line.strip())
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS, 0, 9), 0\n")                                                                                   
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                                    injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")
+                                    injected_lines.append("; injected code end\n")  
                                 written_ins = True
                                 last_insert_index = len(injected_lines)
                             if not is_nop and func_index >= 0:
