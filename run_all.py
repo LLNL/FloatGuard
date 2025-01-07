@@ -14,6 +14,7 @@ from pathlib import Path
 Rodinia_Path = "benchmarks/rodinia_3.1/cuda"
 PolyBench_Path = "benchmarks/PolyBench-ACC-0.1/CUDA"
 NPB_Path = "benchmarks/NPB-GPU/CUDA"
+Varity_Path = "benchmarks/cuda_examples/src"
 
 Rodinia_Tests = ["backprop", "cfd", "gaussian", "heartwall", "hotspot", "hotspot3D", \
                 "lavaMD", "lud", "myocyte", "nn", "nw", "particlefilter", "streamcluster"]
@@ -34,6 +35,10 @@ def test_path(full_path):
     else:
         print("path", full_path, "do not exist")
         exit(0)
+
+for i in range(1, 501):
+    full_path = os.path.join(".", Varity_Path, "case_" + str(i))
+    test_path(full_path)
 
 for test in Rodinia_Tests:
     full_path = os.path.join(".", Rodinia_Path, test)
