@@ -139,6 +139,9 @@ def get_key_from_kernel_ins_tuple(inj):
     sha1_num_hash = int(sha1_hash[:8], 16)
     return (sha1_num_hash << 32) + inj[1]
 
+def is_set_mode_trapsts_reg(line):
+    return "s_setreg_imm32_b32 hwreg(HW_REG_MODE" in line or "s_setreg_imm32_b32 hwreg(HW_REG_TRAPSTS" in line
+
 def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_locs, kernel_disassemble, injected_points):
     gdb = pexpect.spawn('rocgdb', timeout=3600)
     gdb.delaybeforesend = None
@@ -219,7 +222,16 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                 match = re.search(r'=>\s+(0x[0-9a-fA-F]+)', line)
                 if match:
                     error_loc = match.group(1)
-                    #print("error loc:", error_loc)
+                    error_loc = "0x" + error_loc.replace("0x", "").zfill(16)
+                    print("error loc:", error_loc)
+            if error_loc == "(none)":
+                error_loc_lines = send(gdb, "x/i", "$pc").splitlines()
+                for line in error_loc_lines:
+                    match = re.search(r'=>\s+(0x[0-9a-fA-F]+)', line)
+                    if match:
+                        error_loc = match.group(1)
+                        error_loc = "0x" + error_loc.replace("0x", "").zfill(16)
+                        print("error loc:", error_loc)                    
             trapsts = (int)(send(gdb, "p", "$trapsts&0x1ff").strip().split("=")[1].strip()) & exception_flags
             if trapsts & 0x01:
                 print("exception type: invalid")
@@ -253,6 +265,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     break
             saved_locs.append(filename + ":" + str(line_number))
             kernel_disassemble[exception_kernel_name] = send(gdb, "disassemble", exception_kernel_name).replace("=>", "  ").splitlines()
+            #print(send(gdb, "disassemble", exception_kernel_name), file=open(exception_kernel_name + ".dump", "w"))
             ins_index = 0
             ins_strings = []
             for line in kernel_disassemble[exception_kernel_name]:
@@ -263,17 +276,15 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             #print(*ins_strings, sep="\n")
             for idx, line in enumerate(ins_strings):
                 if error_loc in line:
-                    if "s_setreg_imm32_b32" in line:
+                    if is_set_mode_trapsts_reg(line):
                         ins_index -= 1
-                        if "s_setreg_imm32_b32" in ins_strings[idx-1]:
+                        if is_set_mode_trapsts_reg(ins_strings[idx-1]):
                             ins_index -= 1
                     break
-                ins_index += 1
+                if not "s_nop" in line and not is_set_mode_trapsts_reg(line):
+                    ins_index += 1
             #print("ins_index_old:", ins_index)
             # adjustment from previous injected code
-            for inj in injected_points:
-                if exception_kernel_name == inj[0] and ins_index > inj[1]:
-                    ins_index -= NumInjectedLines
 
             injected_points.append((exception_kernel_name, ins_index))
             injected_points = sorted(injected_points, key=get_key_from_kernel_ins_tuple)
