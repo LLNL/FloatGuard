@@ -15,11 +15,13 @@ def process_output(captured_output):
     captured_lines = captured_output.splitlines()
     filtered_lines = []
     in_exception = False
+    total_exceptions = 0
     for line in captured_lines:
         if "----------------- EXCEPTION CAPTURED -----------------" in line:
             in_exception = True
         elif "----------------- EXCEPTION CAPTURE END -----------------" in line:
             in_exception = False
+            total_exceptions += 1
         elif not in_exception:
             if  not line.startswith("program:") and \
                 not line.startswith("kernel name:") and \
@@ -30,7 +32,7 @@ def process_output(captured_output):
                 continue
         filtered_lines.append(line.strip())
 
-    return "\n".join(filtered_lines)    
+    return "\n".join(filtered_lines) + "\ntotal exceptions: " + str(total_exceptions) + "\n"   
 
 def execute(cmd):
     popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
