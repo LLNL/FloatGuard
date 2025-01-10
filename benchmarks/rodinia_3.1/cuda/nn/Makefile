@@ -9,7 +9,7 @@ clean_base:
 	-rm -rf *.s *.o nn hurricane_gen
 
 clean: clean_base
-	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
 
 nn : nn_cuda.cu
 	$(CC) -c $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o nn_cuda.cu

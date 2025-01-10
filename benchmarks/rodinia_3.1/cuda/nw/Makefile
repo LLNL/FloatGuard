@@ -22,4 +22,4 @@ clean_base: $(SRC)
 	-rm -f *.s $(EXE) $(EXE).linkinfo result.txt
 
 clean: clean_base
-	rm -f exp_flag.txt seq.txt inject_points.txt loc.txt
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
