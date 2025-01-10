@@ -164,6 +164,21 @@ if __name__ == "__main__":
         else:
             replaced_argv.append(arg)
 
+    # if first time, store asm
+    if not disable_all and link_time and not build_lib:
+        if os.path.exists("./asm_info/"):
+            with open("asm_info/link_command.txt", "r") as f:
+                lines = f.readlines()
+            for line in lines[1:]:
+                print("read assembly file:", line.strip())
+        else:
+            os.mkdir("./asm_info")
+            with open("asm_info/link_command.txt", "w") as f:
+                f.write(" ".join(argv) + "\n")
+                for asm_file in assembly_list:
+                    f.write(asm_file + "\n")
+                    os.system("cp " + asm_file + " asm_info/")
+
     # write EXP_FLAG_TOTAL flag if the file does not exist
     if not build_lib and not os.path.exists("exp_flag.txt"):
         with open("exp_flag.txt", "w") as f:
