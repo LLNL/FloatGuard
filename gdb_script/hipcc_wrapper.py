@@ -170,7 +170,9 @@ if __name__ == "__main__":
             with open("asm_info/link_command.txt", "r") as f:
                 lines = f.readlines()
             for line in lines[1:]:
-                print("read assembly file:", line.strip())
+                asm_file = line.strip()
+                print("read assembly file:", asm_file)
+                os.system("cp asm_info/" + os.path.basename(asm_file) + " " + os.path.dirname(os.path.abspath(asm_file)))
         else:
             os.mkdir("./asm_info")
             with open("asm_info/link_command.txt", "w") as f:
