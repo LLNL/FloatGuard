@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import sys
 import time
@@ -179,15 +180,21 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             for inj in injected_points:
                 f.write(inj[0] + "," + str(inj[1]) + "\n")
 
-        # TODO: recompile the program
-        clean_command = conf['DEFAULT']['clean']
-        os.system(clean_command)        
-        if use_clang:
-            compile_command = conf['DEFAULT']['compile'].split()
-            subprocess.run(compile_command, stdout=subprocess.PIPE)            
+        # recompile the program
+        # NEW: rerun the linker only
+        if os.path.exists("asm_info/link_command.txt"):
+            with open("asm_info/link_command.txt", "r") as f:
+                linker_command = f.readline()
+                os.system(linker_command.strip())
         else:
-            llvm_pass_command = conf['DEFAULT']['llvm_pass'].split()
-            subprocess.run(llvm_pass_command, stdout=subprocess.PIPE)
+            clean_command = conf['DEFAULT']['clean']
+            os.system(clean_command)        
+            if use_clang:
+                compile_command = conf['DEFAULT']['compile'].split()
+                subprocess.run(compile_command, stdout=subprocess.PIPE)            
+            else:
+                llvm_pass_command = conf['DEFAULT']['llvm_pass'].split()
+                subprocess.run(llvm_pass_command, stdout=subprocess.PIPE)
 
     #for kernel in kernel_names:
     #    send(gdb, "b", kernel)

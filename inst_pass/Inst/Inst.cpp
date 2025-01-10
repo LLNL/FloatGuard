@@ -111,8 +111,9 @@ namespace {
         bool hasFloat = false;
         if (CallInst *callI = dyn_cast<CallInst>(&I)) {
           if (getFunctionName(callI).str() == "hipLaunchKernel") {
+            #if DEBUG_PRINT
             errs() << "call: " << getFunctionName(callI) << "\n";
-
+            #endif
             builder.SetInsertPoint(&I);
             // Declare C standard library printf 
             Type *intType = Type::getVoidTy(module->getContext());
@@ -137,8 +138,9 @@ namespace {
     IRBuilder<> builder(module->getContext());
 
     std::string func_name = demangle(F.getName().str().c_str());
-
+    #if DEBUG_PRINT
     errs() << "function name:" << func_name << " type: " << (int)F.getCallingConv() << "\n";
+    #endif
     mangledFuncNames[func_name] = F.getName().str();
 
     if (locs.size() == 0) {
@@ -155,7 +157,9 @@ namespace {
           str.erase(std::remove(str.begin(), str.end(), '\n'),
               str.end());
           locs.insert(str);
+          #if DEBUG_PRINT
           errs() << "read loc:" << str << "\n";
+          #endif
         }
       }
     }
@@ -164,7 +168,9 @@ namespace {
       processMain(F, module, builder);
     }
     else if (func_name.find("setfpexception") != std::string::npos) {
-      errs() << "found exception kernel func 1\n";
+      #if DEBUG_PRINT
+      errs() << "found exception kernel func\n";
+      #endif
       setFpExceptionFuncName = func_name;
     }
     else if (F.getCallingConv() == llvm::CallingConv::AMDGPU_KERNEL) {  
@@ -194,7 +200,9 @@ PassPluginLibraryInfo getInstPassPluginInfo() {
   const auto callback = [](PassBuilder &PB) {
     PB.registerPipelineStartEPCallback (
         [&](ModulePassManager &MPM, OptimizationLevel opt) {
+          #if DEBUG_PRINT
 		      errs() << "opt:" << opt.getSpeedupLevel() << "\n";
+          #endif
           MPM.addPass(createModuleToFunctionPassAdaptor(Inst()));
         });        
   };
