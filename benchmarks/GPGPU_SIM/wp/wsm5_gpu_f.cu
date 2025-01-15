@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #define REWORK_FALL
 #define REWORK_PART2
 // wsm5_gpu.cu gets preprocessed by spt.pl, which handles the _def_ directives before it is compiled
@@ -6,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "cublas.h"
+//#include "hipblas.h"
 #endif
 
 #define IDEBUG ((DEBUG_I)-2)

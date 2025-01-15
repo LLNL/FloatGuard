@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "cublas.h"
+#include "hipblas.h"
 #endif
 
 __device__ float4 max4 ( const float4 a , const float4 b )

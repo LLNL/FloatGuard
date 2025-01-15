@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -30,9 +31,9 @@
 #define VOLSIZEY 256 
 #define ATOMCOUNT 100
 
-#define CUERR { cudaError_t err; \
-  if ((err = cudaGetLastError()) != cudaSuccess) { \
-  printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+#define CUERR { hipError_t err; \
+  if ((err = hipGetLastError()) != hipSuccess) { \
+  printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
   return -1; }}
 
 __global__ void cenergy(int numatoms,

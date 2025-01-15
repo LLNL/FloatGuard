@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*
  * Copyright 2008 BOROUJERDI Maxime. Tous droits reserves.
  */

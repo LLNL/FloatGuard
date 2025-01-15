@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef _MUMMERGPU_KERNEL_H_
 #define _MUMMERGPU_KERNEL_H_
 
@@ -13,10 +14,10 @@
 
 
 
-texture<ulong4, 2, cudaReadModeElementType> nodetex;
-texture<ulong4, 2, cudaReadModeElementType> childrentex;
+texture<ulong4, 2, hipReadModeElementType> nodetex;
+texture<ulong4, 2, hipReadModeElementType> childrentex;
 
-texture<char, 2, cudaReadModeElementType> reftex;
+texture<char, 2, hipReadModeElementType> reftex;
 
 __device__ void set_result(const TextureAddress& cur,
 					   MatchCoord* result, 

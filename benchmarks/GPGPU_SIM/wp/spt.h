@@ -1,6 +1,6 @@
 // macros and whatnot for translator
 
-#ifdef CUDA
+#if defined(CUDA) || defined(__HIPCC__)
 
 #if 0
 Types

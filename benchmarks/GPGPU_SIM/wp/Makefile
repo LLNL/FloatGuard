@@ -8,7 +8,7 @@ CC      = gcc
 FC      = gfortran
 FCFLAGS = -fconvert=big-endian -frecord-marker=4 -ffree-form
 OPT     =  -O3
-NVCC    = $(CUDA_DIR)/bin/nvcc -DCUDA
+#NVCC    = $(CUDA_DIR)/bin/nvcc -DCUDA
 #LD      = $(FC)
 LD      = $(NVCC)
 LDOPT   = 
@@ -51,22 +51,22 @@ COMMONDIR  := $(NVIDIA_COMPUTE_SDK_LOCATION)/common
 INTERMED_FILES := *.cpp*.i *.cpp*.ii *.cu.c *.cudafe*.* *.fatbin.c *.cubin *.hash
 CUDAHOME=$(CUDA_DIR)
 
-GPGPULINK = $(LINK_FLAG) -lcudart  -lm -lz -ldl -lstdc++ $(NEWLIBDIR) $(LIB) # /usr/lib64/libstdc++.so.6 
+GPGPULINK = $(LINK_FLAG)  -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran -lm -lz -ldl -lstdc++ $(NEWLIBDIR) $(LIB) # /usr/lib64/libstdc++.so.6 
 .SUFFIXES :
 
 #all : vanilla wp compare_snaps
 all : wp 
 
 wp : module_mp_wsm5.o  wsm5_gpu_f.o wsm5_f.o libmassv.o microclock.o
-	$(FC) -o wp $(LDOPT) $^ $(LIBCUBLAS) $(GPGPULINK)
+	$(NVCC) -o wp $(LDOPT) $^ $(LIBCUBLAS) $(GPGPULINK)
 
 wsm5_f.o : wsm5.cu
 	m4 wsm5.cu | sed "s/float/$(FLOAT)/g" > wsm5_f.cu
-	$(NVCC) --generate-line-info $(NVOPT)  -c wsm5_f.cu
+	$(NVCC)  $(NVOPT)  -c wsm5_f.cu
 
 wsm5_gpu_f.o: wsm5_gpu.cu spt.h
 	m4 wsm5_gpu.cu | ./spt.pl | sed "s/float/$(FLOAT)/g" > wsm5_gpu_f.cu
-	$(NVCC) --generate-line-info  $(NVOPT)  -c wsm5_gpu_f.cu
+	$(NVCC)  $(NVOPT)  -c wsm5_gpu_f.cu
 
 libmassv.o : libmassv.F
 	$(FC) -E -C -P libmassv.F > libmassv.f90

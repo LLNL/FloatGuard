@@ -104,15 +104,15 @@ int main(int argc, char **argv){
 
   // initialise card and timer
   int deviceCount;                                                         
-  CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceCount(&deviceCount));                
+  CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceCount(&deviceCount));                
   if (deviceCount == 0) {                                                  
       fprintf(stderr, "There is no device.\n");                            
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   int dev;                                                                 
   for (dev = 0; dev < deviceCount; ++dev) {                                
-      cudaDeviceProp deviceProp;                                           
-      CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceProperties(&deviceProp, dev));   
+      hipDeviceProp_t deviceProp;                                           
+      CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceProperties(&deviceProp, dev));   
       if (deviceProp.major >= 1)                                           
           break;                                                           
   }                                                                        
@@ -121,7 +121,7 @@ int main(int argc, char **argv){
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   else                                                                     
-      CUDA_SAFE_CALL(cudaSetDevice(dev));  
+      CUDA_SAFE_CALL(hipSetDevice(dev));  
   //CUT_SAFE_CALL( cutCreateTimer(&hTimer) );
   sdkCreateTimer(&hTimer);
   // allocate memory for arrays
@@ -129,8 +129,8 @@ int main(int argc, char **argv){
   h_u1 = (float *)malloc(sizeof(float)*NX*NY*NZ);
   h_u2 = (float *)malloc(sizeof(float)*NX*NY*NZ);
   h_u3 = (float *)malloc(sizeof(float)*NX*NY*NZ);
-  CUDA_SAFE_CALL( cudaMallocPitch((void **)&d_u1, &pitch_bytes, sizeof(float)*NX, NY*NZ) );
-  CUDA_SAFE_CALL( cudaMallocPitch((void **)&d_u2, &pitch_bytes, sizeof(float)*NX, NY*NZ) );
+  CUDA_SAFE_CALL( hipMallocPitch((void **)&d_u1, &pitch_bytes, sizeof(float)*NX, NY*NZ) );
+  CUDA_SAFE_CALL( hipMallocPitch((void **)&d_u2, &pitch_bytes, sizeof(float)*NX, NY*NZ) );
 
   pitch = pitch_bytes/sizeof(float);
 
@@ -153,11 +153,11 @@ int main(int argc, char **argv){
 
   sdkStartTimer(&hTimer);
   //CUT_SAFE_CALL(cutStartTimer(hTimer));
-  CUDA_SAFE_CALL( cudaMemcpy2D(d_u1, pitch_bytes,
+  CUDA_SAFE_CALL( hipMemcpy2D(d_u1, pitch_bytes,
                                h_u1, sizeof(float)*NX,
                                sizeof(float)*NX, NY*NZ,
-                               cudaMemcpyHostToDevice) );
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+                               hipMemcpyHostToDevice) );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
   //CUT_SAFE_CALL(cutStopTimer(hTimer));
   sdkStopTimer(&hTimer);
   printf("\nCopy u1 to device: %f (ms) \n", sdkGetTimerValue(&hTimer));
@@ -178,7 +178,7 @@ int main(int argc, char **argv){
 
   // Execute GPU kernel
 
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
   //CUT_SAFE_CALL( cutResetTimer(hTimer) );
   //CUT_SAFE_CALL( cutStartTimer(hTimer) );
   sdkResetTimer(&hTimer);
@@ -188,7 +188,7 @@ int main(int argc, char **argv){
     GPU_laplace3d<<<dimGrid, dimBlock>>>(NX, NY, NZ, pitch, d_u1, d_u2);
     d_foo = d_u1; d_u1 = d_u2; d_u2 = d_foo;   // swap d_u1 and d_u3
 
-    CUDA_SAFE_CALL( cudaThreadSynchronize() );
+    CUDA_SAFE_CALL( hipDeviceSynchronize() );
     CUT_CHECK_ERROR("GPU_laplace3d execution failed\n");
   }
 
@@ -206,10 +206,10 @@ int main(int argc, char **argv){
   //CUT_SAFE_CALL( cutStartTimer(hTimer) );
   sdkStartTimer(&hTimer);
 
-  CUDA_SAFE_CALL( cudaMemcpy2D(h_u2, sizeof(float)*NX,
+  CUDA_SAFE_CALL( hipMemcpy2D(h_u2, sizeof(float)*NX,
                                d_u1, pitch_bytes,
                                sizeof(float)*NX, NY*NZ,
-                               cudaMemcpyDeviceToHost) );
+                               hipMemcpyDeviceToHost) );
   //CUT_SAFE_CALL( cutStopTimer(hTimer) );
   //printf("\nCopy u2 to host: %f (ms) \n", cutGetTimerValue(hTimer));
   //CUT_SAFE_CALL( cutResetTimer(hTimer) );
@@ -280,10 +280,10 @@ int main(int argc, char **argv){
   printf("\n rms error = %f \n",sqrt(err/ (float)(NX*NY*NZ)));
 
  // Release GPU and CPU memory
-  printf("CUDA_SAFE_CALL( cudaFree(d_u1) );\n"); fflush(stdout);
-  CUDA_SAFE_CALL( cudaFree(d_u1) );
-  printf("CUDA_SAFE_CALL( cudaFree(d_u2) );\n"); fflush(stdout);
-  CUDA_SAFE_CALL( cudaFree(d_u2) );
+  printf("CUDA_SAFE_CALL( hipFree(d_u1) );\n"); fflush(stdout);
+  CUDA_SAFE_CALL( hipFree(d_u1) );
+  printf("CUDA_SAFE_CALL( hipFree(d_u2) );\n"); fflush(stdout);
+  CUDA_SAFE_CALL( hipFree(d_u2) );
   printf("free(h_u1);\n"); fflush(stdout);
   free(h_u1);
   printf("free(h_u2);\n"); fflush(stdout);

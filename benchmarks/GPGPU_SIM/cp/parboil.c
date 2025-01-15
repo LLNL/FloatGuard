@@ -2,7 +2,7 @@
  * (c) 2007 The Board of Trustees of the University of Illinois.
  */
 
-#include <parboil.h>
+#include "parboil.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

@@ -14,7 +14,7 @@
  * consuming portions of the 'cionize' ion placement tool.
  */
 
-#include <parboil.h>
+#include "parboil.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -163,9 +163,9 @@ int main(int argc, char** argv) {
     int atomstart;
 
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
-    cudaMalloc((void**)&d_output, volmemsz);
+    hipMalloc((void**)&d_output, volmemsz);
     CUERR // check and clear any existing errors
-    cudaMemset(d_output, 0, volmemsz);
+    hipMemset(d_output, 0, volmemsz);
     CUERR // check and clear any existing errors
     pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 
@@ -179,14 +179,14 @@ int main(int argc, char** argv) {
       if (copyatomstoconstbuf(atoms + 4*atomstart, runatoms, 0*gridspacing)) 
 	return -1;
 
-      if (parameters->synchronizeGpu) cudaThreadSynchronize();
+      if (parameters->synchronizeGpu) hipDeviceSynchronize();
       pb_SwitchToTimer(&timers, pb_TimerID_GPU);
  
       // RUN the kernel...
       cenergy<<<Gsz, Bsz, 0>>>(runatoms, 0.1, d_output);
       CUERR // check and clear any existing errors
 
-      if (parameters->synchronizeGpu) cudaThreadSynchronize();
+      if (parameters->synchronizeGpu) hipDeviceSynchronize();
       pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 
       // final_iteration_count = iterations;
@@ -198,10 +198,10 @@ int main(int argc, char** argv) {
     // Copy the GPU output data back to the host and use/store it..
     energy = (float *) malloc(volmemsz);
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
-    cudaMemcpy(energy, d_output, volmemsz,  cudaMemcpyDeviceToHost);
+    hipMemcpy(energy, d_output, volmemsz,  hipMemcpyDeviceToHost);
     CUERR // check and clear any existing errors
 
-    cudaFree(d_output);
+    hipFree(d_output);
 
     pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
   }

@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "cublas.h"
+//#include "hipblas.h"
 
 #define IDEBUG 12
 #define JDEBUG 0
@@ -31,43 +32,43 @@
 #define I3(i,j,m,k,n) (I2(i,j,m)+((k)*(m)*(n)))
 
 #if 1
-# define TODEV(A,s) float *A##_d;cudaMalloc((void**)&A##_d,((s))*sizeof(float));cudaMemcpy(A##_d,A,(s)*sizeof(float),cudaMemcpyHostToDevice);
-# define FROMDEV(A,s) cudaMemcpy(A,A##_d,(s)*sizeof(float),cudaMemcpyDeviceToHost);
-# define CLNUP(A) cudaFree(A##_d)
+# define TODEV(A,s) float *A##_d;hipMalloc((void**)&A##_d,((s))*sizeof(float));hipMemcpy(A##_d,A,(s)*sizeof(float),hipMemcpyHostToDevice);
+# define FROMDEV(A,s) hipMemcpy(A,A##_d,(s)*sizeof(float),hipMemcpyDeviceToHost);
+# define CLNUP(A) hipFree(A##_d)
 #else
-# define TODEV(A,s) s1=rsl_internal_microclock_() ; float *A##_d;cudaMalloc((void**)&A##_d,((s))*sizeof(float));cudaMemcpy(A##_d,A,(s)*sizeof(float),cudaMemcpyHostToDevice); e1=rsl_internal_microclock_() ; fprintf(stderr,"TODEV %d\n",e1-s1) 
-# define FROMDEV(A,s) s1=rsl_internal_microclock_() ; cudaMemcpy(A,A##_d,(s)*sizeof(float),cudaMemcpyDeviceToHost); e1=rsl_internal_microclock_() ; fprintf(stderr,"FROMDEV %d\n",e1-s1) 
-# define CLNUP(A) s1=rsl_internal_microclock_() ; cudaFree(A##_d) ; e1=rsl_internal_microclock_() ; fprintf(stderr,"Free %d\n",e1-s1)
+# define TODEV(A,s) s1=rsl_internal_microclock_() ; float *A##_d;hipMalloc((void**)&A##_d,((s))*sizeof(float));hipMemcpy(A##_d,A,(s)*sizeof(float),hipMemcpyHostToDevice); e1=rsl_internal_microclock_() ; fprintf(stderr,"TODEV %d\n",e1-s1) 
+# define FROMDEV(A,s) s1=rsl_internal_microclock_() ; hipMemcpy(A,A##_d,(s)*sizeof(float),hipMemcpyDeviceToHost); e1=rsl_internal_microclock_() ; fprintf(stderr,"FROMDEV %d\n",e1-s1) 
+# define CLNUP(A) s1=rsl_internal_microclock_() ; hipFree(A##_d) ; e1=rsl_internal_microclock_() ; fprintf(stderr,"Free %d\n",e1-s1)
 #endif
 
 #if FLOAT_4==4
 #define TODEV2(A)s1=rsl_internal_microclock_();\
 float*A##_d;\
-cudaMalloc((void**)&A##_d,(dipe*djpe*sizeof(float)));\
+hipMalloc((void**)&A##_d,(dipe*djpe*sizeof(float)));\
 for(j=*jps-1;j<=*jpe-1;j++){\
   for(i=*ips-1;i<=*ipe-1;i++){\
     bigbuf[I2(i-*ips+1,j-*jps+1,dipe)]=\
       A[I2(i-*ims+1,j-*jms+1,(*ime-*ims+1))];\
 }}\
-cudaMemcpy(A##_d,bigbuf,(dipe*djpe)*sizeof(float),cudaMemcpyHostToDevice);\
+hipMemcpy(A##_d,bigbuf,(dipe*djpe)*sizeof(float),hipMemcpyHostToDevice);\
 e1=rsl_internal_microclock_();fprintf(stderr,"TODEV2 %d\n",e1-s1);
 
 #define TODEV3(A)s1=rsl_internal_microclock_();\
 float*A##_d;\
-cudaMalloc((void**)&A##_d,(dipe*djpe*dkpe*sizeof(float)));\
+hipMalloc((void**)&A##_d,(dipe*djpe*dkpe*sizeof(float)));\
 for(j=*jps-1;j<=*jpe-1;j++){\
  for(k=*kps-1;k<=*kpe-1;k++){\
   for(i=*ips-1;i<=*ipe-1;i++){\
    bigbuf[I3(i-*ips+1,k-*kps+1,dipe,j-*jps+1,dkpe)]=\
      A[I3(i-*ims+1,k-*kms+1,*ime-*ims+1,j-*jms+1,*kme-*kms+1)];\
 }}}\
-cudaMemcpy(A##_d,bigbuf,(dipe*djpe*dkpe)*sizeof(float),cudaMemcpyHostToDevice);\
+hipMemcpy(A##_d,bigbuf,(dipe*djpe*dkpe)*sizeof(float),hipMemcpyHostToDevice);\
 e1=rsl_internal_microclock_();fprintf(stderr,"TODEV3 %d\n",e1-s1);
 
 // for debugging only
 #define TODEV3a(A)s1=rsl_internal_microclock_();\
 float*A##_d;\
-cudaMalloc((void**)&A##_d,(dipe*djpe*dkpe*sizeof(float)));\
+hipMalloc((void**)&A##_d,(dipe*djpe*dkpe*sizeof(float)));\
 for(j=*jps-1;j<=*jpe-1;j++){\
  for(k=*kps-1;k<=*kpe-1;k++){\
   for(i=*ips-1;i<=*ipe-1;i++){\
@@ -81,12 +82,12 @@ if (i==*ips-1){\
    A[I3(i-*ims+1,k-*kms+1,*ime-*ims+1,j-*jms+1,*kme-*kms+1)]=199.;\
 }\
 }}}\
-cudaMemcpy(A##_d,bigbuf,(dipe*djpe*dkpe)*sizeof(float),cudaMemcpyHostToDevice);\
+hipMemcpy(A##_d,bigbuf,(dipe*djpe*dkpe)*sizeof(float),hipMemcpyHostToDevice);\
 e1=rsl_internal_microclock_();fprintf(stderr,"TODEV3 %d\n",e1-s1);
 
 
 #define FROMDEV2(A) s1=rsl_internal_microclock_();\
-cudaMemcpy(bigbuf,A##_d,dipe*djpe*sizeof(float),cudaMemcpyDeviceToHost);\
+hipMemcpy(bigbuf,A##_d,dipe*djpe*sizeof(float),hipMemcpyDeviceToHost);\
 for(j=*jps-1;j<=*jpe-1;j++){\
   for(i=*ips-1;i<=*ipe-1;i++){\
     A[I2(i-*ims+1,j-*jms+1,(*ime-*ims+1))]=\
@@ -95,7 +96,7 @@ for(j=*jps-1;j<=*jpe-1;j++){\
 e1=rsl_internal_microclock_() ; fprintf(stderr,"FROMDEV2 %d\n",e1-s1);
 
 #define FROMDEV3(A) s1=rsl_internal_microclock_();\
-cudaMemcpy(bigbuf,A##_d,dipe*djpe*dkpe*sizeof(float),cudaMemcpyDeviceToHost);\
+hipMemcpy(bigbuf,A##_d,dipe*djpe*dkpe*sizeof(float),hipMemcpyDeviceToHost);\
 for(j=*jps-1;j<=*jpe-1;j++){\
  for(k=*kps-1;k<=*kpe-1;k++){\
   for(i=*ips-1;i<=*ipe-1;i++){\
@@ -144,11 +145,11 @@ WSM5_GPU_INIT ( int * myproc , int * nproc, int * mydevice )
    float x, *x_d ;
    int s, e ;
    int i, dc, m ;
-   cudaError_t cerr ;
+   hipError_t cerr ;
    char hostname[64] ;
-   struct cudaDeviceProp dp ;
+   struct hipDeviceProp_t dp ;
 //  manage devices if multiheaded
-   cudaGetDeviceCount( &dc ) ;
+   hipGetDeviceCount( &dc ) ;
    if ( dc > MAXDEVICES ) 
      { fprintf(stderr, "warning: more than %d devices on node (%d)\n", MAXDEVICES, dc ) ; dc = MAXDEVICES ; }
    fprintf(stderr,"Number of devices on this node: %d\n", dc) ;
@@ -158,14 +159,14 @@ WSM5_GPU_INIT ( int * myproc , int * nproc, int * mydevice )
    i = *mydevice ;
    if ( dc > 0 ) 
    {
-      if ( cerr = cudaSetDevice( i ) ) {
+      if ( cerr = hipSetDevice( i ) ) {
          fprintf(stderr,"    non-zero cerr %d\n",cerr) ;
       }
    }
    gethostname( hostname, 64 ) ;
    fprintf(stderr,"Setting device %02d for task %03d on host %s\n",i,*myproc,hostname) ;
 
-   if ( cerr = cudaGetDeviceProperties( &dp, i ) ) {
+   if ( cerr = hipGetDeviceProperties( &dp, i ) ) {
          fprintf(stderr,"Device %02d: cerr = %d\n", cerr) ;
    } else {
          fprintf(stderr,"Device %02d: name %s\n",i,dp.name) ;
@@ -187,9 +188,9 @@ WSM5_GPU_INIT ( int * myproc , int * nproc, int * mydevice )
 
 //  do a dummy init to get things going
    s=rsl_internal_microclock_() ;
-   cudaMalloc((void **)&x_d,sizeof(float)) ;
-   cudaMemcpy(x_d,&x,sizeof(float),cudaMemcpyHostToDevice) ;
-   cudaFree(x_d) ;
+   hipMalloc((void **)&x_d,sizeof(float)) ;
+   hipMemcpy(x_d,&x,sizeof(float),hipMemcpyHostToDevice) ;
+   hipFree(x_d) ;
    e=rsl_internal_microclock_() ;
    fprintf(stderr,"wsm5_init: %d\n",e-s) ;
    return(0) ;
@@ -296,7 +297,7 @@ TODEV(retvals,(*kme-*kms+1)) ;
                    ,dips+1 , dipe , djps+1 , djpe , dkps+1 , dkpe
                    ,dips+1 , dipe , djps+1 , djpe , dkps+1 , dkpe
                          ) ;
-      cudaThreadSynchronize() ;
+      hipDeviceSynchronize() ;
       e2 = rsl_internal_microclock_() ;
       fprintf(stderr,"Call to wsm5_gpu (not including data xfer): %d microseconds\n",e2-s2) ;
 #endif
@@ -391,21 +392,21 @@ WSM5_HOST_2 (
    int d2 = (*ipe-*ips+1) * (*jpe-*jps+1) ;
   
    if ( first_wsm5_host_2 == 1 ) {
-      cudaMallocHost( (void **)&th_h   , d3*sizeof(float) ) ; //3d
-      cudaMallocHost( (void **)&pii_h  , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&q_h    , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&qc_h   , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&qi_h   , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&qr_h   , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&qs_h   , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&den_h  , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&p_h    , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&delz_h , d3*sizeof(float) ) ;
-      cudaMallocHost( (void **)&rain_h    , d2*sizeof(float) ) ; //2d
-      cudaMallocHost( (void **)&rainncv_h , d2*sizeof(float) ) ;
-      cudaMallocHost( (void **)&sr_h      , d2*sizeof(float) ) ;
-      cudaMallocHost( (void **)&snow_h    , d2*sizeof(float) ) ;
-      cudaMallocHost( (void **)&snowncv_h , d2*sizeof(float) ) ;
+      hipHostMalloc( (void **)&th_h   , d3*sizeof(float) ) ; //3d
+      hipHostMalloc( (void **)&pii_h  , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&q_h    , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&qc_h   , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&qi_h   , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&qr_h   , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&qs_h   , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&den_h  , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&p_h    , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&delz_h , d3*sizeof(float) ) ;
+      hipHostMalloc( (void **)&rain_h    , d2*sizeof(float) ) ; //2d
+      hipHostMalloc( (void **)&rainncv_h , d2*sizeof(float) ) ;
+      hipHostMalloc( (void **)&sr_h      , d2*sizeof(float) ) ;
+      hipHostMalloc( (void **)&snow_h    , d2*sizeof(float) ) ;
+      hipHostMalloc( (void **)&snowncv_h , d2*sizeof(float) ) ;
       first_wsm5_host_2 = 0 ;
    }
 

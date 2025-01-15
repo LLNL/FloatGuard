@@ -147,27 +147,27 @@ void initObjet()
    #ifdef DEBUG_RT_CUDA
    h_debug_float4 = (float4*) calloc(DEBUG_NUM, sizeof(float4));
    h_debug_uint = (uint*) calloc(DEBUG_NUM, sizeof(uint));
-   CUDA_SAFE_CALL( cudaMalloc( (void**)&d_debug_float4, DEBUG_NUM*sizeof(float4)));
-   CUDA_SAFE_CALL( cudaMalloc( (void**)&d_debug_uint, DEBUG_NUM*sizeof(uint)));
-   CUDA_SAFE_CALL( cudaMemcpy( d_debug_float4, h_debug_float4, DEBUG_NUM*sizeof(float4), cudaMemcpyHostToDevice) );
-   CUDA_SAFE_CALL( cudaMemcpy( d_debug_uint, h_debug_uint, DEBUG_NUM*sizeof(uint), cudaMemcpyHostToDevice) );
+   CUDA_SAFE_CALL( hipMalloc( (void**)&d_debug_float4, DEBUG_NUM*sizeof(float4)));
+   CUDA_SAFE_CALL( hipMalloc( (void**)&d_debug_uint, DEBUG_NUM*sizeof(uint)));
+   CUDA_SAFE_CALL( hipMemcpy( d_debug_float4, h_debug_float4, DEBUG_NUM*sizeof(float4), hipMemcpyHostToDevice) );
+   CUDA_SAFE_CALL( hipMemcpy( d_debug_uint, h_debug_uint, DEBUG_NUM*sizeof(uint), hipMemcpyHostToDevice) );
    #endif
    c_output = (uint*) calloc(width*height, sizeof(uint));
-   CUDA_SAFE_CALL( cudaMalloc( (void**)&d_output, width*height*sizeof(uint)));
+   CUDA_SAFE_CALL( hipMalloc( (void**)&d_output, width*height*sizeof(uint)));
 
-    CUDA_SAFE_CALL( cudaMalloc( (void**)&d_node, numObj*sizeof(Node) ));
-    CUDA_SAFE_CALL( cudaMemcpy( d_node, node, numObj*sizeof(Node), cudaMemcpyHostToDevice) );
-    CUDA_SAFE_CALL( cudaMemcpyToSymbol(cnode, node, numObj*sizeof(Node)) );
-    CUDA_SAFE_CALL( cudaMemcpyToSymbol(MView, (void*)&obs, 3*sizeof(float4)) );	
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&d_temp, width * height*sizeof(uint)));
-	CUDA_SAFE_CALL( cudaMemset(d_temp, 0, width * height*sizeof(uint)) );
+    CUDA_SAFE_CALL( hipMalloc( (void**)&d_node, numObj*sizeof(Node) ));
+    CUDA_SAFE_CALL( hipMemcpy( d_node, node, numObj*sizeof(Node), hipMemcpyHostToDevice) );
+    CUDA_SAFE_CALL( hipMemcpyToSymbol(HIP_SYMBOL(cnode), node, numObj*sizeof(Node)) );
+    CUDA_SAFE_CALL( hipMemcpyToSymbol(HIP_SYMBOL(MView), (void*)&obs, 3*sizeof(float4)) );	
+	CUDA_SAFE_CALL( hipMalloc( (void**)&d_temp, width * height*sizeof(uint)));
+	CUDA_SAFE_CALL( hipMemset(d_temp, 0, width * height*sizeof(uint)) );
 	
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&nObj, width * height*sizeof(uint)));
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&prof, width * height*sizeof(float)));
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&ray, width * height*sizeof(Rayon)));
+	CUDA_SAFE_CALL( hipMalloc( (void**)&nObj, width * height*sizeof(uint)));
+	CUDA_SAFE_CALL( hipMalloc( (void**)&prof, width * height*sizeof(float)));
+	CUDA_SAFE_CALL( hipMalloc( (void**)&ray, width * height*sizeof(Rayon)));
 	
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&A, width * height*sizeof(float3)));
-	CUDA_SAFE_CALL( cudaMalloc( (void**)&u, width * height*sizeof(float3)));
+	CUDA_SAFE_CALL( hipMalloc( (void**)&A, width * height*sizeof(float3)));
+	CUDA_SAFE_CALL( hipMalloc( (void**)&u, width * height*sizeof(float3)));
 }
 
 #define PRINT_PIXELS
@@ -177,7 +177,7 @@ void render()
 {
     // map PBO to get CUDA device pointer <GY: replace with memcpy?>
     //CUDA_SAFE_CALL(cudaGLMapBufferObject((void**)&d_output, pbo));
-    //CUDA_SAFE_CALL( cudaMemcpy( d_output, c_output, width*height*sizeof(uint), cudaMemcpyHostToDevice) );
+    //CUDA_SAFE_CALL( hipMemcpy( d_output, c_output, width*height*sizeof(uint), hipMemcpyHostToDevice) );
     // call CUDA kernel, writing results to PBO
     //CUT_SAFE_CALL(cutStartTimer(timer)); 
     sdkStartTimer(&timer);
@@ -186,13 +186,13 @@ void render()
     #else
     render<<<gridSize, blockSize>>>(d_output, d_node, width, height, anim, obs.getDistance());
     #endif
-    CUDA_SAFE_CALL( cudaThreadSynchronize() );
+    CUDA_SAFE_CALL( hipDeviceSynchronize() );
     //CUT_SAFE_CALL(cutStopTimer(timer));
     sdkStopTimer(&timer);
 
     #ifdef DEBUG_RT_CUDA
-    CUDA_SAFE_CALL( cudaMemcpy( h_debug_float4, d_debug_float4, DEBUG_NUM*sizeof(float4), cudaMemcpyDeviceToHost) );
-    CUDA_SAFE_CALL( cudaMemcpy( h_debug_uint, d_debug_uint, DEBUG_NUM*sizeof(uint), cudaMemcpyDeviceToHost) );
+    CUDA_SAFE_CALL( hipMemcpy( h_debug_float4, d_debug_float4, DEBUG_NUM*sizeof(float4), hipMemcpyDeviceToHost) );
+    CUDA_SAFE_CALL( hipMemcpy( h_debug_uint, d_debug_uint, DEBUG_NUM*sizeof(uint), hipMemcpyDeviceToHost) );
 
     printf("debug_float4\n");
     for (int i=0; i< DEBUG_NUM; i++) {
@@ -204,7 +204,7 @@ void render()
     }
     #endif
 
-    CUDA_SAFE_CALL( cudaMemcpy( c_output, d_output, width*height*sizeof(uint), cudaMemcpyDeviceToHost) );
+    CUDA_SAFE_CALL( hipMemcpy( c_output, d_output, width*height*sizeof(uint), hipMemcpyDeviceToHost) );
     unsigned long long int checksum = 0;
     for (int y=(height-1); y >= 0; y--){
        if (g_verbose) printf("\n");
@@ -373,15 +373,15 @@ int main( int argc, char** argv)
 {
   // initialise card and timer
   int deviceCount;                                                         
-  CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceCount(&deviceCount));                
+  CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceCount(&deviceCount));                
   if (deviceCount == 0) {                                                  
       fprintf(stderr, "There is no device.\n");                            
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   int dev;                                                                 
   for (dev = 0; dev < deviceCount; ++dev) {                                
-      cudaDeviceProp deviceProp;                                           
-      CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceProperties(&deviceProp, dev));   
+      hipDeviceProp_t deviceProp;                                           
+      CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceProperties(&deviceProp, dev));   
       if (deviceProp.major >= 1)                                           
           break;                                                           
   }                                                                        
@@ -390,7 +390,7 @@ int main( int argc, char** argv)
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   else                                                                     
-      CUDA_SAFE_CALL(cudaSetDevice(dev));  
+      CUDA_SAFE_CALL(hipSetDevice(dev));  
 	int i, commandline_error;
 	commandline_error = 0;
 	g_verbose = 0;

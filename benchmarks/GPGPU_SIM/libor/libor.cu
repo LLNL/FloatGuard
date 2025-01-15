@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 
 /* Program to compute swaption portfolio using NVIDIA CUDA */
 
@@ -275,15 +276,15 @@ int main(int argc, char **argv){
 
   // initialise card and timer
   int deviceCount;                                                         
-  CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceCount(&deviceCount));                
+  CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceCount(&deviceCount));                
   if (deviceCount == 0) {                                                  
       fprintf(stderr, "There is no device.\n");                            
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   int dev;                                                                 
   for (dev = 0; dev < deviceCount; ++dev) {                                
-      cudaDeviceProp deviceProp;                                           
-      CUDA_SAFE_CALL_NO_SYNC(cudaGetDeviceProperties(&deviceProp, dev));   
+      hipDeviceProp_t deviceProp;                                           
+      CUDA_SAFE_CALL_NO_SYNC(hipGetDeviceProperties(&deviceProp, dev));   
       if (deviceProp.major >= 1)                                           
           break;                                                           
   }                                                                        
@@ -292,7 +293,7 @@ int main(int argc, char **argv){
       exit(EXIT_FAILURE);                                                  
   }                                                                        
   else                                                                     
-      CUDA_SAFE_CALL(cudaSetDevice(dev));  
+      CUDA_SAFE_CALL(hipSetDevice(dev));  
 
   //CUT_SAFE_CALL( cutCreateTimer(&hTimer) );
   sdkCreateTimer(&hTimer);
@@ -301,24 +302,24 @@ int main(int argc, char **argv){
 
   // Copy all constants into constant memory
 
-  cudaMemcpyToSymbol(N, &h_N, sizeof(h_N));
-  cudaMemcpyToSymbol(Nmat, &h_Nmat, sizeof(h_Nmat));
-  cudaMemcpyToSymbol(Nopt, &h_Nopt, sizeof(h_Nopt));
-  cudaMemcpyToSymbol(delta, &h_delta, sizeof(h_delta));
-  cudaMemcpyToSymbol(maturities, &h_maturities, sizeof(h_maturities));
-  cudaMemcpyToSymbol(swaprates, &h_swaprates, sizeof(h_swaprates));
-  cudaMemcpyToSymbol(lambda, &h_lambda, sizeof(h_lambda));        
+  hipMemcpyToSymbol(HIP_SYMBOL(N), &h_N, sizeof(h_N));
+  hipMemcpyToSymbol(HIP_SYMBOL(Nmat), &h_Nmat, sizeof(h_Nmat));
+  hipMemcpyToSymbol(HIP_SYMBOL(Nopt), &h_Nopt, sizeof(h_Nopt));
+  hipMemcpyToSymbol(HIP_SYMBOL(delta), &h_delta, sizeof(h_delta));
+  hipMemcpyToSymbol(HIP_SYMBOL(maturities), &h_maturities, sizeof(h_maturities));
+  hipMemcpyToSymbol(HIP_SYMBOL(swaprates), &h_swaprates, sizeof(h_swaprates));
+  hipMemcpyToSymbol(HIP_SYMBOL(lambda), &h_lambda, sizeof(h_lambda));        
 
   // Allocate memory on host and device
 
   h_v      = (float *)malloc(sizeof(float)*NPATH);
-  CUDA_SAFE_CALL( cudaMalloc((void **)&d_v, sizeof(float)*NPATH) );
+  CUDA_SAFE_CALL( hipMalloc((void **)&d_v, sizeof(float)*NPATH) );
   h_Lb     = (float *)malloc(sizeof(float)*NPATH);
-  CUDA_SAFE_CALL( cudaMalloc((void **)&d_Lb, sizeof(float)*NPATH) );
+  CUDA_SAFE_CALL( hipMalloc((void **)&d_Lb, sizeof(float)*NPATH) );
 
   // Execute GPU kernel -- no Greeks
 
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
   //CUT_SAFE_CALL( cutResetTimer(hTimer) );
   //CUT_SAFE_CALL( cutStartTimer(hTimer) );
   sdkResetTimer(&hTimer);
@@ -333,12 +334,12 @@ int main(int argc, char **argv){
 
   Pathcalc_Portfolio_KernelGPU2<<<dimGrid, dimBlock>>>(d_v);
   CUT_CHECK_ERROR("Pathcalc_Portfolio_kernelGPU2() execution failed\n");
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
 
   // Read back GPU results and compute average
 
-  CUDA_SAFE_CALL( cudaMemcpy(h_v, d_v, sizeof(float)*NPATH,
-                  cudaMemcpyDeviceToHost) );
+  CUDA_SAFE_CALL( hipMemcpy(h_v, d_v, sizeof(float)*NPATH,
+                  hipMemcpyDeviceToHost) );
   //CUT_SAFE_CALL( cutStopTimer(hTimer) );
   sdkStopTimer(&hTimer);
   gpuTime = sdkGetTimerValue(&hTimer);//cutGetTimerValue(hTimer);
@@ -352,7 +353,7 @@ int main(int argc, char **argv){
 
   // Execute GPU kernel -- Greeks
 
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
   //CUT_SAFE_CALL( cutResetTimer(hTimer) );
   //CUT_SAFE_CALL( cutStartTimer(hTimer) ); 
   sdkResetTimer(&hTimer);
@@ -362,14 +363,14 @@ int main(int argc, char **argv){
 
   Pathcalc_Portfolio_KernelGPU<<<dimGrid, dimBlock>>>(d_v,d_Lb);
   CUT_CHECK_ERROR("Pathcalc_Portfolio_kernelGPU() execution failed\n");
-  CUDA_SAFE_CALL( cudaThreadSynchronize() );
+  CUDA_SAFE_CALL( hipDeviceSynchronize() );
 
   // Read back GPU results and compute average
 
-  CUDA_SAFE_CALL( cudaMemcpy(h_v, d_v, sizeof(float)*NPATH,
-                  cudaMemcpyDeviceToHost) );
-  CUDA_SAFE_CALL( cudaMemcpy(h_Lb, d_Lb, sizeof(float)*NPATH,
-                  cudaMemcpyDeviceToHost) );
+  CUDA_SAFE_CALL( hipMemcpy(h_v, d_v, sizeof(float)*NPATH,
+                  hipMemcpyDeviceToHost) );
+  CUDA_SAFE_CALL( hipMemcpy(h_Lb, d_Lb, sizeof(float)*NPATH,
+                  hipMemcpyDeviceToHost) );
   //CUT_SAFE_CALL( cutStopTimer(hTimer) );
   //gpuTime = cutGetTimerValue(hTimer);
   sdkStopTimer(&hTimer);
@@ -389,8 +390,8 @@ int main(int argc, char **argv){
 
   // Release GPU memory
 
-  CUDA_SAFE_CALL( cudaFree(d_v));
-  CUDA_SAFE_CALL( cudaFree(d_Lb));
+  CUDA_SAFE_CALL( hipFree(d_v));
+  CUDA_SAFE_CALL( hipFree(d_Lb));
        
   // Release CPU memory
 

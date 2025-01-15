@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -77,7 +78,7 @@ int copyatomstoconstbuf(float *atoms, int count, float zplane) {
     atompre[i + 3] = atoms[i + 3];
   }
 
-  cudaMemcpyToSymbol(atominfo, atompre, count * 4 * sizeof(float), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(atominfo), atompre, count * 4 * sizeof(float), 0);
   CUERR // check and clear any existing errors
 
   return 0;
