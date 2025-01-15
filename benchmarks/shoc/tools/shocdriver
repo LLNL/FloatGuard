@@ -1,0 +1,4 @@
+#!/bin/sh
+
+perl /root/GPU-FPX/benchmarks_new/shoc/shoc/libexec/driver.pl -bindir /root/GPU-FPX/benchmarks_new/shoc/shoc/bin $*
+
