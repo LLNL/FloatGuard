@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 
 //
 // workaround for CUDA 2.3a + gcc 4.2.1 problem
@@ -10,8 +11,8 @@
 // #endif // __APPLE__
 
 #include <assert.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include <iostream>
 #include "cudacommon.h"
 #include "CUDAStencil.cpp"
@@ -216,13 +217,13 @@ CUDAStencil<T>::operator()( Matrix2D<T>& mtx, unsigned int nIters )
     T* db = NULL;
 
     // allocate space on device in global memory
-    cudaMalloc( (void**)&da, matDataSize );
-    cudaMalloc( (void**)&db, matDataSize );
+    hipMalloc( (void**)&da, matDataSize );
+    hipMalloc( (void**)&db, matDataSize );
 
     // copy initial data to global memory
     T* currData = da;
     T* newData = db;
-    cudaMemcpy( currData, mtx.GetFlatData(), matDataSize, cudaMemcpyHostToDevice );
+    hipMemcpy( currData, mtx.GetFlatData(), matDataSize, hipMemcpyHostToDevice );
 
     // copy the halo from the initial buffer into the second buffer
     // Note: when doing local iterations, these values do not change
@@ -231,36 +232,36 @@ CUDAStencil<T>::operator()( Matrix2D<T>& mtx, unsigned int nIters )
     //
     // copy the sides with contiguous data
     size_t rowExtent = mtx.GetNumPaddedColumns() * sizeof(T);
-    cudaMemcpy2D( newData,      // destination
+    hipMemcpy2D( newData,      // destination
                     rowExtent,  // destination pitch
                     currData,   // source
                     rowExtent,  // source pitch
                     rowExtent,  // width of data to transfer (bytes)
                     1,          // height of data to transfer (rows)
-                    cudaMemcpyDeviceToDevice );
-    cudaMemcpy2D( newData + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),      // destination
+                    hipMemcpyDeviceToDevice );
+    hipMemcpy2D( newData + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),      // destination
                     rowExtent,  // destination pitch
                     currData + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),   // source
                     rowExtent,  // source pitch
                     rowExtent,  // width of data to transfer (bytes)
                     1,          // height of data to transfer (rows)
-                    cudaMemcpyDeviceToDevice );
+                    hipMemcpyDeviceToDevice );
 
     // copy the non-contiguous data
-    cudaMemcpy2D( newData,      // destination
+    hipMemcpy2D( newData,      // destination
                     rowExtent,  // destination pitch
                     currData,   // source
                     rowExtent,  // source pitch
                     sizeof(T),  // width of data to transfer (bytes)
                     mtx.GetNumRows(),      // height of data to transfer (rows)
-                    cudaMemcpyDeviceToDevice );
-    cudaMemcpy2D( newData + (mtx.GetNumColumns() - 1),      // destination
+                    hipMemcpyDeviceToDevice );
+    hipMemcpy2D( newData + (mtx.GetNumColumns() - 1),      // destination
                     rowExtent,  // destination pitch
                     currData + (mtx.GetNumColumns() - 1),   // source
                     rowExtent,  // source pitch
                     sizeof(T),  // width of data to transfer (bytes)
                     mtx.GetNumRows(),      // height of data to transfer (rows)
-                    cudaMemcpyDeviceToDevice );
+                    hipMemcpyDeviceToDevice );
 
     // run the CUDA kernel
     for( unsigned int iter = 0; iter < nIters; iter++ )
@@ -295,11 +296,11 @@ CUDAStencil<T>::operator()( Matrix2D<T>& mtx, unsigned int nIters )
     }
 
     // get the final result
-    cudaMemcpy( mtx.GetFlatData(), currData, matDataSize, cudaMemcpyDeviceToHost );
+    hipMemcpy( mtx.GetFlatData(), currData, matDataSize, hipMemcpyDeviceToHost );
 
     // clean up CUDA
-    cudaFree( da );
-    cudaFree( db );
+    hipFree( da );
+    hipFree( db );
 }
 
 

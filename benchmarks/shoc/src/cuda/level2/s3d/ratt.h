@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef RATT_H
 #define RATT_H
 

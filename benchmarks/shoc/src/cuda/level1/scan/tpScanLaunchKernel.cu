@@ -10,7 +10,7 @@ LaunchReduceKernel( int num_blocks,
                     int size )
 {
     // In CUDA 4.0 we will be able to remove this level of indirection
-    // if we use the cuConfigureCall and cuLaunchKernel functions.
+    // if we use the cuConfigureCall and hipModuleLaunchKernel functions.
     reduce<T,256><<<num_blocks,num_threads,smem_size>>>
         (d_idata, d_odata, size);
 }
@@ -24,7 +24,7 @@ LaunchTopScanKernel( int num_blocks,
                      int size )
 {
     // In CUDA 4.0 we will be able to remove this level of indirection
-    // if we use the cuConfigureCall and cuLaunchKernel functions.
+    // if we use the cuConfigureCall and hipModuleLaunchKernel functions.
     scan_single_block<T,256><<<num_blocks,num_threads,smem_size>>>
         (d_block_sums, size);
 }
@@ -40,7 +40,7 @@ LaunchBottomScanKernel( int num_blocks,
                         int size )
 {
     // In CUDA 4.0 we will be able to remove this level of indirection
-    // if we use the cuConfigureCall and cuLaunchKernel functions.
+    // if we use the cuConfigureCall and hipModuleLaunchKernel functions.
     bottom_scan<T, vecT, blockSize><<<num_blocks,num_threads,smem_size>>>(g_idata, g_odata,
         d_block_sums, size);
 }

@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include "cudacommon.h"
 #include <cassert>
 #include <iostream>
@@ -71,8 +71,8 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     // create input data on CPU
     uint *hKeys;
     uint *hVals;
-    cudaMallocHost((void**)&hKeys, bytes);
-    cudaMallocHost((void**)&hVals, bytes);
+    hipHostMalloc((void**)&hKeys, bytes);
+    hipHostMalloc((void**)&hVals, bytes);
 
     // Allocate space for block sums in the scan kernel.
     uint numLevelsAllocated = 0;
@@ -105,7 +105,7 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
         if (numBlocks > 1)
         {
             // Malloc device mem for block sums
-            CUDA_SAFE_CALL(cudaMalloc((void**)&(scanBlockSums[level]),
+            CUDA_SAFE_CALL(hipMalloc((void**)&(scanBlockSums[level]),
                     numBlocks*sizeof(uint)));
             level++;
         }
@@ -113,32 +113,32 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     }
     while (numScanElts > 1);
 
-    CUDA_SAFE_CALL(cudaMalloc((void**)&(scanBlockSums[level]),
+    CUDA_SAFE_CALL(hipMalloc((void**)&(scanBlockSums[level]),
             sizeof(uint)));
 
     // Allocate device mem for sorting kernels
     uint* dKeys, *dVals, *dTempKeys, *dTempVals;
 
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dKeys, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dVals, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dTempKeys, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dTempVals, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**)&dKeys, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**)&dVals, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**)&dTempKeys, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**)&dTempVals, bytes));
 
     // Each thread in the sort kernel handles 4 elements
     size_t numSortGroups = size / (4 * SORT_BLOCK_SIZE);
 
     uint* dCounters, *dCounterSums, *dBlockOffsets;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dCounters, WARP_SIZE
+    CUDA_SAFE_CALL(hipMalloc((void**)&dCounters, WARP_SIZE
             * numSortGroups * sizeof(uint)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dCounterSums, WARP_SIZE
+    CUDA_SAFE_CALL(hipMalloc((void**)&dCounterSums, WARP_SIZE
             * numSortGroups * sizeof(uint)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&dBlockOffsets, WARP_SIZE
+    CUDA_SAFE_CALL(hipMalloc((void**)&dBlockOffsets, WARP_SIZE
             * numSortGroups * sizeof(uint)));
 
     int iterations = op.getOptionInt("passes");
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    hipEvent_t start, stop;
+    hipEventCreate(&start);
+    hipEventCreate(&stop);
 
     for (int it = 0; it < iterations; it++)
     {
@@ -150,16 +150,16 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 
         // Copy inputs to GPU
         double transferTime = 0.;
-        cudaEventRecord(start, 0);
-        CUDA_SAFE_CALL(cudaMemcpy(dKeys, hKeys, bytes, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(dVals, hVals, bytes, cudaMemcpyHostToDevice));
-        cudaEventRecord(stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+        hipEventRecord(start, 0);
+        CUDA_SAFE_CALL(hipMemcpy(dKeys, hKeys, bytes, hipMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipMemcpy(dVals, hVals, bytes, hipMemcpyHostToDevice));
+        hipEventRecord(stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
         float elapsedTime;
-        cudaEventElapsedTime(&elapsedTime, start, stop);
+        hipEventElapsedTime(&elapsedTime, start, stop);
         transferTime += elapsedTime * 1.e-3; // convert to seconds
 
-        cudaEventRecord(start, 0);
+        hipEventRecord(start, 0);
         // Perform Radix Sort (4 bits at a time)
         for (int i = 0; i < SORT_BITS; i += 4)
         {
@@ -167,18 +167,18 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
                     (uint4*)dTempKeys, (uint4*)dTempVals, dCounters,
                     dCounterSums, dBlockOffsets, scanBlockSums, size);
         }
-        cudaEventRecord(stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&elapsedTime, start, stop);
+        hipEventRecord(stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&elapsedTime, start, stop);
         double kernelTime = elapsedTime * 1.e-3;
 
         // Readback data from device
-        cudaEventRecord(start, 0);
-        CUDA_SAFE_CALL(cudaMemcpy(hKeys, dKeys, bytes, cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(hVals, dVals, bytes, cudaMemcpyDeviceToHost));
-        cudaEventRecord(stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&elapsedTime, start, stop);
+        hipEventRecord(start, 0);
+        CUDA_SAFE_CALL(hipMemcpy(hKeys, dKeys, bytes, hipMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(hipMemcpy(hVals, dVals, bytes, hipMemcpyDeviceToHost));
+        hipEventRecord(stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&elapsedTime, start, stop);
         transferTime += elapsedTime * 1.e-3;
 
         // Test to make sure data was sorted properly, if not, return
@@ -199,21 +199,21 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     // Clean up
     for (int i = 0; i < numLevelsAllocated; i++)
     {
-        CUDA_SAFE_CALL(cudaFree(scanBlockSums[i]));
+        CUDA_SAFE_CALL(hipFree(scanBlockSums[i]));
     }
-    CUDA_SAFE_CALL(cudaFree(dKeys));
-    CUDA_SAFE_CALL(cudaFree(dVals));
-    CUDA_SAFE_CALL(cudaFree(dTempKeys));
-    CUDA_SAFE_CALL(cudaFree(dTempVals));
-    CUDA_SAFE_CALL(cudaFree(dCounters));
-    CUDA_SAFE_CALL(cudaFree(dCounterSums));
-    CUDA_SAFE_CALL(cudaFree(dBlockOffsets));
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(hipFree(dKeys));
+    CUDA_SAFE_CALL(hipFree(dVals));
+    CUDA_SAFE_CALL(hipFree(dTempKeys));
+    CUDA_SAFE_CALL(hipFree(dTempVals));
+    CUDA_SAFE_CALL(hipFree(dCounters));
+    CUDA_SAFE_CALL(hipFree(dCounterSums));
+    CUDA_SAFE_CALL(hipFree(dBlockOffsets));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
 
     free(scanBlockSums);
-    CUDA_SAFE_CALL(cudaFreeHost(hKeys));
-    CUDA_SAFE_CALL(cudaFreeHost(hVals));
+    CUDA_SAFE_CALL(hipHostFree(hKeys));
+    CUDA_SAFE_CALL(hipHostFree(hVals));
 }
 
 // ****************************************************************************

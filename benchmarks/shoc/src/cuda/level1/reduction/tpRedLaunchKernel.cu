@@ -10,7 +10,7 @@ RunTestLaunchKernel( int num_blocks,
                     int size )
 {
     // In CUDA 4.0 we will be able to remove this level of indirection
-    // if we use the cuConfigureCall and cuLaunchKernel functions.
+    // if we use the cuConfigureCall and hipModuleLaunchKernel functions.
     reduce<T,256><<<num_blocks,num_threads,smem_size>>>(d_idata, d_odata, size);
 }
 

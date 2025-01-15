@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 #ifndef SORT_KERNEL_H_
 #define SORT_KERNEL_H_
 
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 
 #define WARP_SIZE 32
 #define SORT_BLOCK_SIZE 128

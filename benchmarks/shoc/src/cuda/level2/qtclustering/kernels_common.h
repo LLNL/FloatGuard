@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef _KERNELS_COMMON_H_
 #define _KERNELS_COMMON_H_
 

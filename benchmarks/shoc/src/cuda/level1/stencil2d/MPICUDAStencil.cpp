@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <cassert>
 #include "MPICUDAStencil.h"
-#include "cuda_runtime.h"
+#include "hip/hip_runtime.h"
 
 
 template<class T>
@@ -98,43 +98,43 @@ MPICUDAStencil<T>::DoPreIterationWork( T* currBuf,  // in device global memory
         if( this->HaveNorthNeighbor() )
         {
             // north data is contiguous - copy directly into matrix
-            cudaMemcpy( flatData + (haloWidth * nPaddedCols),   // dest
+            hipMemcpy( flatData + (haloWidth * nPaddedCols),   // dest
                         currBuf + (haloWidth * nPaddedCols),     // src
                         nsDataSize,                 // amount to transfer
-                        cudaMemcpyDeviceToHost );   // direction
+                        hipMemcpyDeviceToHost );   // direction
         }
 
         if( this->HaveSouthNeighbor() )
         {
             // south data is contiguous - copy directly into matrix
-            cudaMemcpy( flatData + ((nRows - 2*haloWidth)*nPaddedCols),   // dest
+            hipMemcpy( flatData + ((nRows - 2*haloWidth)*nPaddedCols),   // dest
                         currBuf + ((nRows - 2*haloWidth)*nPaddedCols),    // src
                         nsDataSize,                 // amount to transfer
-                        cudaMemcpyDeviceToHost );   // direction
+                        hipMemcpyDeviceToHost );   // direction
         }
 
         if( this->HaveEastNeighbor() )
         {
             // east data is non-contiguous - but CUDA has a strided read
-            cudaMemcpy2D( flatData + (nCols - 2*haloWidth), // dest
+            hipMemcpy2D( flatData + (nCols - 2*haloWidth), // dest
                             nPaddedCols * sizeof(T),        // dest pitch
                             currBuf + (nCols - 2*haloWidth),    // src
                             nPaddedCols * sizeof(T),        // src pitch
                             haloWidth * sizeof(T),          // width of data to transfer (bytes)
                             nRows,                          // height of data to transfer (rows)
-                            cudaMemcpyDeviceToHost );       // transfer direction
+                            hipMemcpyDeviceToHost );       // transfer direction
         }
 
         if( this->HaveWestNeighbor() )
         {
             // west data is non-contiguous - but CUDA has a strided read
-            cudaMemcpy2D( flatData + haloWidth,         // dest
+            hipMemcpy2D( flatData + haloWidth,         // dest
                             nPaddedCols * sizeof(T),    // dest pitch
                             currBuf + haloWidth,        // src
                             nPaddedCols * sizeof(T),    // src pitch
                             haloWidth * sizeof(T),      // width of data to transfer (bytes)
                             nRows,          // height of data to transfer (rows)
-                            cudaMemcpyDeviceToHost );   // transfer direction
+                            hipMemcpyDeviceToHost );   // transfer direction
 
         }
 
@@ -159,43 +159,43 @@ MPICUDAStencil<T>::DoPreIterationWork( T* currBuf,  // in device global memory
         if( this->HaveNorthNeighbor() )
         {
             // north data is contiguous - copy directly from matrix
-            cudaMemcpy( currBuf,                    // dest
+            hipMemcpy( currBuf,                    // dest
                         flatData,                   // src
                         nsDataSize,                 // amount to transfer
-                        cudaMemcpyHostToDevice );   // direction
+                        hipMemcpyHostToDevice );   // direction
         }
 
         if( this->HaveSouthNeighbor() )
         {
             // south data is contiguous - copy directly from matrix
-            cudaMemcpy( currBuf + ((nRows - haloWidth)*nPaddedCols),    // dest
+            hipMemcpy( currBuf + ((nRows - haloWidth)*nPaddedCols),    // dest
                         flatData + ((nRows - haloWidth)*nPaddedCols),   // src
                         nsDataSize,                 // amount to transfer
-                        cudaMemcpyHostToDevice );   // direction
+                        hipMemcpyHostToDevice );   // direction
         }
 
         if( this->HaveEastNeighbor() )
         {
             // east data is non-contiguous - but CUDA has a strided write
-            cudaMemcpy2D( currBuf + (nCols - haloWidth),  // dest
+            hipMemcpy2D( currBuf + (nCols - haloWidth),  // dest
                             nPaddedCols * sizeof(T),              // dest pitch
                             flatData + (nCols - haloWidth), // src
                             nPaddedCols * sizeof(T),              // src pitch
                             haloWidth * sizeof(T),          // width of data to transfer (bytes)
                             nRows,                          // height of data to transfer (rows)
-                            cudaMemcpyHostToDevice );       // transfer direction
+                            hipMemcpyHostToDevice );       // transfer direction
         }
 
         if( this->HaveWestNeighbor() )
         {
             // west data is non-contiguous - but CUDA has a strided write
-            cudaMemcpy2D( currBuf,                      // dest
+            hipMemcpy2D( currBuf,                      // dest
                             nPaddedCols * sizeof(T),          // dest pitch
                             flatData,                   // src
                             nPaddedCols * sizeof(T),          // src pitch
                             haloWidth * sizeof(T),      // width of data to transfer (bytes)
                             nRows,          // height of data to transfer (rows)
-                            cudaMemcpyHostToDevice );   // transfer direction
+                            hipMemcpyHostToDevice );   // transfer direction
 
         }
 
@@ -205,36 +205,36 @@ MPICUDAStencil<T>::DoPreIterationWork( T* currBuf,  // in device global memory
         // note we only need to update the 1-wide halo here, even if
         // our real halo width is larger
         size_t rowExtent = mtx.GetNumPaddedColumns() * sizeof(T);
-        cudaMemcpy2D( altBuf,      // destination
+        hipMemcpy2D( altBuf,      // destination
                         rowExtent,  // destination pitch
                         currBuf,   // source
                         rowExtent,  // source pitch
                         rowExtent,  // width of data to transfer (bytes)
                         1,          // height of data to transfer (rows)
-                        cudaMemcpyDeviceToDevice );
-        cudaMemcpy2D( altBuf + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),      // destination
+                        hipMemcpyDeviceToDevice );
+        hipMemcpy2D( altBuf + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),      // destination
                         rowExtent,  // destination pitch
                         currBuf + (mtx.GetNumRows() - 1) * mtx.GetNumPaddedColumns(),   // source
                         rowExtent,  // source pitch
                         rowExtent,  // width of data to transfer (bytes)
                         1,          // height of data to transfer (rows)
-                        cudaMemcpyDeviceToDevice );
+                        hipMemcpyDeviceToDevice );
 
         // copy the non-contiguous data
-        cudaMemcpy2D( altBuf,      // destination
+        hipMemcpy2D( altBuf,      // destination
                         rowExtent,  // destination pitch
                         currBuf,   // source
                         rowExtent,  // source pitch
                         sizeof(T),  // width of data to transfer (bytes)
                         mtx.GetNumRows(),      // height of data to transfer (rows)
-                        cudaMemcpyDeviceToDevice );
-        cudaMemcpy2D( altBuf + (mtx.GetNumColumns() - 1),      // destination
+                        hipMemcpyDeviceToDevice );
+        hipMemcpy2D( altBuf + (mtx.GetNumColumns() - 1),      // destination
                         rowExtent,  // destination pitch
                         currBuf + (mtx.GetNumColumns() - 1),   // source
                         rowExtent,  // source pitch
                         sizeof(T),  // width of data to transfer (bytes)
                         mtx.GetNumRows(),      // height of data to transfer (rows)
-                        cudaMemcpyDeviceToDevice );
+                        hipMemcpyDeviceToDevice );
     }
 }
 

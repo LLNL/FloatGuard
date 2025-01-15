@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 // Written by Vasily Volkov.
 // Copyright (c) 2008-2009, The Regents of the University of California.
 // All rights reserved.

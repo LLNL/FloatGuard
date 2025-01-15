@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef GETRATES_BASE_H
 #define GETRATES_BASE_H
 

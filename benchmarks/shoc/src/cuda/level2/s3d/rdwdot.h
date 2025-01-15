@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef RDWDOT_H
 #define RDWDOT_H
 

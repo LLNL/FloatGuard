@@ -71,15 +71,15 @@ void RunBenchmark(ResultDatabase &resultDB,
     float *hostMem2;
     if (pinned)
     {
-        cudaMallocHost((void**)&hostMem1, sizeof(float)*numMaxFloats);
-        cudaError_t err1 = cudaGetLastError();
-        cudaMallocHost((void**)&hostMem2, sizeof(float)*numMaxFloats);
-        cudaError_t err2 = cudaGetLastError();
-	while (err1 != cudaSuccess || err2 != cudaSuccess)
+        hipHostMalloc((void**)&hostMem1, sizeof(float)*numMaxFloats);
+        hipError_t err1 = hipGetLastError();
+        hipHostMalloc((void**)&hostMem2, sizeof(float)*numMaxFloats);
+        hipError_t err2 = hipGetLastError();
+	while (err1 != hipSuccess || err2 != hipSuccess)
 	{
 	    // free the first buffer if only the second failed
-	    if (err1 == cudaSuccess)
-	        cudaFreeHost((void*)hostMem1);
+	    if (err1 == hipSuccess)
+	        hipHostFree((void*)hostMem1);
 
 	    // drop the size and try again
 	    if (verbose) cout << " - dropping size allocating pinned mem\n";
@@ -90,10 +90,10 @@ void RunBenchmark(ResultDatabase &resultDB,
 		return;
 	    }
 	    numMaxFloats = 1024 * (sizes[nSizes-1]) / 4;
-            cudaMallocHost((void**)&hostMem1, sizeof(float)*numMaxFloats);
-            err1 = cudaGetLastError();
-            cudaMallocHost((void**)&hostMem2, sizeof(float)*numMaxFloats);
-            err2 = cudaGetLastError();
+            hipHostMalloc((void**)&hostMem1, sizeof(float)*numMaxFloats);
+            err1 = hipGetLastError();
+            hipHostMalloc((void**)&hostMem2, sizeof(float)*numMaxFloats);
+            err2 = hipGetLastError();
 	}
    }
     else
@@ -105,8 +105,8 @@ void RunBenchmark(ResultDatabase &resultDB,
         hostMem1[i] = i % 77;
 
     float *device;
-    cudaMalloc((void**)&device, sizeof(float) * numMaxFloats);
-    while (cudaGetLastError() != cudaSuccess)
+    hipMalloc((void**)&device, sizeof(float) * numMaxFloats);
+    while (hipGetLastError() != hipSuccess)
     {
 	// drop the size and try again
 	if (verbose) cout << " - dropping size allocating device mem\n";
@@ -117,17 +117,17 @@ void RunBenchmark(ResultDatabase &resultDB,
 	    return;
 	}
 	numMaxFloats = 1024 * (sizes[nSizes-1]) / 4;
-        cudaMalloc((void**)&device, sizeof(float) * numMaxFloats);
+        hipMalloc((void**)&device, sizeof(float) * numMaxFloats);
     }
 
-    cudaMemcpy(device, hostMem1,
-               numMaxFloats*sizeof(float), cudaMemcpyHostToDevice);
-    cudaThreadSynchronize();
+    hipMemcpy(device, hostMem1,
+               numMaxFloats*sizeof(float), hipMemcpyHostToDevice);
+    hipDeviceSynchronize();
     const unsigned int passes = op.getOptionInt("passes");
 
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    hipEvent_t start, stop;
+    hipEventCreate(&start);
+    hipEventCreate(&stop);
     CHECK_CUDA_ERROR();
 
     // Three passes, forward and backward both
@@ -146,13 +146,13 @@ void RunBenchmark(ResultDatabase &resultDB,
 
             int nbytes = sizes[sizeIndex] * 1024;
 
-            cudaEventRecord(start, 0);
-            cudaMemcpy(hostMem2, device,
-                       nbytes, cudaMemcpyDeviceToHost);
-            cudaEventRecord(stop, 0);
-            cudaEventSynchronize(stop);
+            hipEventRecord(start, 0);
+            hipMemcpy(hostMem2, device,
+                       nbytes, hipMemcpyDeviceToHost);
+            hipEventRecord(stop, 0);
+            hipEventSynchronize(stop);
             float t = 0;
-            cudaEventElapsedTime(&t, start, stop);
+            hipEventElapsedTime(&t, start, stop);
             //times[sizeIndex] = t;
 
             // Convert to GB/sec
@@ -174,20 +174,20 @@ void RunBenchmark(ResultDatabase &resultDB,
     }
 
     // Cleanup
-    cudaFree((void*)device);
+    hipFree((void*)device);
     CHECK_CUDA_ERROR();
     if (pinned)
     {
-        cudaFreeHost((void*)hostMem1);
+        hipHostFree((void*)hostMem1);
         CHECK_CUDA_ERROR();
-        cudaFreeHost((void*)hostMem2);
+        hipHostFree((void*)hostMem2);
         CHECK_CUDA_ERROR();
     }
     else
     {
         delete[] hostMem1;
         delete[] hostMem2;
-        cudaEventDestroy(start);
-	    cudaEventDestroy(stop);
+        hipEventDestroy(start);
+	    hipEventDestroy(stop);
     }
 }

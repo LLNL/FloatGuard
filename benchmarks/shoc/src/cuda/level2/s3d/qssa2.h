@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef QSSA2_H
 #define QSSA2_H
 

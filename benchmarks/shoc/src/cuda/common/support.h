@@ -1,8 +1,8 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #include "cudacommon.h"
 #include <iostream>
 using std::cin;
@@ -24,23 +24,23 @@ inline unsigned long
 findAvailBytes(void)
 {
     int device;
-    cudaGetDevice(&device);
+    hipGetDevice(&device);
     CHECK_CUDA_ERROR();
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
     CHECK_CUDA_ERROR();
     unsigned long total_bytes = deviceProp.totalGlobalMem;
     unsigned long avail_bytes = total_bytes;
     void* work;
 
     while (1) {
-        cudaMalloc(&work, avail_bytes);
-        if (cudaGetLastError() == cudaSuccess) {
+        hipMalloc(&work, avail_bytes);
+        if (hipGetLastError() == hipSuccess) {
             break;
         }
         avail_bytes -= (1024*1024);
     }
-    cudaFree(work);
+    hipFree(work);
     CHECK_CUDA_ERROR();
 
     return avail_bytes;

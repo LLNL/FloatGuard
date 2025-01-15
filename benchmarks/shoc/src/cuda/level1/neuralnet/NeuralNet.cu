@@ -1,9 +1,10 @@
+#include "hip/hip_runtime.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include "cudacommon.h"
 #include <cassert>
 #include <iostream>
@@ -11,7 +12,7 @@
 #include "OptionParser.h"
 #include "ResultDatabase.h"
 
-#include <cublas.h>
+#include <hipblas.h>
 
 #define TRAINING_SIZE 5000
 #define TEST_SIZE 1000
@@ -166,9 +167,9 @@ __global__ void kernelFeedForward2(float *zs,float *biases,int b_off,float *acti
   activations[threadIdx.x]=1.0/(1.0+expf(-zs[threadIdx.x]));
 }
 
-void cublasCheck(cublasStatus_t status, const char *fn_name)
+void cublasCheck(hipblasStatus_t status, const char *fn_name)
 {
-  if(status != CUBLAS_STATUS_SUCCESS)
+  if(status != HIPBLAS_STATUS_SUCCESS)
   {
     fprintf(stderr,"cublas error returned %d from %s. exiting...\n", status, fn_name);
     exit(EXIT_FAILURE);
@@ -211,7 +212,7 @@ void backprop(float y) {
     // Feed forward using all training sets in mini batch
     for (k=1; k<NUM_LAYERS; k++) {
 
-      cublasSgemm('t','n',SIZES[k],MINI_BATCH_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TRAINING[k-1],SIZES[k-1],0,D__ZS_2D_TRAINING[k-1],SIZES[k]);
+      hipblasSgemm('t','n',SIZES[k],MINI_BATCH_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TRAINING[k-1],SIZES[k-1],0,D__ZS_2D_TRAINING[k-1],SIZES[k]);
 
       {dim3 dimBlock(SIZES[k],1,1); dim3 dimGrid(MINI_BATCH_SIZE,1,1);
       kernelFeedForward3<<< dimGrid, dimBlock >>>(D__ZS_2D_TRAINING[k-1],D__BIASES,b_offset,D__ACTIVATIONS_2D_TRAINING[k]);}
@@ -272,15 +273,15 @@ void update_mini_batch(int *mini_batch_y) {
 
     backprop(mini_batch_y[i]);
 
-    cublasSaxpy(TBS,1,D__DELTA_NABLA_B,1,D__NABLA_B,1);
+    hipblasSaxpy(TBS,1,D__DELTA_NABLA_B,1,D__NABLA_B,1);
 
-    cublasSaxpy(TWS,1,D__DELTA_NABLA_W,1,D__NABLA_W,1);
+    hipblasSaxpy(TWS,1,D__DELTA_NABLA_W,1,D__NABLA_W,1);
 
   }
 
-  cublasSaxpy(TBS,-(ETA/MINI_BATCH_SIZE),D__NABLA_B,1,D__BIASES,1);
+  hipblasSaxpy(TBS,-(ETA/MINI_BATCH_SIZE),D__NABLA_B,1,D__BIASES,1);
 
-  cublasSaxpy(TWS,-(ETA/MINI_BATCH_SIZE),D__NABLA_W,1,D__WEIGHTS,1);
+  hipblasSaxpy(TWS,-(ETA/MINI_BATCH_SIZE),D__NABLA_W,1,D__WEIGHTS,1);
 
 }
 
@@ -390,18 +391,18 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     TRAINING_DATA_X[i] = (float*)malloc(IMAGE_SIZE*sizeof(float));
   }
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__TRAINING_DATA_X_2D,TRAINING_SIZE*IMAGE_SIZE*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__TRAINING_DATA_X_2D,TRAINING_SIZE*IMAGE_SIZE*sizeof(float)));
 
   TEST_DATA_X=(float**)malloc(10000*sizeof(float*));
   for (i=0; i<TEST_SIZE; i++) {
     TEST_DATA_X[i] = (float*)malloc(IMAGE_SIZE*sizeof(float));
   }
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__TEST_DATA_X_2D,TEST_SIZE*IMAGE_SIZE*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__TEST_DATA_X_2D,TEST_SIZE*IMAGE_SIZE*sizeof(float)));
 
   D__TEST_DATA_X=(float**)malloc(TEST_SIZE*sizeof(float*));
   for (i=0; i<TEST_SIZE; i++) {
-    CUDA_SAFE_CALL(cudaMalloc((void**)&D__TEST_DATA_X[i],IMAGE_SIZE*sizeof(float)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&D__TEST_DATA_X[i],IMAGE_SIZE*sizeof(float)));
   }
 
   TRAINING_DATA_Y = (int*)malloc(TRAINING_SIZE*sizeof(int));
@@ -417,21 +418,21 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
   D__ZS_2D_TEST =(float**)malloc((NUM_LAYERS-1)*sizeof(float*));
 
   for (i=1; i<NUM_LAYERS; i++) {
-    CUDA_SAFE_CALL(cudaMalloc((void**)&D__ACTIVATIONS_2D_TRAINING[i],SIZES[i]*MINI_BATCH_SIZE*sizeof(float)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&D__ACTIVATIONS_2D_TRAINING[i],SIZES[i]*MINI_BATCH_SIZE*sizeof(float)));
   }
 
   for (i=1; i<NUM_LAYERS; i++) {
-    CUDA_SAFE_CALL(cudaMalloc((void**)&D__ACTIVATIONS_2D_TEST[i],SIZES[i]*TEST_SIZE*sizeof(float)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&D__ACTIVATIONS_2D_TEST[i],SIZES[i]*TEST_SIZE*sizeof(float)));
   }
 
   ACTIVATIONS_2D=(float*)malloc(SIZES[NUM_LAYERS-1]*TEST_SIZE*sizeof(float));
 
   for (i=1; i<NUM_LAYERS; i++) {
-    CUDA_SAFE_CALL(cudaMalloc((void**)&D__ZS_2D_TRAINING[i-1],SIZES[i]*MINI_BATCH_SIZE*sizeof(float)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&D__ZS_2D_TRAINING[i-1],SIZES[i]*MINI_BATCH_SIZE*sizeof(float)));
   }
 
   for (i=1; i<NUM_LAYERS; i++) {
-    CUDA_SAFE_CALL(cudaMalloc((void**)&D__ZS_2D_TEST[i-1],SIZES[i]*TEST_SIZE*sizeof(float)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&D__ZS_2D_TEST[i-1],SIZES[i]*TEST_SIZE*sizeof(float)));
   }
 
   for (i=1; i<NUM_LAYERS; i++) {
@@ -469,8 +470,8 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
   BIASES =(float*)malloc(TBS*sizeof(float));
   WEIGHTS=(float*)malloc(TWS*sizeof(float));
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__BIASES,TBS*sizeof(float)));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__WEIGHTS,TWS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__BIASES,TBS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__WEIGHTS,TWS*sizeof(float)));
 
   srand(7777);
 
@@ -487,11 +488,11 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
   DELTA_NABLA_B =(float*)malloc(TBS*sizeof(float));
   DELTA_NABLA_W=(float*)malloc(TWS*sizeof(float));
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__NABLA_B,TBS*sizeof(float)));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__NABLA_W,TWS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__NABLA_B,TBS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__NABLA_W,TWS*sizeof(float)));
 
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__DELTA_NABLA_B,TBS*sizeof(float)));
-  CUDA_SAFE_CALL(cudaMalloc((void**)&D__DELTA_NABLA_W,TWS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__DELTA_NABLA_B,TBS*sizeof(float)));
+  CUDA_SAFE_CALL(hipMalloc((void**)&D__DELTA_NABLA_W,TWS*sizeof(float)));
 
   cublasInit();
 
@@ -502,40 +503,40 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 
   iterations=2;
 
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
+  hipEvent_t start, stop;
+  hipEventCreate(&start);
+  hipEventCreate(&stop);
 
   for (int it = 0; it < iterations; it++) {
 
     // Copy inputs to GPU
     double transferTime = 0.;
-    cudaEventRecord(start, 0);
+    hipEventRecord(start, 0);
 
     for (i=0; i<TRAINING_SIZE; i++) {
-      CUDA_SAFE_CALL(cudaMemcpy(&D__TRAINING_DATA_X_2D[i*IMAGE_SIZE], TRAINING_DATA_X[i], sizeof(float)*IMAGE_SIZE, cudaMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(&D__TRAINING_DATA_X_2D[i*IMAGE_SIZE], TRAINING_DATA_X[i], sizeof(float)*IMAGE_SIZE, hipMemcpyHostToDevice));
     }
 
     for (i=0; i<TEST_SIZE; i++) {
-      CUDA_SAFE_CALL(cudaMemcpy(&D__TEST_DATA_X_2D[i*IMAGE_SIZE], TEST_DATA_X[i], sizeof(float)*IMAGE_SIZE, cudaMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(&D__TEST_DATA_X_2D[i*IMAGE_SIZE], TEST_DATA_X[i], sizeof(float)*IMAGE_SIZE, hipMemcpyHostToDevice));
     }
 
     for (i=0; i<TEST_SIZE; i++) {
-      CUDA_SAFE_CALL(cudaMemcpy(D__TEST_DATA_X[i], TEST_DATA_X[i], sizeof(float)*IMAGE_SIZE, cudaMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(D__TEST_DATA_X[i], TEST_DATA_X[i], sizeof(float)*IMAGE_SIZE, hipMemcpyHostToDevice));
     }
 
-    CUDA_SAFE_CALL(cudaMemcpy(TEST_DATA_X[1], &D__TEST_DATA_X_2D[1*IMAGE_SIZE], sizeof(float)*IMAGE_SIZE, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(hipMemcpy(TEST_DATA_X[1], &D__TEST_DATA_X_2D[1*IMAGE_SIZE], sizeof(float)*IMAGE_SIZE, hipMemcpyDeviceToHost));
 
-    CUDA_SAFE_CALL(cudaMemcpy(D__BIASES, BIASES, sizeof(float)*TBS, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(D__WEIGHTS, WEIGHTS, sizeof(float)*TWS, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(D__BIASES, BIASES, sizeof(float)*TBS, hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(D__WEIGHTS, WEIGHTS, sizeof(float)*TWS, hipMemcpyHostToDevice));
 
-    cudaEventRecord(stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+    hipEventRecord(stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(stop));
     float elapsedTime;
-    cudaEventElapsedTime(&elapsedTime, start, stop);
+    hipEventElapsedTime(&elapsedTime, start, stop);
     transferTime += elapsedTime * 1.e-3; // convert to seconds
 
-    cudaEventRecord(start, 0);
+    hipEventRecord(start, 0);
 
     // loop over epochs
     for (i=0; i<num_epochs; i++) {
@@ -565,7 +566,7 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 
         for (k=1; k<NUM_LAYERS; k++) {
 
-          cublasSgemm('t','n',SIZES[k],TEST_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TEST[k-1],SIZES[k-1],0,D__ZS_2D_TEST[k-1],SIZES[k]);
+          hipblasSgemm('t','n',SIZES[k],TEST_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TEST[k-1],SIZES[k-1],0,D__ZS_2D_TEST[k-1],SIZES[k]);
 
           {dim3 dimBlock(SIZES[k],1,1); dim3 dimGrid(TEST_SIZE,1,1);
           kernelFeedForward3<<< dimGrid, dimBlock >>>(D__ZS_2D_TEST[k-1],D__BIASES,b_offset,D__ACTIVATIONS_2D_TEST[k]);}
@@ -574,7 +575,7 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
           w_offset+=SIZES[k-1]*SIZES[k];
         }
 
-        CUDA_SAFE_CALL(cudaMemcpy(ACTIVATIONS_2D, D__ACTIVATIONS_2D_TEST[NUM_LAYERS-1], sizeof(float)*SIZES[NUM_LAYERS-1]*TEST_SIZE, cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(hipMemcpy(ACTIVATIONS_2D, D__ACTIVATIONS_2D_TEST[NUM_LAYERS-1], sizeof(float)*SIZES[NUM_LAYERS-1]*TEST_SIZE, hipMemcpyDeviceToHost));
 
         for (j=0; j<TEST_SIZE; j++) {
 
@@ -601,9 +602,9 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 
     }
 
-    cudaEventRecord(stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-    cudaEventElapsedTime(&elapsedTime, start, stop);
+    hipEventRecord(stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(stop));
+    hipEventElapsedTime(&elapsedTime, start, stop);
     double kernelTime = elapsedTime * 1.e-3;
 
     // Test to make sure neural net reached threshold; if not, return
@@ -642,27 +643,27 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     free(ZS);
 
     for (i=1; i<NUM_LAYERS; i++) {
-      CUDA_SAFE_CALL(cudaFree(D__ACTIVATIONS_2D_TRAINING[i]));
+      CUDA_SAFE_CALL(hipFree(D__ACTIVATIONS_2D_TRAINING[i]));
     }
     free(D__ACTIVATIONS_2D_TRAINING);
 
     for (i=1; i<(NUM_LAYERS-1); i++) {
-      CUDA_SAFE_CALL(cudaFree(D__ZS_2D_TEST[i]));
+      CUDA_SAFE_CALL(hipFree(D__ZS_2D_TEST[i]));
     }
     free(D__ZS_2D_TEST);
 
     for (i=1; i<(NUM_LAYERS-1); i++) {
-      CUDA_SAFE_CALL(cudaFree(D__ZS_2D_TRAINING[i]));
+      CUDA_SAFE_CALL(hipFree(D__ZS_2D_TRAINING[i]));
     }
     free(D__ZS_2D_TRAINING);
 
     for (i=0; i<TEST_SIZE; i++) {
-      CUDA_SAFE_CALL(cudaFree(D__TEST_DATA_X[i]));
+      CUDA_SAFE_CALL(hipFree(D__TEST_DATA_X[i]));
     }
     free(D__TEST_DATA_X);
 
     for (i=1; i<NUM_LAYERS; i++) {
-      CUDA_SAFE_CALL(cudaFree(D__ACTIVATIONS_2D_TEST[i]));
+      CUDA_SAFE_CALL(hipFree(D__ACTIVATIONS_2D_TEST[i]));
     }
     free(D__ACTIVATIONS_2D_TEST);
 
@@ -676,17 +677,17 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     }
     free(TEST_DATA_X);
 
-    CUDA_SAFE_CALL(cudaFree(D__BIASES));
-    CUDA_SAFE_CALL(cudaFree(D__WEIGHTS));
-    CUDA_SAFE_CALL(cudaFree(D__NABLA_B));
-    CUDA_SAFE_CALL(cudaFree(D__NABLA_W));
-    CUDA_SAFE_CALL(cudaFree(D__DELTA_NABLA_B));
-    CUDA_SAFE_CALL(cudaFree(D__DELTA_NABLA_W));
-    CUDA_SAFE_CALL(cudaFree(D__TRAINING_DATA_X_2D));
-    CUDA_SAFE_CALL(cudaFree(D__TEST_DATA_X_2D));
+    CUDA_SAFE_CALL(hipFree(D__BIASES));
+    CUDA_SAFE_CALL(hipFree(D__WEIGHTS));
+    CUDA_SAFE_CALL(hipFree(D__NABLA_B));
+    CUDA_SAFE_CALL(hipFree(D__NABLA_W));
+    CUDA_SAFE_CALL(hipFree(D__DELTA_NABLA_B));
+    CUDA_SAFE_CALL(hipFree(D__DELTA_NABLA_W));
+    CUDA_SAFE_CALL(hipFree(D__TRAINING_DATA_X_2D));
+    CUDA_SAFE_CALL(hipFree(D__TEST_DATA_X_2D));
 
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
 
 }
 

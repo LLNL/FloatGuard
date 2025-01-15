@@ -1,8 +1,8 @@
 #ifndef MD_H__
 #define MD_H__
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 
 // Problem Constants
 static const float  cutsq        = 16.0f; // Square of cutoff distance

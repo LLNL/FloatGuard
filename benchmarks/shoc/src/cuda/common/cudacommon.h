@@ -10,8 +10,8 @@
 #endif // __APPLE__
 
 #include <stdio.h>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 
 // On Windows, if we call exit, our console may disappear,
 // taking the error message with it, so prompt before exiting.
@@ -28,21 +28,21 @@
 
 #define CHECK_CUDA_ERROR()                                                    \
 {                                                                             \
-    cudaError_t err = cudaGetLastError();                                     \
-    if (err != cudaSuccess)                                                   \
+    hipError_t err = hipGetLastError();                                     \
+    if (err != hipSuccess)                                                   \
     {                                                                         \
         printf("error=%d name=%s at "                                         \
-               "ln: %d\n  ",err,cudaGetErrorString(err),__LINE__);            \
+               "ln: %d\n  ",err,hipGetErrorString(err),__LINE__);            \
         safe_exit(-1);                                                        \
     }                                                                         \
 }
 
 // Alternative macro to catch CUDA errors
 #define CUDA_SAFE_CALL( call) do {                                            \
-   cudaError err = call;                                                      \
-   if (cudaSuccess != err) {                                                  \
+   hipError_t err = call;                                                      \
+   if (hipSuccess != err) {                                                  \
        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",          \
-           __FILE__, __LINE__, cudaGetErrorString( err) );                    \
+           __FILE__, __LINE__, hipGetErrorString( err) );                    \
        safe_exit(EXIT_FAILURE);                                               \
    }                                                                          \
 } while (0)

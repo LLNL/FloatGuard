@@ -1,10 +1,10 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "cuda.h"
+#include "hip/hip_runtime.h"
 #include "cudacommon.h"
-#include "cublas.h"
-#include "cuda_runtime.h"
+#include "hipblas.h"
+#include "hip/hip_runtime.h"
 #include "Timer.h"
 #include "ResultDatabase.h"
 #include "OptionParser.h"
@@ -122,9 +122,9 @@ void
 RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 {
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
 
     cout << "Running single precision test" << endl;
     RunTest<float>("SGEMM", resultDB, op);
@@ -170,38 +170,38 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
 
     // Allocate GPU memory
     T *dA, *dB, *dC;
-    CUDA_SAFE_CALL(cudaMalloc(&dA, N * N * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMalloc(&dB, N * N * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMalloc(&dC, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc(&dA, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc(&dB, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc(&dC, N * N * sizeof(T)));
 
     // Initialize host memory
     T *A;
     T *B;
     T *C;
 
-    CUDA_SAFE_CALL(cudaMallocHost(&A, N * N * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMallocHost(&B, N * N * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMallocHost(&C, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipHostMalloc(&A, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipHostMalloc(&B, N * N * sizeof(T)));
+    CUDA_SAFE_CALL(hipHostMalloc(&C, N * N * sizeof(T)));
 
     fill<T>(A, N * N, 31);
     fill<T>(B, N * N, 31);
     fill<T>(C, N * N, 31);
 
     // Copy input to GPU
-    cudaEvent_t start, stop;
-    CUDA_SAFE_CALL(cudaEventCreate(&start));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop));
-    CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-    CUDA_SAFE_CALL(cudaMemcpy(dA, A, N * N * sizeof(T),
-            cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(dB, B, N * N * sizeof(T),
-            cudaMemcpyHostToDevice));
-    cudaEventRecord(stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+    hipEvent_t start, stop;
+    CUDA_SAFE_CALL(hipEventCreate(&start));
+    CUDA_SAFE_CALL(hipEventCreate(&stop));
+    CUDA_SAFE_CALL(hipEventRecord(start, 0));
+    CUDA_SAFE_CALL(hipMemcpy(dA, A, N * N * sizeof(T),
+            hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(dB, B, N * N * sizeof(T),
+            hipMemcpyHostToDevice));
+    hipEventRecord(stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
     // Get elapsed time
     float transferTime = 0.0f;
-    cudaEventElapsedTime(&transferTime, start, stop);
+    hipEventElapsedTime(&transferTime, start, stop);
     transferTime *= 1.e-3;
 
     bool first = true;
@@ -228,32 +228,32 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
             // Warm Up
             devGEMM<T>(transa, transb, m, n, k, alpha, dA, lda, dB, ldb, beta,
                     dC, ldc);
-            CUDA_SAFE_CALL(cudaThreadSynchronize());
+            CUDA_SAFE_CALL(hipDeviceSynchronize());
 
             double cublas_time;
             float kernel_time = 0.0f;
             for (int ii = 0; ii < 4; ++ii)
             {
-                CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+                CUDA_SAFE_CALL(hipEventRecord(start, 0));
                 devGEMM<T>(transa, transb, m, n, k, alpha, dA, lda, dB, ldb,
                         beta, dC, ldc);
                 CHECK_CUDA_ERROR();
-                cudaEventRecord(stop, 0);
-                CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+                hipEventRecord(stop, 0);
+                CUDA_SAFE_CALL(hipEventSynchronize(stop));
                 float currTime = 0.0f;
-                cudaEventElapsedTime(&currTime, start, stop);
+                hipEventElapsedTime(&currTime, start, stop);
                 kernel_time += currTime;
             }
             cublas_time = (kernel_time / 4.0) * 1.e-3;
 
-            CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-            CUDA_SAFE_CALL(cudaMemcpy(C, dC, N * N * sizeof(float),
-                    cudaMemcpyDeviceToHost));
-            cudaEventRecord(stop, 0);
-            CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+            CUDA_SAFE_CALL(hipEventRecord(start, 0));
+            CUDA_SAFE_CALL(hipMemcpy(C, dC, N * N * sizeof(float),
+                    hipMemcpyDeviceToHost));
+            hipEventRecord(stop, 0);
+            CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
             float oTransferTime = 0.0f;
-            cudaEventElapsedTime(&oTransferTime, start, stop);
+            hipEventElapsedTime(&oTransferTime, start, stop);
             oTransferTime *= 1.e-3;
 
             // Add the PCIe transfer time to total transfer time only once
@@ -276,14 +276,14 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     }
 
     // Clean Up
-    CUDA_SAFE_CALL(cudaFree(dA));
-    CUDA_SAFE_CALL(cudaFree(dB));
-    CUDA_SAFE_CALL(cudaFree(dC));
-    CUDA_SAFE_CALL(cudaFreeHost(A));
-    CUDA_SAFE_CALL(cudaFreeHost(B));
-    CUDA_SAFE_CALL(cudaFreeHost(C));
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(hipFree(dA));
+    CUDA_SAFE_CALL(hipFree(dB));
+    CUDA_SAFE_CALL(hipFree(dC));
+    CUDA_SAFE_CALL(hipHostFree(A));
+    CUDA_SAFE_CALL(hipHostFree(B));
+    CUDA_SAFE_CALL(hipHostFree(C));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
     cublasShutdown();
 }
 
@@ -291,12 +291,12 @@ template<>
 inline void devGEMM<double>(char transa, char transb, int m, int n, int k,
         double alpha, const double *A, int lda, const double *B, int ldb,
         double beta, double *C, int ldc) {
-    cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+    hipblasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 }
 
 template <>
 inline void devGEMM<float>(char transa, char transb, int m, int n, int k,
         float alpha, const float *A, int lda, const float *B, int ldb,
         float beta, float *C, int ldc) {
-    cublasSgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+    hipblasSgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 }

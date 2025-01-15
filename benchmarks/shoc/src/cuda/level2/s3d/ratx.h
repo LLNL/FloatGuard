@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef RATX_H
 #define RATX_H
 #include "S3D.h"

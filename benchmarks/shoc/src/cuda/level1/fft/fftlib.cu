@@ -1,9 +1,10 @@
+#include "hip/hip_runtime.h"
 #include "cudacommon.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
-#include <cuda_runtime.h>
-#include <cufft.h>
+#include <hip/hip_runtime.h>
+#include <hipfft/hipfft.h>
 #include "OptionParser.h"
 #include "fftlib.h"
 
@@ -14,7 +15,7 @@ bool do_dp;
 //#define USE_CUFFT
 
 #ifdef USE_CUFFT
-cufftHandle plan;
+hipfftHandle plan;
 // Arrange blocks into 2D grid that fits into the GPU (for powers of two only)
 inline dim3 grid2D(const int nblocks)
 {
@@ -26,32 +27,32 @@ inline dim3 grid2D(const int nblocks)
     return dim3(nblocks/slices, slices);
 }
 
-void printCUFFTError(const cufftResult res)
+void printCUFFTError(const hipfftResult res)
 {
-    if (res != CUFFT_SUCCESS)
+    if (res != HIPFFT_SUCCESS)
     {
         cout << "CUFFT Error: ";
-        if (res == CUFFT_INVALID_PLAN)
+        if (res == HIPFFT_INVALID_PLAN)
         {
             cout << "Invalid Plan.\n";
         }
-        else if (res == CUFFT_INVALID_VALUE)
+        else if (res == HIPFFT_INVALID_VALUE)
         {
             cout << "Invalid Value.\n";
         }
-        else if (res == CUFFT_INTERNAL_ERROR)
+        else if (res == HIPFFT_INTERNAL_ERROR)
         {
             cout << "Internal Error .\n";
         }
-        else if (res == CUFFT_EXEC_FAILED)
+        else if (res == HIPFFT_EXEC_FAILED)
         {
             cout << "FFT Exec failed.\n";
         }
-        else if (res == CUFFT_SETUP_FAILED)
+        else if (res == HIPFFT_SETUP_FAILED)
         {
             cout << "Setup failed.\n";
         }
-        else if (res == CUFFT_UNALIGNED_DATA)
+        else if (res == HIPFFT_UNALIGNED_DATA)
         {
             cout << "Unaligned data (unused).\n";
         }
@@ -120,21 +121,21 @@ init(OptionParser& op, const bool _do_dp, const int n_ffts)
         {
             fftDevice = 0;
         }
-        cudaSetDevice(fftDevice);
-        cudaGetDevice(&fftDevice);
+        hipSetDevice(fftDevice);
+        hipGetDevice(&fftDevice);
     }
 #ifdef USE_CUFFT
-    cufftResult res;
+    hipfftResult res;
     cerr << "init: initing plan, n_ffts=" << n_ffts << endl;
     if (do_dp)
     {
-        res = cufftPlan1d(&plan, 512, CUFFT_Z2Z, n_ffts);
+        res = hipfftPlan1d(&plan, 512, HIPFFT_Z2Z, n_ffts);
     }
     else
     {
-        res = cufftPlan1d(&plan, 512, CUFFT_C2C, n_ffts);
+        res = hipfftPlan1d(&plan, 512, HIPFFT_C2C, n_ffts);
     }
-    if (res != CUFFT_SUCCESS)
+    if (res != HIPFFT_SUCCESS)
     {
         cout << "CUFFT Error in plan.\n";
     }
@@ -151,19 +152,19 @@ void
 forward(void* work, const int n_ffts)
 {
 #ifdef USE_CUFFT
-    cufftResult res;
+    hipfftResult res;
     if (do_dp)
     {
-        res = cufftExecZ2Z(plan, (cufftDoubleComplex*)work,
-            (cufftDoubleComplex*)work, CUFFT_FORWARD);
+        res = hipfftExecZ2Z(plan, (hipfftDoubleComplex*)work,
+            (hipfftDoubleComplex*)work, HIPFFT_FORWARD);
     }
     else
     {
-        res = cufftExecC2C(plan, (cufftComplex*)work,
-            (cufftComplex*)work, CUFFT_FORWARD);
+        res = hipfftExecC2C(plan, (hipfftComplex*)work,
+            (hipfftComplex*)work, HIPFFT_FORWARD);
     }
     printCUFFTError(res);
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     CHECK_CUDA_ERROR();
 #else
     if (do_dp)
@@ -174,7 +175,7 @@ forward(void* work, const int n_ffts)
     {
         FFT512_device<float2, float><<<grid2D(n_ffts), 64>>>((float2*)work);
     }
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     CHECK_CUDA_ERROR();
 #endif
 }
@@ -184,16 +185,16 @@ void
 inverse(void* work, const int n_ffts)
 {
 #ifdef USE_CUFFT
-    cufftResult res;
+    hipfftResult res;
     if (do_dp)
     {
-        res = cufftExecZ2Z(plan, (cufftDoubleComplex*)work,
-            (cufftDoubleComplex*)work, CUFFT_INVERSE);
+        res = hipfftExecZ2Z(plan, (hipfftDoubleComplex*)work,
+            (hipfftDoubleComplex*)work, HIPFFT_BACKWARD);
     }
     else
     {
-        res = cufftExecC2C(plan, (cufftComplex*)work,
-            (cufftComplex*)work, CUFFT_INVERSE);
+        res = hipfftExecC2C(plan, (hipfftComplex*)work,
+            (hipfftComplex*)work, HIPFFT_BACKWARD);
     }
     printCUFFTError(res);
 
@@ -206,7 +207,7 @@ inverse(void* work, const int n_ffts)
     {
         norm512_device<float2><<<grid2D(n_ffts), 64>>>((float2*)work);
     }
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     CHECK_CUDA_ERROR();
 #else
     if (do_dp)
@@ -217,7 +218,7 @@ inverse(void* work, const int n_ffts)
     {
         IFFT512_device<float2, float><<<grid2D(n_ffts), 64>>>((float2*)work);
     }
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     CHECK_CUDA_ERROR();
     // normalization built in to inverse...
 #endif
@@ -239,7 +240,7 @@ check(void* work, void* check, const int half_n_ffts, const int half_n_cmplx)
         chk512_device<float2><<<grid2D(half_n_ffts), 64>>>(
             (float2*)work, half_n_cmplx, (char*)check);
     }
-    cudaMemcpy(&result, check, 1, cudaMemcpyDeviceToHost);
+    hipMemcpy(&result, check, 1, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
 
     return result;
@@ -249,21 +250,21 @@ check(void* work, void* check, const int half_n_ffts, const int half_n_cmplx)
 void
 allocHostBuffer(void** bufferp, unsigned long bytes)
 {
-    cudaMallocHost(bufferp, bytes);
+    hipHostMalloc(bufferp, bytes);
     CHECK_CUDA_ERROR();
 }
 
 void
 allocDeviceBuffer(void** bufferp, unsigned long bytes)
 {
-    cudaMalloc(bufferp, bytes);
+    hipMalloc(bufferp, bytes);
     CHECK_CUDA_ERROR();
 }
 
 void
 freeHostBuffer(void* buffer)
 {
-    cudaFreeHost(buffer);
+    hipHostFree(buffer);
     CHECK_CUDA_ERROR();
 }
 
@@ -271,14 +272,14 @@ freeHostBuffer(void* buffer)
 void
 freeDeviceBuffer(void* buffer)
 {
-    cudaFree(buffer);
+    hipFree(buffer);
 }
 
 void
 copyToDevice(void* to_device, const void* from_host,
     const unsigned long bytes)
 {
-    cudaMemcpy(to_device, from_host, bytes, cudaMemcpyHostToDevice);
+    hipMemcpy(to_device, from_host, bytes, hipMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
 }
 
@@ -286,7 +287,7 @@ void
 copyFromDevice(void* to_host, const void* from_device,
     const unsigned long bytes)
 {
-    cudaMemcpy(to_host, from_device, bytes, cudaMemcpyDeviceToHost);
+    hipMemcpy(to_host, from_device, bytes, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
 }
 

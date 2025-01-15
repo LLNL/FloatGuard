@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,8 +9,8 @@
 #include <sstream>
 
 #include "Timer.h"
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include "OptionParser.h"
 #include "ResultDatabase.h"
 #include "cudacommon.h"
@@ -461,29 +462,29 @@ double FindKeyWithDigest_GPU(const unsigned int searchDigest[4],
     // allocate output buffers
     //
     int *d_foundIndex;
-    cudaMalloc((void**)&d_foundIndex, sizeof(int) * 1);
+    hipMalloc((void**)&d_foundIndex, sizeof(int) * 1);
     CHECK_CUDA_ERROR();
     unsigned char *d_foundKey;
-    cudaMalloc((void**)&d_foundKey, 8);
+    hipMalloc((void**)&d_foundKey, 8);
     CHECK_CUDA_ERROR();
     unsigned int *d_foundDigest;
-    cudaMalloc((void**)&d_foundDigest, sizeof(unsigned int) * 4);
+    hipMalloc((void**)&d_foundDigest, sizeof(unsigned int) * 4);
     CHECK_CUDA_ERROR();
 
     //
     // initialize output buffers to show no found result
     //
-    cudaMemcpy(d_foundIndex, foundIndex, sizeof(int) * 1, cudaMemcpyHostToDevice);
+    hipMemcpy(d_foundIndex, foundIndex, sizeof(int) * 1, hipMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
-    cudaMemcpy(d_foundKey, foundKey, 8, cudaMemcpyHostToDevice);
+    hipMemcpy(d_foundKey, foundKey, 8, hipMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
-    cudaMemcpy(d_foundDigest, foundDigest, sizeof(unsigned int) * 4, cudaMemcpyHostToDevice);
+    hipMemcpy(d_foundDigest, foundDigest, sizeof(unsigned int) * 4, hipMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
 
 
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    hipEvent_t start, stop;
+    hipEventCreate(&start);
+    hipEventCreate(&stop);
     CHECK_CUDA_ERROR();
 
     //
@@ -495,7 +496,7 @@ double FindKeyWithDigest_GPU(const unsigned int searchDigest[4],
     //
     // run the kernel
     //
-    cudaEventRecord(start, 0);
+    hipEventRecord(start, 0);
 
     FindKeyWithDigest_Kernel<<<nblocks, nthreads>>>(searchDigest[0],
                                                     searchDigest[1],
@@ -508,34 +509,34 @@ double FindKeyWithDigest_GPU(const unsigned int searchDigest[4],
                                                     d_foundDigest);
     CHECK_CUDA_ERROR();
 
-    cudaEventRecord(stop, 0);
-    cudaEventSynchronize(stop);
+    hipEventRecord(stop, 0);
+    hipEventSynchronize(stop);
     CHECK_CUDA_ERROR();
 
     //
     // get the timing/rate info
     //
     float millisec = 0;
-    cudaEventElapsedTime(&millisec, start, stop);
+    hipEventElapsedTime(&millisec, start, stop);
 
     //
     // read the (presumably) found key
     //
-    cudaMemcpy(foundIndex, d_foundIndex, sizeof(int) * 1, cudaMemcpyDeviceToHost);
+    hipMemcpy(foundIndex, d_foundIndex, sizeof(int) * 1, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
-    cudaMemcpy(foundKey, d_foundKey, 8, cudaMemcpyDeviceToHost);
+    hipMemcpy(foundKey, d_foundKey, 8, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
-    cudaMemcpy(foundDigest, d_foundDigest, sizeof(unsigned int) * 4, cudaMemcpyDeviceToHost);
+    hipMemcpy(foundDigest, d_foundDigest, sizeof(unsigned int) * 4, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
 
     //
     // free device memory
     //
-    cudaFree(d_foundIndex);
+    hipFree(d_foundIndex);
     CHECK_CUDA_ERROR();
-    cudaFree(d_foundKey);
+    hipFree(d_foundKey);
     CHECK_CUDA_ERROR();
-    cudaFree(d_foundDigest);
+    hipFree(d_foundDigest);
     CHECK_CUDA_ERROR();
 
     //

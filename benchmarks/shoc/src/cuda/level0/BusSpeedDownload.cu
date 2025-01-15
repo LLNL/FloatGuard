@@ -70,8 +70,8 @@ void RunBenchmark(ResultDatabase &resultDB,
     float *hostMem = NULL;
     if (pinned)
     {
-        cudaMallocHost((void**)&hostMem, sizeof(float) * numMaxFloats);
-        while (cudaGetLastError() != cudaSuccess)
+        hipHostMalloc((void**)&hostMem, sizeof(float) * numMaxFloats);
+        while (hipGetLastError() != hipSuccess)
         {
  	    // drop the size and try again
 	    if (verbose) cout << " - dropping size allocating pinned mem\n";
@@ -82,7 +82,7 @@ void RunBenchmark(ResultDatabase &resultDB,
 		return;
 	    }
 	    numMaxFloats = 1024 * (sizes[nSizes-1]) / 4;
-            cudaMallocHost((void**)&hostMem, sizeof(float) * numMaxFloats);
+            hipHostMalloc((void**)&hostMem, sizeof(float) * numMaxFloats);
         }
     }
     else
@@ -96,8 +96,8 @@ void RunBenchmark(ResultDatabase &resultDB,
     }
 
     float *device;
-    cudaMalloc((void**)&device, sizeof(float) * numMaxFloats);
-    while (cudaGetLastError() != cudaSuccess)
+    hipMalloc((void**)&device, sizeof(float) * numMaxFloats);
+    while (hipGetLastError() != hipSuccess)
     {
 	// drop the size and try again
 	if (verbose) cout << " - dropping size allocating device mem\n";
@@ -108,14 +108,14 @@ void RunBenchmark(ResultDatabase &resultDB,
 	    return;
 	}
 	numMaxFloats = 1024 * (sizes[nSizes-1]) / 4;
-        cudaMalloc((void**)&device, sizeof(float) * numMaxFloats);
+        hipMalloc((void**)&device, sizeof(float) * numMaxFloats);
     }
 
     const unsigned int passes = op.getOptionInt("passes");
 
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    hipEvent_t start, stop;
+    hipEventCreate(&start);
+    hipEventCreate(&stop);
     CHECK_CUDA_ERROR();
 
     // Three passes, forward and backward both
@@ -134,12 +134,12 @@ void RunBenchmark(ResultDatabase &resultDB,
 
             int nbytes = sizes[sizeIndex] * 1024;
 
-            cudaEventRecord(start, 0);
-            cudaMemcpy(device, hostMem, nbytes, cudaMemcpyHostToDevice);
-            cudaEventRecord(stop, 0);
-            cudaEventSynchronize(stop);
+            hipEventRecord(start, 0);
+            hipMemcpy(device, hostMem, nbytes, hipMemcpyHostToDevice);
+            hipEventRecord(stop, 0);
+            hipEventSynchronize(stop);
             float t = 0;
-            cudaEventElapsedTime(&t, start, stop);
+            hipEventElapsedTime(&t, start, stop);
             //times[sizeIndex] = t;
 
             // Convert to GB/sec
@@ -161,17 +161,17 @@ void RunBenchmark(ResultDatabase &resultDB,
     }
 
     // Cleanup
-    cudaFree((void*)device);
+    hipFree((void*)device);
     CHECK_CUDA_ERROR();
     if (pinned)
     {
-        cudaFreeHost((void*)hostMem);
+        hipHostFree((void*)hostMem);
         CHECK_CUDA_ERROR();
     }
     else
     {
         delete[] hostMem;
     }
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
+    hipEventDestroy(start);
+    hipEventDestroy(stop);
 }

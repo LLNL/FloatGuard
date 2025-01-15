@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 #include "cudacommon.h"
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 
 // Programming Model-Specific Memory Management
 // Some programming models for heterogeneous systems provide
@@ -18,7 +18,7 @@ pmsAllocHostBuffer( size_t nItems )
 {
     T* ret = NULL;
     size_t nBytes = nItems * sizeof(T);
-    CUDA_SAFE_CALL(cudaMallocHost(&ret, nBytes));
+    CUDA_SAFE_CALL(hipHostMalloc(&ret, nBytes));
     return ret;
 }
 
@@ -27,7 +27,7 @@ template<class T>
 void
 pmsFreeHostBuffer( T* buf )
 {
-    CUDA_SAFE_CALL(cudaFreeHost(buf));
+    CUDA_SAFE_CALL(hipHostFree(buf));
 }
 
 #endif // PMSMEMMGMT_H

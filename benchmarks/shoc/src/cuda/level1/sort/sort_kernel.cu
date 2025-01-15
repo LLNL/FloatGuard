@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 // This kernel code based on CUDPP.  Please see the notice in
 // LICENSE_CUDPP.txt.
 
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include "sort_kernel.h"
 
 __device__ uint scanLSB(const uint val, uint* s_data)

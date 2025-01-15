@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 #ifndef BFS_KERNEL_H_
 #define BFS_KERNEL_H_
 
-#include<cuda.h>
+#include<hip/hip_runtime.h>
 
 #define get_queue_index(tid) ((tid%NUM_P_PER_MP))
 #define get_queue_offset(tid) ((tid%NUM_P_PER_MP)*W_Q_SIZE)

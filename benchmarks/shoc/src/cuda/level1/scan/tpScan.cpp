@@ -1,6 +1,6 @@
 #include "cudacommon.h"
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,9 +69,9 @@ RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
 
     // Always do the single precision test
     RunTest<float,float4>("TPScan-SP", resultDB, op);
@@ -131,16 +131,16 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
 
     // Allocate Host Memory
     T* h_idata, *h_block_sums, *h_odata;
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &h_idata, bytes));
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &h_block_sums,
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &h_idata, bytes));
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &h_block_sums,
                 num_blocks * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &h_odata, bytes));
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &h_odata, bytes));
 
     // Allocate Device Data
     T* d_idata, *d_block_sums, *d_odata;
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_idata, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_block_sums, num_blocks * sizeof(T)));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_odata, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_idata, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_block_sums, num_blocks * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_odata, bytes));
 
     // Initialize host memory
     if (mpi_rank == 0)
@@ -156,7 +156,7 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
 
     int passes = op.getOptionInt("passes");
     int iters = op.getOptionInt("iterations");
-    cudaEvent_t start, stop;
+    hipEvent_t start, stop;
 
     for (int k = 0; k < passes; k++)
     {
@@ -164,22 +164,22 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
         double kernel_time=0., pcie_time=0., mpi_time=0.;
 
         // Copy data to GPU
-        CUDA_SAFE_CALL(cudaEventCreate(&start));
-        CUDA_SAFE_CALL(cudaEventCreate(&stop));
+        CUDA_SAFE_CALL(hipEventCreate(&start));
+        CUDA_SAFE_CALL(hipEventCreate(&stop));
         MPI_Barrier(MPI_COMM_WORLD); // Sync processes at beginning of pass
 
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int m = 0; m < iters; m++)
         {
-            CUDA_SAFE_CALL(cudaMemcpy(d_idata, h_idata, bytes,
-                           cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(hipMemcpy(d_idata, h_idata, bytes,
+                           hipMemcpyHostToDevice));
         }
-        cudaEventRecord(stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+        hipEventRecord(stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
         // Get elapsed time of input PCIe transfer
         float temp;
-        cudaEventElapsedTime(&temp, start, stop);
+        hipEventElapsedTime(&temp, start, stop);
         pcie_time += (temp / (double)iters)* 1.e-3;
 
         // This code uses a reduce-then-scan strategy.
@@ -188,7 +188,7 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
         // 2. Global exclusive scan of the reduction values
         // 3. Local inclusive scan, seeded with the node's result
         //    from the global exclusive scan
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
             LaunchReduceKernel<T>( num_blocks,
@@ -198,23 +198,23 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
                                    d_block_sums,
                                    size );
         }
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&temp, start, stop);
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&temp, start, stop);
         kernel_time += (temp / (float)iters) * 1.e-3;
 
         // Next step is to copy the reduced blocks back to the host,
         // sum them, and perform the MPI exlcusive (top level) scan.
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int m = 0; m < iters; m++)
         {
             // Copy back to host
-            CUDA_SAFE_CALL(cudaMemcpy(h_block_sums, d_block_sums,
-                num_blocks*sizeof(T), cudaMemcpyDeviceToHost));
+            CUDA_SAFE_CALL(hipMemcpy(h_block_sums, d_block_sums,
+                num_blocks*sizeof(T), hipMemcpyDeviceToHost));
         }
-        cudaEventRecord(stop, 0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&temp, start, stop);
+        hipEventRecord(stop, 0);
+        hipEventSynchronize(stop);
+        hipEventElapsedTime(&temp, start, stop);
         pcie_time += (temp / (double)iters) * 1.e-3;
 
         int globscan_th = Timer::Start();
@@ -238,17 +238,17 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
         // Next step is to perform the local top level (i.e. across blocks) scan,
         // but seed it with the "scanned", the sum of elems on all lower ranks.
         h_block_sums[0] += scanned;
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-        CUDA_SAFE_CALL(cudaMemcpy(d_block_sums, h_block_sums,
-                sizeof(T), cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&temp, start, stop);
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipMemcpy(d_block_sums, h_block_sums,
+                sizeof(T), hipMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&temp, start, stop);
         pcie_time +=  temp * 1.e-3;
 
         // Device block sums has been seeded, perform the top level scan,
         // then the bottom level scan.
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         LaunchTopScanKernel( 1,
                              num_threads,
                              smem_size*2,
@@ -262,18 +262,18 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
                                               d_odata,
                                               d_block_sums,
                                               size );
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&temp, start, stop);
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&temp, start, stop);
         kernel_time += temp * 1.e-3;
 
         // Lightweight correctness check -- won't apply
         // if data is not initialized to i%2 above
         if (mpi_rank == mpi_size-1)
         {
-            CUDA_SAFE_CALL(cudaMemcpy(&(h_odata[size-1]),
+            CUDA_SAFE_CALL(hipMemcpy(&(h_odata[size-1]),
                                       &(d_odata[size-1]),
-                sizeof(T), cudaMemcpyDeviceToHost));
+                sizeof(T), hipMemcpyDeviceToHost));
 
             if (h_odata[size-1] != (mpi_size * size) / 2)
             {
@@ -300,15 +300,15 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     }
 
     // Clean up host data
-    CUDA_SAFE_CALL(cudaFreeHost(h_idata));
-    CUDA_SAFE_CALL(cudaFreeHost(h_odata));
-    CUDA_SAFE_CALL(cudaFreeHost(h_block_sums));
+    CUDA_SAFE_CALL(hipHostFree(h_idata));
+    CUDA_SAFE_CALL(hipHostFree(h_odata));
+    CUDA_SAFE_CALL(hipHostFree(h_block_sums));
     // Clean up device data
-    CUDA_SAFE_CALL(cudaFree(d_idata));
-    CUDA_SAFE_CALL(cudaFree(d_odata));
-    CUDA_SAFE_CALL(cudaFree(d_block_sums));
+    CUDA_SAFE_CALL(hipFree(d_idata));
+    CUDA_SAFE_CALL(hipFree(d_odata));
+    CUDA_SAFE_CALL(hipFree(d_block_sums));
     // Clean up events used in timing
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
 }
 

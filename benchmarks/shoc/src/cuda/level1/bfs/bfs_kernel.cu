@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #include "bfs_kernel.h"
 
 // BFS depends on atomic instructions.  NVCC will generate errors if

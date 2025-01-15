@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 #include <cassert>
 #include <cfloat>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <hip/hip_runtime_api.h>
+#include <hip/hip_runtime.h>
 #include <iostream>
 #include <list>
 #include <math.h>
@@ -37,8 +38,8 @@ inline int populateNeighborList(std::list<T>& currDist,
         int* neighborList);
 
 // Texture caches for position info
-texture<float4, 1, cudaReadModeElementType> posTexture;
-texture<int4, 1, cudaReadModeElementType> posTexture_dp;
+texture<float4, 1, hipReadModeElementType> posTexture;
+texture<int4, 1, hipReadModeElementType> posTexture_dp;
 
 struct texReader_sp {
    __device__ __forceinline__ float4 operator()(int idx) const
@@ -276,9 +277,9 @@ RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 {
     // Test to see if this device supports double precision
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
 
     cout << "Running single precision test" << endl;
     runTest<float, float3, float4, true, texReader_sp>("MD-LJ", resultDB, op);
@@ -318,20 +319,20 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
     forceVecType* force;
     int* neighborList;
 
-    CUDA_SAFE_CALL(cudaMallocHost((void**)&position, nAtom*sizeof(posVecType)));
-    CUDA_SAFE_CALL(cudaMallocHost((void**)&force,    nAtom*sizeof(forceVecType)));
-    CUDA_SAFE_CALL(cudaMallocHost((void**)&neighborList,
+    CUDA_SAFE_CALL(hipHostMalloc((void**)&position, nAtom*sizeof(posVecType)));
+    CUDA_SAFE_CALL(hipHostMalloc((void**)&force,    nAtom*sizeof(forceVecType)));
+    CUDA_SAFE_CALL(hipHostMalloc((void**)&neighborList,
             nAtom*maxNeighbors*sizeof(int)));
 
     // Allocate device memory for position and force
     forceVecType* d_force;
     posVecType*   d_position;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_force,    nAtom*sizeof(forceVecType)));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_position, nAtom*sizeof(posVecType)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&d_force,    nAtom*sizeof(forceVecType)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&d_position, nAtom*sizeof(posVecType)));
 
     // Allocate device memory for neighbor list
     int* d_neighborList;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_neighborList,
+    CUDA_SAFE_CALL(hipMalloc((void**)&d_neighborList,
                               nAtom*maxNeighbors*sizeof(int)));
 
     cout << "Initializing test problem (this can take several "
@@ -352,16 +353,16 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
     if (useTexture)
     {
         // Set up 1D texture to cache position info
-        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float4>();
+        hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float4>();
 
         // Bind a 1D texture to the position array
-        CUDA_SAFE_CALL(cudaBindTexture(0, posTexture, d_position, channelDesc,
+        CUDA_SAFE_CALL(hipBindTexture(0, posTexture, d_position, channelDesc,
                 nAtom*sizeof(float4)));
 
-        cudaChannelFormatDesc channelDesc2 = cudaCreateChannelDesc<int4>();
+        hipChannelFormatDesc channelDesc2 = hipCreateChannelDesc<int4>();
 
         // Bind a 1D texture to the position array
-        CUDA_SAFE_CALL(cudaBindTexture(0, posTexture_dp, d_position,
+        CUDA_SAFE_CALL(hipBindTexture(0, posTexture_dp, d_position,
                 channelDesc2, nAtom*sizeof(double4)));
     }
 
@@ -376,23 +377,23 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
             100.0 * ((double)totalPairs / (nAtom*maxNeighbors)) << " %" << endl;
 
     // Time the transfer of input data to the GPU
-    cudaEvent_t inputTransfer_start, inputTransfer_stop;
-    cudaEventCreate(&inputTransfer_start);
-    cudaEventCreate(&inputTransfer_stop);
+    hipEvent_t inputTransfer_start, inputTransfer_stop;
+    hipEventCreate(&inputTransfer_start);
+    hipEventCreate(&inputTransfer_stop);
 
-    cudaEventRecord(inputTransfer_start, 0);
+    hipEventRecord(inputTransfer_start, 0);
     // Copy neighbor list data to GPU
-    CUDA_SAFE_CALL(cudaMemcpy(d_neighborList, neighborList,
-            maxNeighbors*nAtom*sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_neighborList, neighborList,
+            maxNeighbors*nAtom*sizeof(int), hipMemcpyHostToDevice));
     // Copy position to GPU
-    CUDA_SAFE_CALL(cudaMemcpy(d_position, position, nAtom*sizeof(posVecType),
-            cudaMemcpyHostToDevice));
-    cudaEventRecord(inputTransfer_stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(inputTransfer_stop));
+    CUDA_SAFE_CALL(hipMemcpy(d_position, position, nAtom*sizeof(posVecType),
+            hipMemcpyHostToDevice));
+    hipEventRecord(inputTransfer_stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(inputTransfer_stop));
 
     // Get elapsed time
     float inputTransfer_time = 0.0f;
-    cudaEventElapsedTime(&inputTransfer_time, inputTransfer_start,
+    hipEventElapsedTime(&inputTransfer_time, inputTransfer_start,
             inputTransfer_stop);
     inputTransfer_time *= 1.e-3;
 
@@ -404,22 +405,22 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
                     <<<gridSize, blockSize>>>
                     (d_force, d_position, maxNeighbors, d_neighborList,
                      cutsq, lj1, lj2, nAtom);
-    CUDA_SAFE_CALL(cudaThreadSynchronize());
+    CUDA_SAFE_CALL(hipDeviceSynchronize());
 
     // Copy back forces
-    cudaEvent_t outputTransfer_start, outputTransfer_stop;
-    cudaEventCreate(&outputTransfer_start);
-    cudaEventCreate(&outputTransfer_stop);
+    hipEvent_t outputTransfer_start, outputTransfer_stop;
+    hipEventCreate(&outputTransfer_start);
+    hipEventCreate(&outputTransfer_stop);
 
-    cudaEventRecord(outputTransfer_start, 0);
-    CUDA_SAFE_CALL(cudaMemcpy(force, d_force, nAtom*sizeof(forceVecType),
-            cudaMemcpyDeviceToHost));
-    cudaEventRecord(outputTransfer_stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(outputTransfer_stop));
+    hipEventRecord(outputTransfer_start, 0);
+    CUDA_SAFE_CALL(hipMemcpy(force, d_force, nAtom*sizeof(forceVecType),
+            hipMemcpyDeviceToHost));
+    hipEventRecord(outputTransfer_stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(outputTransfer_stop));
 
     // Get elapsed time
     float outputTransfer_time = 0.0f;
-    cudaEventElapsedTime(&outputTransfer_time, outputTransfer_start,
+    hipEventElapsedTime(&outputTransfer_time, outputTransfer_start,
             outputTransfer_stop);
     outputTransfer_time *= 1.e-3;
 
@@ -432,15 +433,15 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
     }
 
     // Begin performance tests
-    cudaEvent_t kernel_start, kernel_stop;
-    cudaEventCreate(&kernel_start);
-    cudaEventCreate(&kernel_stop);
+    hipEvent_t kernel_start, kernel_stop;
+    hipEventCreate(&kernel_start);
+    hipEventCreate(&kernel_stop);
     int passes = op.getOptionInt("passes");
     int iter   = op.getOptionInt("iterations");
     for (int i = 0; i < passes; i++)
     {
         // Other kernels will be involved in true parallel versions
-        cudaEventRecord(kernel_start, 0);
+        hipEventRecord(kernel_start, 0);
         for (int j = 0; j < iter; j++)
         {
             compute_lj_force<T, forceVecType, posVecType, useTexture, texReader>
@@ -448,12 +449,12 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
                 (d_force, d_position, maxNeighbors, d_neighborList, cutsq,
                  lj1, lj2, nAtom);
         }
-        cudaEventRecord(kernel_stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(kernel_stop));
+        hipEventRecord(kernel_stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(kernel_stop));
 
         // get elapsed time
         float kernel_time = 0.0f;
-        cudaEventElapsedTime(&kernel_time, kernel_start, kernel_stop);
+        hipEventElapsedTime(&kernel_time, kernel_start, kernel_stop);
         kernel_time /= (float)iter;
         kernel_time *= 1.e-3; // Convert to seconds
 
@@ -485,20 +486,20 @@ void runTest(const string& testName, ResultDatabase& resultDB, OptionParser& op)
 
     // Clean up
     // Host
-    CUDA_SAFE_CALL(cudaFreeHost(position));
-    CUDA_SAFE_CALL(cudaFreeHost(force));
-    CUDA_SAFE_CALL(cudaFreeHost(neighborList));
+    CUDA_SAFE_CALL(hipHostFree(position));
+    CUDA_SAFE_CALL(hipHostFree(force));
+    CUDA_SAFE_CALL(hipHostFree(neighborList));
     // Device
-    CUDA_SAFE_CALL(cudaUnbindTexture(posTexture));
-    CUDA_SAFE_CALL(cudaFree(d_position));
-    CUDA_SAFE_CALL(cudaFree(d_force));
-    CUDA_SAFE_CALL(cudaFree(d_neighborList));
-    CUDA_SAFE_CALL(cudaEventDestroy(inputTransfer_start));
-    CUDA_SAFE_CALL(cudaEventDestroy(inputTransfer_stop));
-    CUDA_SAFE_CALL(cudaEventDestroy(outputTransfer_start));
-    CUDA_SAFE_CALL(cudaEventDestroy(outputTransfer_stop));
-    CUDA_SAFE_CALL(cudaEventDestroy(kernel_start));
-    CUDA_SAFE_CALL(cudaEventDestroy(kernel_stop));
+    CUDA_SAFE_CALL(hipUnbindTexture(posTexture));
+    CUDA_SAFE_CALL(hipFree(d_position));
+    CUDA_SAFE_CALL(hipFree(d_force));
+    CUDA_SAFE_CALL(hipFree(d_neighborList));
+    CUDA_SAFE_CALL(hipEventDestroy(inputTransfer_start));
+    CUDA_SAFE_CALL(hipEventDestroy(inputTransfer_stop));
+    CUDA_SAFE_CALL(hipEventDestroy(outputTransfer_start));
+    CUDA_SAFE_CALL(hipEventDestroy(outputTransfer_stop));
+    CUDA_SAFE_CALL(hipEventDestroy(kernel_start));
+    CUDA_SAFE_CALL(hipEventDestroy(kernel_stop));
 }
 // ********************************************************
 // Function: distance

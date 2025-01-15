@@ -64,9 +64,9 @@ void
 RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 {
     // Test to see if this device supports double precision
-    cudaGetDevice(&fftDevice);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, fftDevice);
+    hipGetDevice(&fftDevice);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, fftDevice);
     bool has_dp = (deviceProp.major == 1 && deviceProp.minor >= 3) ||
         (deviceProp.major >= 2);
 

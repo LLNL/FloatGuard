@@ -1,4 +1,4 @@
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include <fstream>
 #include <iostream>
 #include <limits.h>
@@ -135,9 +135,9 @@ void RunTest1(ResultDatabase &resultDB, OptionParser &op, Graph *G)
 
     // Allocate pinned memory for frontier and cost arrays on CPU
     cost_type  *costArray;
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&costArray,
+    CUDA_SAFE_CALL(hipHostMalloc((void **)&costArray,
                                   sizeof(cost_type)*(numVerts)));
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&flag,
+    CUDA_SAFE_CALL(hipHostMalloc((void **)&flag,
                                   sizeof(int)));
 
     // Variables for GPU memory
@@ -149,11 +149,11 @@ void RunTest1(ResultDatabase &resultDB, OptionParser &op, Graph *G)
     int *d_flag;
 
     // Allocate memory on GPU
-    CUDA_SAFE_CALL(cudaMalloc(&d_costArray,sizeof(cost_type)*numVerts));
-    CUDA_SAFE_CALL(cudaMalloc(&d_edgeArray,sizeof(unsigned int)*(numVerts+1)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_edgeArrayAux,
+    CUDA_SAFE_CALL(hipMalloc(&d_costArray,sizeof(cost_type)*numVerts));
+    CUDA_SAFE_CALL(hipMalloc(&d_edgeArray,sizeof(unsigned int)*(numVerts+1)));
+    CUDA_SAFE_CALL(hipMalloc(&d_edgeArrayAux,
                                         adj_list_length*sizeof(unsigned int)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_flag,sizeof(int)));
+    CUDA_SAFE_CALL(hipMalloc(&d_flag,sizeof(int)));
 
     // Initialize frontier and cost arrays
     for (int index=0;index<numVerts;index++)
@@ -166,28 +166,28 @@ void RunTest1(ResultDatabase &resultDB, OptionParser &op, Graph *G)
     costArray[source_vertex]=0;
 
     // Initialize timers
-    cudaEvent_t start_cuda_event, stop_cuda_event;
-    CUDA_SAFE_CALL(cudaEventCreate(&start_cuda_event));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop_cuda_event));
+    hipEvent_t start_cuda_event, stop_cuda_event;
+    CUDA_SAFE_CALL(hipEventCreate(&start_cuda_event));
+    CUDA_SAFE_CALL(hipEventCreate(&stop_cuda_event));
 
     // Transfer frontier, cost array and adjacency lists on GPU
-    cudaEventRecord(start_cuda_event, 0);
-    CUDA_SAFE_CALL(cudaMemcpy(d_costArray, costArray,
-                   sizeof(cost_type)*numVerts, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_edgeArray, edgeArray,
-                   sizeof(unsigned int)*(numVerts+1),cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_edgeArrayAux,edgeArrayAux,
-                 sizeof(unsigned int)*adj_list_length,cudaMemcpyHostToDevice));
-    cudaEventRecord(stop_cuda_event,0);
-    cudaEventSynchronize(stop_cuda_event);
+    hipEventRecord(start_cuda_event, 0);
+    CUDA_SAFE_CALL(hipMemcpy(d_costArray, costArray,
+                   sizeof(cost_type)*numVerts, hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_edgeArray, edgeArray,
+                   sizeof(unsigned int)*(numVerts+1),hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_edgeArrayAux,edgeArrayAux,
+                 sizeof(unsigned int)*adj_list_length,hipMemcpyHostToDevice));
+    hipEventRecord(stop_cuda_event,0);
+    hipEventSynchronize(stop_cuda_event);
     float inputTransferTime=0;
-    cudaEventElapsedTime(&inputTransferTime,start_cuda_event,stop_cuda_event);
+    hipEventElapsedTime(&inputTransferTime,start_cuda_event,stop_cuda_event);
 
     // Get the device properties for kernel configuration
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp devProp;
-    cudaGetDeviceProperties(&devProp,device);
+    hipGetDevice(&device);
+    hipDeviceProp_t devProp;
+    hipGetDeviceProperties(&devProp,device);
 
     // Get the kernel configuration
     int numBlocks=0;
@@ -225,35 +225,35 @@ void RunTest1(ResultDatabase &resultDB, OptionParser &op, Graph *G)
         {
             *flag=0;
             // Set flag to 0
-            CUDA_SAFE_CALL(cudaMemcpy(d_flag,flag,
-                        sizeof(int),cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(hipMemcpy(d_flag,flag,
+                        sizeof(int),hipMemcpyHostToDevice));
 
-            cudaEventRecord( start_cuda_event,0);
+            hipEventRecord( start_cuda_event,0);
             BFS_kernel_warp<<<numBlocks,devProp.maxThreadsPerBlock>>>
             (d_costArray,d_edgeArray,d_edgeArrayAux, W_SZ, CHUNK_SZ, numVerts,
                 iters,d_flag);
             CHECK_CUDA_ERROR();
-            cudaEventRecord(stop_cuda_event,0);
-            cudaEventSynchronize(stop_cuda_event);
+            hipEventRecord(stop_cuda_event,0);
+            hipEventSynchronize(stop_cuda_event);
             k_time=0;
-            cudaEventElapsedTime( &k_time, start_cuda_event, stop_cuda_event );
+            hipEventElapsedTime( &k_time, start_cuda_event, stop_cuda_event );
             totalKernelTime += k_time;
 
             // Read flag
-            CUDA_SAFE_CALL(cudaMemcpy(flag,d_flag,
-                        sizeof(int),cudaMemcpyDeviceToHost));
+            CUDA_SAFE_CALL(hipMemcpy(flag,d_flag,
+                        sizeof(int),hipMemcpyDeviceToHost));
             iters++;
         }
         // Stop the CPU Timer
         double result_time = Timer::Stop(cpu_bfs_timer, "cpu_bfs_timer");
 
         // Copy the cost array from GPU to CPU
-        cudaEventRecord(start_cuda_event,0);
-        CUDA_SAFE_CALL(cudaMemcpy(costArray,d_costArray,
-                       sizeof(cost_type)*numVerts,cudaMemcpyDeviceToHost));
-        cudaEventRecord(stop_cuda_event,0);
-        cudaEventSynchronize(stop_cuda_event);
-        cudaEventElapsedTime(&k_time,start_cuda_event,
+        hipEventRecord(start_cuda_event,0);
+        CUDA_SAFE_CALL(hipMemcpy(costArray,d_costArray,
+                       sizeof(cost_type)*numVerts,hipMemcpyDeviceToHost));
+        hipEventRecord(stop_cuda_event,0);
+        hipEventSynchronize(stop_cuda_event);
+        hipEventElapsedTime(&k_time,start_cuda_event,
                             stop_cuda_event);
         outputTransferTime += k_time;
 
@@ -330,21 +330,21 @@ void RunTest1(ResultDatabase &resultDB, OptionParser &op, Graph *G)
         }
         costArray[source_vertex]=0;
 
-        CUDA_SAFE_CALL(cudaMemcpy(d_costArray, costArray,
-                       sizeof(cost_type)*numVerts, cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipMemcpy(d_costArray, costArray,
+                       sizeof(cost_type)*numVerts, hipMemcpyHostToDevice));
 
     }
 
     // Clean up
     delete[] cpu_cost;
-    CUDA_SAFE_CALL(cudaEventDestroy(start_cuda_event));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop_cuda_event));
+    CUDA_SAFE_CALL(hipEventDestroy(start_cuda_event));
+    CUDA_SAFE_CALL(hipEventDestroy(stop_cuda_event));
 
-    CUDA_SAFE_CALL(cudaFreeHost(costArray));
+    CUDA_SAFE_CALL(hipHostFree(costArray));
 
-    CUDA_SAFE_CALL(cudaFree(d_costArray));
-    CUDA_SAFE_CALL(cudaFree(d_edgeArray));
-    CUDA_SAFE_CALL(cudaFree(d_edgeArrayAux));
+    CUDA_SAFE_CALL(hipFree(d_costArray));
+    CUDA_SAFE_CALL(hipFree(d_edgeArray));
+    CUDA_SAFE_CALL(hipFree(d_edgeArrayAux));
 }
 
 // ****************************************************************************
@@ -385,11 +385,11 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
     cost_type  *costArray;
     visited_type *visited;
 
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&frontier,
+    CUDA_SAFE_CALL(hipHostMalloc((void **)&frontier,
                     sizeof(frontier_type)*(numVerts)));
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&costArray ,
+    CUDA_SAFE_CALL(hipHostMalloc((void **)&costArray ,
                     sizeof(cost_type)*(numVerts)));
-    CUDA_SAFE_CALL(cudaMallocHost((void **)&visited,
+    CUDA_SAFE_CALL(hipHostMalloc((void **)&visited,
                     sizeof(visited_type)*(numVerts)));
 
     // Variables for GPU memory
@@ -404,14 +404,14 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
     unsigned int *d_frontier_length;
 
     // Allocate memory on GPU
-    CUDA_SAFE_CALL(cudaMalloc(&d_frontier,sizeof(frontier_type)*numVerts));
-    CUDA_SAFE_CALL(cudaMalloc(&d_frontier2,sizeof(frontier_type)*numVerts));
-    CUDA_SAFE_CALL(cudaMalloc(&d_costArray,sizeof(cost_type)*numVerts));
-    CUDA_SAFE_CALL(cudaMalloc(&d_visited,sizeof(visited_type)*numVerts));
-    CUDA_SAFE_CALL(cudaMalloc(&d_edgeArray,sizeof(unsigned int)*(numVerts+1)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_edgeArrayAux,
+    CUDA_SAFE_CALL(hipMalloc(&d_frontier,sizeof(frontier_type)*numVerts));
+    CUDA_SAFE_CALL(hipMalloc(&d_frontier2,sizeof(frontier_type)*numVerts));
+    CUDA_SAFE_CALL(hipMalloc(&d_costArray,sizeof(cost_type)*numVerts));
+    CUDA_SAFE_CALL(hipMalloc(&d_visited,sizeof(visited_type)*numVerts));
+    CUDA_SAFE_CALL(hipMalloc(&d_edgeArray,sizeof(unsigned int)*(numVerts+1)));
+    CUDA_SAFE_CALL(hipMalloc(&d_edgeArrayAux,
                                         adj_list_length*sizeof(unsigned int)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_frontier_length,sizeof(unsigned int)));
+    CUDA_SAFE_CALL(hipMalloc(&d_frontier_length,sizeof(unsigned int)));
 
     // Initialize frontier and visited arrays
     for (int index=0;index<numVerts;index++)
@@ -432,34 +432,34 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
     costArray[source_vertex]=0;
 
     // Initialize timers
-    cudaEvent_t start_cuda_event, stop_cuda_event;
-    CUDA_SAFE_CALL(cudaEventCreate(&start_cuda_event));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop_cuda_event));
+    hipEvent_t start_cuda_event, stop_cuda_event;
+    CUDA_SAFE_CALL(hipEventCreate(&start_cuda_event));
+    CUDA_SAFE_CALL(hipEventCreate(&stop_cuda_event));
 
     // Transfer frontier, visited, cost array and adjacency lists on GPU
-    cudaEventRecord(start_cuda_event, 0);
-    CUDA_SAFE_CALL(cudaMemcpy(d_frontier, frontier,
-                   sizeof(frontier_type)*numVerts , cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_costArray, costArray,
-                   sizeof(cost_type)*numVerts, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_visited, visited,
-                   sizeof(visited_type)*numVerts, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_edgeArray, edgeArray,
-                   sizeof(unsigned int)*(numVerts+1),cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_edgeArrayAux,edgeArrayAux,
-                  sizeof(unsigned int)*adj_list_length,cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_frontier_length, &costArray[source_vertex],
-                   sizeof(unsigned int), cudaMemcpyHostToDevice));
-    cudaEventRecord(stop_cuda_event,0);
-    cudaEventSynchronize(stop_cuda_event);
+    hipEventRecord(start_cuda_event, 0);
+    CUDA_SAFE_CALL(hipMemcpy(d_frontier, frontier,
+                   sizeof(frontier_type)*numVerts , hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_costArray, costArray,
+                   sizeof(cost_type)*numVerts, hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_visited, visited,
+                   sizeof(visited_type)*numVerts, hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_edgeArray, edgeArray,
+                   sizeof(unsigned int)*(numVerts+1),hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_edgeArrayAux,edgeArrayAux,
+                  sizeof(unsigned int)*adj_list_length,hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_frontier_length, &costArray[source_vertex],
+                   sizeof(unsigned int), hipMemcpyHostToDevice));
+    hipEventRecord(stop_cuda_event,0);
+    hipEventSynchronize(stop_cuda_event);
     float inputTransferTime=0;
-    cudaEventElapsedTime(&inputTransferTime,start_cuda_event,stop_cuda_event);
+    hipEventElapsedTime(&inputTransferTime,start_cuda_event,stop_cuda_event);
 
     // Get the device properties for kernel configuration
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp devProp;
-    cudaGetDeviceProperties(&devProp,device);
+    hipGetDevice(&device);
+    hipDeviceProp_t devProp;
+    hipGetDeviceProperties(&devProp,device);
 
     // Get the kernel configuration
     int numBlocks=0;
@@ -508,7 +508,7 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
         //Start CPU Timer to measure total time taken to complete benchmark
         int cpu_bfs_timer = Timer::Start();
 
-        cudaEventRecord( start_cuda_event,0);
+        hipEventRecord( start_cuda_event,0);
         //While there are nodes to traverse
         while(frontier_length>0)
         {
@@ -553,26 +553,26 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
                 CHECK_CUDA_ERROR();
             }
             //Get the current frontier length
-            CUDA_SAFE_CALL(cudaMemcpy(&frontier_length,d_frontier_length,
-                                sizeof(unsigned int),cudaMemcpyDeviceToHost));
+            CUDA_SAFE_CALL(hipMemcpy(&frontier_length,d_frontier_length,
+                                sizeof(unsigned int),hipMemcpyDeviceToHost));
         }
-        cudaEventRecord(stop_cuda_event,0);
-        cudaEventSynchronize(stop_cuda_event);
+        hipEventRecord(stop_cuda_event,0);
+        hipEventSynchronize(stop_cuda_event);
         float k_time=0;
-        cudaEventElapsedTime( &k_time, start_cuda_event, stop_cuda_event );
+        hipEventElapsedTime( &k_time, start_cuda_event, stop_cuda_event );
         totalKernelTime += k_time;
 
         //Stop the CPU Timer
         double result_time = Timer::Stop(cpu_bfs_timer, "cpu_bfs_timer");
 
         //Copy the cost array from GPU to CPU
-        cudaEventRecord(start_cuda_event,0);
-        CUDA_SAFE_CALL(cudaMemcpy(costArray,d_costArray,
-                       sizeof(cost_type)*numVerts,cudaMemcpyDeviceToHost));
-        cudaEventRecord(stop_cuda_event,0);
-        cudaEventSynchronize(stop_cuda_event);
+        hipEventRecord(start_cuda_event,0);
+        CUDA_SAFE_CALL(hipMemcpy(costArray,d_costArray,
+                       sizeof(cost_type)*numVerts,hipMemcpyDeviceToHost));
+        hipEventRecord(stop_cuda_event,0);
+        hipEventSynchronize(stop_cuda_event);
         float outputTransferTime=0;
-        cudaEventElapsedTime(&outputTransferTime,start_cuda_event,
+        hipEventElapsedTime(&outputTransferTime,start_cuda_event,
                             stop_cuda_event);
 
         //get the total transfer time
@@ -658,30 +658,30 @@ void RunTest2(ResultDatabase &resultDB, OptionParser &op, Graph *G)
         costArray[source_vertex]=0;
 
         //transfer the arrays to gpu
-        CUDA_SAFE_CALL(cudaMemcpy(d_frontier, frontier,
-                       sizeof(frontier_type)*numVerts, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(d_costArray, costArray,
-                       sizeof(cost_type)*numVerts, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(d_visited, visited,
-                       sizeof(visited_type)*numVerts, cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipMemcpy(d_frontier, frontier,
+                       sizeof(frontier_type)*numVerts, hipMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipMemcpy(d_costArray, costArray,
+                       sizeof(cost_type)*numVerts, hipMemcpyHostToDevice));
+        CUDA_SAFE_CALL(hipMemcpy(d_visited, visited,
+                       sizeof(visited_type)*numVerts, hipMemcpyHostToDevice));
     }
 
     //Clean up
     delete[] cpu_cost;
 
-    CUDA_SAFE_CALL(cudaEventDestroy(start_cuda_event));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop_cuda_event));
-    CUDA_SAFE_CALL(cudaFreeHost(frontier));
-    CUDA_SAFE_CALL(cudaFreeHost(costArray));
-    CUDA_SAFE_CALL(cudaFreeHost(visited));
+    CUDA_SAFE_CALL(hipEventDestroy(start_cuda_event));
+    CUDA_SAFE_CALL(hipEventDestroy(stop_cuda_event));
+    CUDA_SAFE_CALL(hipHostFree(frontier));
+    CUDA_SAFE_CALL(hipHostFree(costArray));
+    CUDA_SAFE_CALL(hipHostFree(visited));
 
-    CUDA_SAFE_CALL(cudaFree(d_frontier));
-    CUDA_SAFE_CALL(cudaFree(d_frontier2));
-    CUDA_SAFE_CALL(cudaFree(d_visited));
-    CUDA_SAFE_CALL(cudaFree(d_costArray));
-    CUDA_SAFE_CALL(cudaFree(d_frontier_length));
-    CUDA_SAFE_CALL(cudaFree(d_edgeArray));
-    CUDA_SAFE_CALL(cudaFree(d_edgeArrayAux));
+    CUDA_SAFE_CALL(hipFree(d_frontier));
+    CUDA_SAFE_CALL(hipFree(d_frontier2));
+    CUDA_SAFE_CALL(hipFree(d_visited));
+    CUDA_SAFE_CALL(hipFree(d_costArray));
+    CUDA_SAFE_CALL(hipFree(d_frontier_length));
+    CUDA_SAFE_CALL(hipFree(d_edgeArray));
+    CUDA_SAFE_CALL(hipFree(d_edgeArrayAux));
 }
 
 
@@ -709,9 +709,9 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     // First, check if the device supports atomics, which are required
     // for this benchmark.  If not, return the "NoResult" sentinel.int device;
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
     if ((deviceProp.major == 1 && deviceProp.minor < 2))
     {
         cerr << "Warning: BFS uses atomics and requires GPUs with CC > 1.2.\n";
@@ -749,9 +749,9 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
         //edgeArray =new unsigned int[numVerts+1];
         //edgeArrayAux=new unsigned int[numVerts*(avg_degree+1)];
 
-        CUDA_SAFE_CALL(cudaMallocHost(edge_ptr1,
+        CUDA_SAFE_CALL(hipHostMalloc(edge_ptr1,
                         sizeof(unsigned int)*(numVerts+1)));
-        CUDA_SAFE_CALL(cudaMallocHost(edge_ptr2,
+        CUDA_SAFE_CALL(hipHostMalloc(edge_ptr2,
                         sizeof(unsigned int)*(numVerts*(avg_degree+1))));
 
         //Generate simple tree
@@ -782,9 +782,9 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
         numEdges=atoi(temp_token);
 
         //allocate pinned memory
-        CUDA_SAFE_CALL(cudaMallocHost(edge_ptr1,
+        CUDA_SAFE_CALL(hipHostMalloc(edge_ptr1,
                         sizeof(unsigned int)*(numVerts+1)));
-        CUDA_SAFE_CALL(cudaMallocHost(edge_ptr2,
+        CUDA_SAFE_CALL(hipHostMalloc(edge_ptr2,
                         sizeof(unsigned int)*(numEdges*2)));
 
         fclose(fp);
@@ -808,6 +808,6 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 
     //Clean up
     delete G;
-    CUDA_SAFE_CALL(cudaFreeHost(*edge_ptr1));
-    CUDA_SAFE_CALL(cudaFreeHost(*edge_ptr2));
+    CUDA_SAFE_CALL(hipHostFree(*edge_ptr1));
+    CUDA_SAFE_CALL(hipHostFree(*edge_ptr2));
 }

@@ -3,8 +3,8 @@
 #include <iostream>
 #include <string>
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,9 +110,9 @@ RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
 
     // Always do the single precision test
     RunTest<float>("AllReduce-SP", resultDB, op);
@@ -182,7 +182,7 @@ void RunTest(string test_name, ResultDatabase &resultDB, OptionParser &op)
     size = size * 1024 * 1024 / sizeof(T);
 
     T* h_idata;
-    CUDA_SAFE_CALL(cudaMallocHost((void**)&h_idata, size * sizeof(T)));
+    CUDA_SAFE_CALL(hipHostMalloc((void**)&h_idata, size * sizeof(T)));
 
     // Initialize host memory
     if (rank == 0)
@@ -196,7 +196,7 @@ void RunTest(string test_name, ResultDatabase &resultDB, OptionParser &op)
 
     // allocate device memory
     T* d_idata;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_idata, size * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&d_idata, size * sizeof(T)));
 
     int num_threads = 256;
     int num_blocks = 64;
@@ -204,10 +204,10 @@ void RunTest(string test_name, ResultDatabase &resultDB, OptionParser &op)
 
     // allocate mem for the result on host side
     T* h_odata;
-    CUDA_SAFE_CALL(cudaMallocHost((void**)&h_odata, num_blocks * sizeof(T)));
+    CUDA_SAFE_CALL(hipHostMalloc((void**)&h_odata, num_blocks * sizeof(T)));
 
     T* d_odata;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_odata, num_blocks * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc((void**)&d_odata, num_blocks * sizeof(T)));
 
     int passes = op.getOptionInt("passes");
     int iters  = op.getOptionInt("iterations");
@@ -220,50 +220,50 @@ void RunTest(string test_name, ResultDatabase &resultDB, OptionParser &op)
     for (int k=0; k<passes; k++)
     {
         double pcie_time=0.0, kernel_time=0.0, mpi_time=0.0;
-        cudaEvent_t start, stop;
-        CUDA_SAFE_CALL(cudaEventCreate(&start));
-        CUDA_SAFE_CALL(cudaEventCreate(&stop));
+        hipEvent_t start, stop;
+        CUDA_SAFE_CALL(hipEventCreate(&start));
+        CUDA_SAFE_CALL(hipEventCreate(&stop));
 
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Repeatedly transfer input data to GPU and measure average time
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int m = 0; m < iters; m++)
         {
-            CUDA_SAFE_CALL(cudaMemcpy(d_idata, h_idata, size*sizeof(T),
-                           cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(hipMemcpy(d_idata, h_idata, size*sizeof(T),
+                           hipMemcpyHostToDevice));
         }
-        cudaEventRecord(stop, 0);
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+        hipEventRecord(stop, 0);
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
         // Get elapsed time of input PCIe transfer
         float temp;
-        cudaEventElapsedTime(&temp, start, stop);
+        hipEventElapsedTime(&temp, start, stop);
         pcie_time += (temp / (double)iters)* 1.e-3;
 
         // Execute reduction kernel on GPU
-        cudaEventRecord(start, 0);
+        hipEventRecord(start, 0);
         for (int m = 0; m < iters; m++)
         {
             RunTestLaunchKernel<T>(num_blocks, num_threads, smem_size,
                                     d_idata, d_odata, size);
         }
-        cudaEventRecord(stop, 0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&temp, start, stop);
+        hipEventRecord(stop, 0);
+        hipEventSynchronize(stop);
+        hipEventElapsedTime(&temp, start, stop);
         kernel_time += (temp / (double)iters) * 1.e-3;
 
         // Copy output data back to CPU
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int m = 0; m < iters; m++)
         {
             // Copy back to host
-            CUDA_SAFE_CALL(cudaMemcpy(h_odata, d_odata,
-                num_blocks*sizeof(T), cudaMemcpyDeviceToHost));
+            CUDA_SAFE_CALL(hipMemcpy(h_odata, d_odata,
+                num_blocks*sizeof(T), hipMemcpyDeviceToHost));
         }
-        cudaEventRecord(stop, 0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&temp, start, stop);
+        hipEventRecord(stop, 0);
+        hipEventSynchronize(stop);
+        hipEventElapsedTime(&temp, start, stop);
         pcie_time += (temp / (double)iters) * 1.e-3;
 
         T local_result=0, global_result=0;
@@ -328,11 +328,11 @@ void RunTest(string test_name, ResultDatabase &resultDB, OptionParser &op)
         resultDB.AddResult(test_name+"-Overall", atts, "GB/s",
             global_gbytes / (kernel_time + pcie_time + mpi_time));
 
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
+        hipEventDestroy(start);
+        hipEventDestroy(stop);
     }
-    CUDA_SAFE_CALL(cudaFreeHost(h_idata));
-    CUDA_SAFE_CALL(cudaFreeHost(h_odata));
-    CUDA_SAFE_CALL(cudaFree(d_idata));
-    CUDA_SAFE_CALL(cudaFree(d_odata));
+    CUDA_SAFE_CALL(hipHostFree(h_idata));
+    CUDA_SAFE_CALL(hipHostFree(h_odata));
+    CUDA_SAFE_CALL(hipFree(d_idata));
+    CUDA_SAFE_CALL(hipFree(d_odata));
 }

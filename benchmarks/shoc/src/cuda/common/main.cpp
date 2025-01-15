@@ -10,8 +10,8 @@
 #include <iostream>
 #include <cstdlib>
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 
 #include "ResultDatabase.h"
 #include "OptionParser.h"
@@ -57,12 +57,12 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op);
 // ****************************************************************************
 void EnumerateDevicesAndChoose(int chooseDevice, bool verbose)
 {
-    cudaSetDevice(chooseDevice);
+    hipSetDevice(chooseDevice);
     int actualdevice;
-    cudaGetDevice(&actualdevice);
+    hipGetDevice(&actualdevice);
 
     int deviceCount;
-    cudaGetDeviceCount(&deviceCount);
+    hipGetDeviceCount(&deviceCount);
     if (verbose)
     {
         cout << "Number of devices = " << deviceCount << "\n";
@@ -70,8 +70,8 @@ void EnumerateDevicesAndChoose(int chooseDevice, bool verbose)
     string deviceName = "";
     for (int device = 0; device < deviceCount; ++device)
     {
-        cudaDeviceProp deviceProp;
-        cudaGetDeviceProperties(&deviceProp, device);
+        hipDeviceProp_t deviceProp;
+        hipGetDeviceProperties(&deviceProp, device);
         if (device == actualdevice)
             deviceName = deviceProp.name;
         if (verbose)
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
         device = op.getOptionVecInt("device")[0];
 #endif
         int deviceCount;
-        cudaGetDeviceCount(&deviceCount);
+        hipGetDeviceCount(&deviceCount);
         if (device >= deviceCount) {
             cerr << "Warning: device index: " << device <<
             " out of range, defaulting to device 0.\n";

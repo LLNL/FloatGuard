@@ -1,7 +1,8 @@
+#include "hip/hip_runtime.h"
 #include "cudacommon.h"
 #include <cassert>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <iostream>
 #include "OptionParser.h"
 #include "ResultDatabase.h"
@@ -186,46 +187,46 @@ void csrTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
       int *d_cols, *d_rowDelimiters;
 
       // Allocate device memory
-      CUDA_SAFE_CALL(cudaMalloc(&d_val,  numNonZeroes * sizeof(floatType)));
-      CUDA_SAFE_CALL(cudaMalloc(&d_cols, numNonZeroes * sizeof(int)));
-      CUDA_SAFE_CALL(cudaMalloc(&d_vec,  numRows * sizeof(floatType)));
-      CUDA_SAFE_CALL(cudaMalloc(&d_out,  numRows * sizeof(floatType)));
-      CUDA_SAFE_CALL(cudaMalloc(&d_rowDelimiters, (numRows+1) * sizeof(int)));
+      CUDA_SAFE_CALL(hipMalloc(&d_val,  numNonZeroes * sizeof(floatType)));
+      CUDA_SAFE_CALL(hipMalloc(&d_cols, numNonZeroes * sizeof(int)));
+      CUDA_SAFE_CALL(hipMalloc(&d_vec,  numRows * sizeof(floatType)));
+      CUDA_SAFE_CALL(hipMalloc(&d_out,  numRows * sizeof(floatType)));
+      CUDA_SAFE_CALL(hipMalloc(&d_rowDelimiters, (numRows+1) * sizeof(int)));
 
       // Setup events for timing
-      cudaEvent_t start, stop;
-      CUDA_SAFE_CALL(cudaEventCreate(&start));
-      CUDA_SAFE_CALL(cudaEventCreate(&stop));
+      hipEvent_t start, stop;
+      CUDA_SAFE_CALL(hipEventCreate(&start));
+      CUDA_SAFE_CALL(hipEventCreate(&stop));
 
       // Transfer data to device
-      CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-      CUDA_SAFE_CALL(cudaMemcpy(d_val, h_val,   numNonZeroes * sizeof(floatType),
-              cudaMemcpyHostToDevice));
-      CUDA_SAFE_CALL(cudaMemcpy(d_cols, h_cols, numNonZeroes * sizeof(int),
-              cudaMemcpyHostToDevice));
-      CUDA_SAFE_CALL(cudaMemcpy(d_vec, h_vec, numRows * sizeof(floatType),
-                    cudaMemcpyHostToDevice));
-      CUDA_SAFE_CALL(cudaMemcpy(d_rowDelimiters, h_rowDelimiters,
-              (numRows+1) * sizeof(int), cudaMemcpyHostToDevice));
-      CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-      CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+      CUDA_SAFE_CALL(hipEventRecord(start, 0));
+      CUDA_SAFE_CALL(hipMemcpy(d_val, h_val,   numNonZeroes * sizeof(floatType),
+              hipMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(d_cols, h_cols, numNonZeroes * sizeof(int),
+              hipMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(d_vec, h_vec, numRows * sizeof(floatType),
+                    hipMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipMemcpy(d_rowDelimiters, h_rowDelimiters,
+              (numRows+1) * sizeof(int), hipMemcpyHostToDevice));
+      CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+      CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
       float iTransferTime, oTransferTime;
-      CUDA_SAFE_CALL(cudaEventElapsedTime(&iTransferTime, start, stop));
+      CUDA_SAFE_CALL(hipEventElapsedTime(&iTransferTime, start, stop));
       iTransferTime *= 1.e-3;
 
       // Bind texture for position
       string suffix;
       if (sizeof(floatType) == sizeof(float))
       {
-          cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-          CUDA_SAFE_CALL(cudaBindTexture(0, vecTex, d_vec, channelDesc,
+          hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
+          CUDA_SAFE_CALL(hipBindTexture(0, vecTex, d_vec, channelDesc,
                   numRows * sizeof(float)));
           suffix = "-SP";
       }
       else {
-          cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int2>();
-          CUDA_SAFE_CALL(cudaBindTexture(0, vecTexD, d_vec, channelDesc,
+          hipChannelFormatDesc channelDesc = hipCreateChannelDesc<int2>();
+          CUDA_SAFE_CALL(hipBindTexture(0, vecTexD, d_vec, channelDesc,
                   numRows * sizeof(int2)));
           suffix = "-DP";
       }
@@ -247,24 +248,24 @@ void csrTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
       for (int k=0; k<passes; k++)
       {
           // Run Scalar Kernel
-          CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+          CUDA_SAFE_CALL(hipEventRecord(start, 0));
           for (int j = 0; j < iters; j++)
           {
               spmv_csr_scalar_kernel<floatType, texReader>
               <<<nBlocksScalar, BLOCK_SIZE>>>
               (d_val, d_cols, d_rowDelimiters, numRows, d_out);
           }
-          CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-          CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+          CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+          CUDA_SAFE_CALL(hipEventSynchronize(stop));
           float scalarKernelTime;
-          CUDA_SAFE_CALL(cudaEventElapsedTime(&scalarKernelTime, start, stop));
+          CUDA_SAFE_CALL(hipEventElapsedTime(&scalarKernelTime, start, stop));
           // Transfer data back to host
-          CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-          CUDA_SAFE_CALL(cudaMemcpy(h_out, d_out, numRows * sizeof(floatType),
-                  cudaMemcpyDeviceToHost));
-          CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-          CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-          CUDA_SAFE_CALL(cudaEventElapsedTime(&oTransferTime, start, stop));
+          CUDA_SAFE_CALL(hipEventRecord(start, 0));
+          CUDA_SAFE_CALL(hipMemcpy(h_out, d_out, numRows * sizeof(floatType),
+                  hipMemcpyDeviceToHost));
+          CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+          CUDA_SAFE_CALL(hipEventSynchronize(stop));
+          CUDA_SAFE_CALL(hipEventElapsedTime(&oTransferTime, start, stop));
           oTransferTime *= 1.e-3;
           // Compare reference solution to GPU result
           if (! verifyResults(refOut, h_out, numRows, k))
@@ -280,26 +281,26 @@ void csrTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
                             gflop / (scalarKernelTime+totalTransfer));
       }
       zero<floatType><<<nBlocksScalar, BLOCK_SIZE>>>(d_out, numRows);
-      cudaThreadSynchronize();
+      hipDeviceSynchronize();
 
       cout << "CSR Vector Kernel\n";
       for (int k=0; k<passes; k++)
       {
           // Run Vector Kernel
-          CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+          CUDA_SAFE_CALL(hipEventRecord(start, 0));
           for (int j = 0; j < iters; j++)
           {
               spmv_csr_vector_kernel<floatType, texReader>
               <<<nBlocksVector, BLOCK_SIZE>>>
               (d_val, d_cols, d_rowDelimiters, numRows, d_out);
           }
-          CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-          CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+          CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+          CUDA_SAFE_CALL(hipEventSynchronize(stop));
           float vectorKernelTime;
-          CUDA_SAFE_CALL(cudaEventElapsedTime(&vectorKernelTime, start, stop));
-          CUDA_SAFE_CALL(cudaMemcpy(h_out, d_out, numRows * sizeof(floatType),
-                  cudaMemcpyDeviceToHost));
-          cudaThreadSynchronize();
+          CUDA_SAFE_CALL(hipEventElapsedTime(&vectorKernelTime, start, stop));
+          CUDA_SAFE_CALL(hipMemcpy(h_out, d_out, numRows * sizeof(floatType),
+                  hipMemcpyDeviceToHost));
+          hipDeviceSynchronize();
           // Compare reference solution to GPU result
           if (! verifyResults(refOut, h_out, numRows, k))
           {
@@ -313,15 +314,15 @@ void csrTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
                             gflop/(vectorKernelTime+totalTransfer));
       }
       // Free device memory
-      CUDA_SAFE_CALL(cudaFree(d_rowDelimiters));
-      CUDA_SAFE_CALL(cudaFree(d_vec));
-      CUDA_SAFE_CALL(cudaFree(d_out));
-      CUDA_SAFE_CALL(cudaFree(d_val));
-      CUDA_SAFE_CALL(cudaFree(d_cols));
-      CUDA_SAFE_CALL(cudaUnbindTexture(vecTexD));
-      CUDA_SAFE_CALL(cudaUnbindTexture(vecTex));
-      CUDA_SAFE_CALL(cudaEventDestroy(start));
-      CUDA_SAFE_CALL(cudaEventDestroy(stop));
+      CUDA_SAFE_CALL(hipFree(d_rowDelimiters));
+      CUDA_SAFE_CALL(hipFree(d_vec));
+      CUDA_SAFE_CALL(hipFree(d_out));
+      CUDA_SAFE_CALL(hipFree(d_val));
+      CUDA_SAFE_CALL(hipFree(d_cols));
+      CUDA_SAFE_CALL(hipUnbindTexture(vecTexD));
+      CUDA_SAFE_CALL(hipUnbindTexture(vecTex));
+      CUDA_SAFE_CALL(hipEventDestroy(start));
+      CUDA_SAFE_CALL(hipEventDestroy(stop));
 }
 
 template <typename floatType, typename texReader>
@@ -331,7 +332,7 @@ void ellPackTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
         int paddedSize)
 {
     int *h_rowLengths;
-    CUDA_SAFE_CALL(cudaMallocHost(&h_rowLengths, paddedSize * sizeof(int)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_rowLengths, paddedSize * sizeof(int)));
     int maxrl = 0;
     for (int k=0; k<numRows; k++)
     {
@@ -349,9 +350,9 @@ void ellPackTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
     // Column major format host data structures
     int cmSize = padded ? paddedSize : numRows;
     floatType *h_valcm;
-    CUDA_SAFE_CALL(cudaMallocHost(&h_valcm, maxrl * cmSize * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_valcm, maxrl * cmSize * sizeof(floatType)));
     int *h_colscm;
-    CUDA_SAFE_CALL(cudaMallocHost(&h_colscm, maxrl * cmSize * sizeof(int)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_colscm, maxrl * cmSize * sizeof(int)));
     convertToColMajor(h_val, h_cols, numRows, h_rowDelimiters, h_valcm,
                               h_colscm, h_rowLengths, maxrl, padded);
 
@@ -360,57 +361,57 @@ void ellPackTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
     int *d_cols, *d_rowLengths;
 
     // Allocate device memory
-    CUDA_SAFE_CALL(cudaMalloc(&d_val,  maxrl*cmSize * sizeof(floatType)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_cols, maxrl*cmSize * sizeof(int)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_vec,  numRows * sizeof(floatType)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_out,  paddedSize * sizeof(floatType)));
-    CUDA_SAFE_CALL(cudaMalloc(&d_rowLengths, cmSize * sizeof(int)));
+    CUDA_SAFE_CALL(hipMalloc(&d_val,  maxrl*cmSize * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipMalloc(&d_cols, maxrl*cmSize * sizeof(int)));
+    CUDA_SAFE_CALL(hipMalloc(&d_vec,  numRows * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipMalloc(&d_out,  paddedSize * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipMalloc(&d_rowLengths, cmSize * sizeof(int)));
 
     // Transfer data to device
-    CUDA_SAFE_CALL(cudaMemcpy(d_val, h_valcm, maxrl*cmSize * sizeof(floatType),
-            cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_cols, h_colscm, maxrl*cmSize * sizeof(int),
-            cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_vec, h_vec, numRows * sizeof(floatType),
-            cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_rowLengths, h_rowLengths,
-            cmSize * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_val, h_valcm, maxrl*cmSize * sizeof(floatType),
+            hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_cols, h_colscm, maxrl*cmSize * sizeof(int),
+            hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_vec, h_vec, numRows * sizeof(floatType),
+            hipMemcpyHostToDevice));
+    CUDA_SAFE_CALL(hipMemcpy(d_rowLengths, h_rowLengths,
+            cmSize * sizeof(int), hipMemcpyHostToDevice));
 
     // Bind texture for position
     if (sizeof(floatType) == sizeof(float))
     {
-        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-        CUDA_SAFE_CALL(cudaBindTexture(0, vecTex, d_vec, channelDesc,
+        hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
+        CUDA_SAFE_CALL(hipBindTexture(0, vecTex, d_vec, channelDesc,
                 numRows * sizeof(float)));
     }
     else
     {
-        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<int2>();
-        CUDA_SAFE_CALL(cudaBindTexture(0, vecTexD, d_vec, channelDesc,
+        hipChannelFormatDesc channelDesc = hipCreateChannelDesc<int2>();
+        CUDA_SAFE_CALL(hipBindTexture(0, vecTexD, d_vec, channelDesc,
                 numRows * sizeof(int2)));
     }
     int nBlocks = (int) ceil((floatType) cmSize / BLOCK_SIZE);
     int passes = op.getOptionInt("passes");
     int iters  = op.getOptionInt("iterations");
-    cudaEvent_t start, stop;
-    CUDA_SAFE_CALL(cudaEventCreate(&start));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop));
+    hipEvent_t start, stop;
+    CUDA_SAFE_CALL(hipEventCreate(&start));
+    CUDA_SAFE_CALL(hipEventCreate(&stop));
     for (int k=0; k<passes; k++)
     {
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
             spmv_ellpackr_kernel<floatType, texReader><<<nBlocks, BLOCK_SIZE>>>
                     (d_val, d_cols, d_rowLengths, cmSize, d_out);
         }
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
         float totalKernelTime;
-        CUDA_SAFE_CALL(cudaEventElapsedTime(&totalKernelTime, start, stop));
+        CUDA_SAFE_CALL(hipEventElapsedTime(&totalKernelTime, start, stop));
         totalKernelTime *= 1.e-3;
 
-        CUDA_SAFE_CALL(cudaMemcpy(h_out, d_out, cmSize * sizeof(floatType),
-                cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(hipMemcpy(h_out, d_out, cmSize * sizeof(floatType),
+                hipMemcpyDeviceToHost));
 
         // Compare reference solution to GPU result
         if (! verifyResults(refOut, h_out, numRows, k)) {
@@ -428,24 +429,24 @@ void ellPackTest(ResultDatabase& resultDB, OptionParser& op, floatType* h_val,
     }
 
     // Free device memory
-    CUDA_SAFE_CALL(cudaFree(d_rowLengths));
-    CUDA_SAFE_CALL(cudaFree(d_vec));
-    CUDA_SAFE_CALL(cudaFree(d_out));
-    CUDA_SAFE_CALL(cudaFree(d_val));
-    CUDA_SAFE_CALL(cudaFree(d_cols));
+    CUDA_SAFE_CALL(hipFree(d_rowLengths));
+    CUDA_SAFE_CALL(hipFree(d_vec));
+    CUDA_SAFE_CALL(hipFree(d_out));
+    CUDA_SAFE_CALL(hipFree(d_val));
+    CUDA_SAFE_CALL(hipFree(d_cols));
     if (sizeof(floatType) == sizeof(double))
     {
-        CUDA_SAFE_CALL(cudaUnbindTexture(vecTexD));
+        CUDA_SAFE_CALL(hipUnbindTexture(vecTexD));
     }
     else
     {
-        CUDA_SAFE_CALL(cudaUnbindTexture(vecTex));
+        CUDA_SAFE_CALL(hipUnbindTexture(vecTex));
     }
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
-    CUDA_SAFE_CALL(cudaFreeHost(h_rowLengths));
-    CUDA_SAFE_CALL(cudaFreeHost(h_valcm));
-    CUDA_SAFE_CALL(cudaFreeHost(h_colscm));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
+    CUDA_SAFE_CALL(hipHostFree(h_rowLengths));
+    CUDA_SAFE_CALL(hipHostFree(h_valcm));
+    CUDA_SAFE_CALL(hipHostFree(h_colscm));
 }
 
 // ****************************************************************************
@@ -491,9 +492,9 @@ void RunTest(ResultDatabase &resultDB, OptionParser &op, int nRows=0)
         numRows = nRows;
         nItems = numRows * numRows / 100; // 1% of entries will be non-zero
         float maxval = op.getOptionFloat("maxval");
-        CUDA_SAFE_CALL(cudaMallocHost(&h_val, nItems * sizeof(floatType)));
-        CUDA_SAFE_CALL(cudaMallocHost(&h_cols, nItems * sizeof(int)));
-        CUDA_SAFE_CALL(cudaMallocHost(&h_rowDelimiters, (numRows + 1) * sizeof(int)));
+        CUDA_SAFE_CALL(hipHostMalloc(&h_val, nItems * sizeof(floatType)));
+        CUDA_SAFE_CALL(hipHostMalloc(&h_cols, nItems * sizeof(int)));
+        CUDA_SAFE_CALL(hipHostMalloc(&h_rowDelimiters, (numRows + 1) * sizeof(int)));
         fill(h_val, nItems, maxval);
         initRandomMatrix(h_cols, h_rowDelimiters, nItems, numRows);
     }
@@ -506,14 +507,14 @@ void RunTest(ResultDatabase &resultDB, OptionParser &op, int nRows=0)
     }
 
     // Set up remaining host data
-    CUDA_SAFE_CALL(cudaMallocHost(&h_vec, numRows * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_vec, numRows * sizeof(floatType)));
     refOut = new floatType[numRows];
-    CUDA_SAFE_CALL(cudaMallocHost(&h_rowDelimitersPad, (numRows + 1) * sizeof(int)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_rowDelimitersPad, (numRows + 1) * sizeof(int)));
     fill(h_vec, numRows, op.getOptionFloat("maxval"));
 
     // Set up the padded data structures
     int paddedSize = numRows + (PAD_FACTOR - numRows % PAD_FACTOR);
-    CUDA_SAFE_CALL(cudaMallocHost(&h_out, paddedSize * sizeof(floatType)));
+    CUDA_SAFE_CALL(hipHostMalloc(&h_out, paddedSize * sizeof(floatType)));
     convertToPadded(h_val, h_cols, numRows, h_rowDelimiters, &h_valPad,
             &h_colsPad, h_rowDelimitersPad, &nItemsPadded);
 
@@ -537,14 +538,14 @@ void RunTest(ResultDatabase &resultDB, OptionParser &op, int nRows=0)
             paddedSize);
 
     delete[] refOut;
-    CUDA_SAFE_CALL(cudaFreeHost(h_val));
-    CUDA_SAFE_CALL(cudaFreeHost(h_cols));
-    CUDA_SAFE_CALL(cudaFreeHost(h_rowDelimiters));
-    CUDA_SAFE_CALL(cudaFreeHost(h_vec));
-    CUDA_SAFE_CALL(cudaFreeHost(h_out));
-    CUDA_SAFE_CALL(cudaFreeHost(h_valPad));
-    CUDA_SAFE_CALL(cudaFreeHost(h_colsPad));
-    CUDA_SAFE_CALL(cudaFreeHost(h_rowDelimitersPad));
+    CUDA_SAFE_CALL(hipHostFree(h_val));
+    CUDA_SAFE_CALL(hipHostFree(h_cols));
+    CUDA_SAFE_CALL(hipHostFree(h_rowDelimiters));
+    CUDA_SAFE_CALL(hipHostFree(h_vec));
+    CUDA_SAFE_CALL(hipHostFree(h_out));
+    CUDA_SAFE_CALL(hipHostFree(h_valPad));
+    CUDA_SAFE_CALL(hipHostFree(h_colsPad));
+    CUDA_SAFE_CALL(hipHostFree(h_rowDelimitersPad));
 }
 
 // ****************************************************************************
@@ -568,9 +569,9 @@ void RunTest(ResultDatabase &resultDB, OptionParser &op, int nRows=0)
 void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 {
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
     bool doDouble = false;
     if ((deviceProp.major == 1 && deviceProp.minor >= 3) ||
         (deviceProp.major >= 2))

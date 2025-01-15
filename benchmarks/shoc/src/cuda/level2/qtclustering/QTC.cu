@@ -16,13 +16,13 @@
 #include "cudacommon.h"
 #define _USE_MATH_DEFINES
 #include <float.h>
-#include <cuda_runtime.h>
+#include <hip/hip_runtime.h>
 
 #include "PMSMemMgmt.h"
 
 #include "comm.h"
 
-texture<float, 2, cudaReadModeElementType> texDistance;
+texture<float, 2, hipReadModeElementType> texDistance;
 
 using namespace std;
 
@@ -78,9 +78,9 @@ void runTest(const string& name, ResultDatabase &resultDB, OptionParser& op);
 
 void RunBenchmark(ResultDatabase &resultDB, OptionParser &op){
     // Test to see if this device supports double precision
-    cudaGetDevice(&qtcDevice);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, qtcDevice);
+    hipGetDevice(&qtcDevice);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, qtcDevice);
 
     runTest("QTC", resultDB, op);
 }
@@ -168,12 +168,12 @@ unsigned long int estimate_memory_for_full_storage(unsigned long int pnt_cnt, fl
 
 void findMemCharacteristics(unsigned long int *gmem, unsigned long int *text){
     int device;
-    cudaDeviceProp deviceProp;
+    hipDeviceProp_t deviceProp;
 
-    cudaGetDevice(&device);
+    hipGetDevice(&device);
     CHECK_CUDA_ERROR();
 
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDeviceProperties(&deviceProp, device);
     CHECK_CUDA_ERROR();
 
     *gmem = (unsigned long int)(0.75*(float)deviceProp.totalGlobalMem);
@@ -296,7 +296,7 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
     bool save_clusters = false;
     bool be_verbose = false;
     bool synthetic_data = true;
-    cudaArray *distance_matrix_txt;
+    hipArray *distance_matrix_txt;
     void *distance_matrix_gmem, *distance_matrix;
     float *dist_source, *pnts;
     float threshold;
@@ -400,14 +400,14 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
     output = pmsAllocHostBuffer<int>(max_degree);
 
     if( can_use_texture ){
-        texDistance.addressMode[0] = cudaAddressModeClamp;
-        texDistance.addressMode[1] = cudaAddressModeClamp;
-        texDistance.filterMode = cudaFilterModePoint;
+        texDistance.addressMode[0] = hipAddressModeClamp;
+        texDistance.addressMode[1] = hipAddressModeClamp;
+        texDistance.filterMode = hipFilterModePoint;
         texDistance.normalized = false; // do not normalize coordinates
         // This is the actual distance matrix (dst_matrix_elems should be "point_count^2, or point_count*max_degree)
         printf("Allocating: %luMB (%lux%lux%lu) bytes in texture memory\n", dst_matrix_elems*sizeof(float)/(1024*1024),
                                                                         dst_matrix_elems/point_count, point_count, (long unsigned int)sizeof(float));
-        cudaMallocArray(&distance_matrix_txt, &texDistance.channelDesc, dst_matrix_elems/point_count, point_count);
+        hipMallocArray(&distance_matrix_txt, &texDistance.channelDesc, dst_matrix_elems/point_count, point_count);
     }else{
         allocDeviceBuffer(&distance_matrix_gmem, dst_matrix_elems*sizeof(float));
     }
@@ -428,9 +428,9 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
     int pcie_TH = Timer::Start();
 
     if( can_use_texture ){
-        cudaMemcpyToArray(distance_matrix_txt, 0, 0, dist_source, dst_matrix_elems*sizeof(float), cudaMemcpyHostToDevice);
+        hipMemcpyToArray(distance_matrix_txt, 0, 0, dist_source, dst_matrix_elems*sizeof(float), hipMemcpyHostToDevice);
         CHECK_CUDA_ERROR();
-        cudaBindTextureToArray(texDistance, distance_matrix_txt);
+        hipBindTextureToArray(texDistance, distance_matrix_txt);
     }else{
         copyToDevice(distance_matrix_gmem, dist_source, dst_matrix_elems*sizeof(float));
     }
@@ -438,13 +438,13 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
     copyToDevice(indr_mtrx, indr_mtrx_host, point_count*max_degree*sizeof(int));
 
     copyToDevice(ungrpd_pnts_indr, ungrpd_pnts_indr_host, point_count*sizeof(int));
-    cudaMemset(clustered_pnts_mask, 0, point_count*sizeof(char));
-    cudaMemset(dist_to_clust, 0, max_degree*thread_block_count*sizeof(float));
+    hipMemset(clustered_pnts_mask, 0, point_count*sizeof(char));
+    hipMemset(dist_to_clust, 0, max_degree*thread_block_count*sizeof(float));
     double transfer_time = Timer::Stop(pcie_TH, "PCIe Transfer Time");
 
     tpb = ( point_count > THREADSPERBLOCK )? THREADSPERBLOCK : point_count;
     compute_degrees<<<grid2D(thread_block_count), tpb>>>((int *)indr_mtrx, (int *)degrees, point_count, max_degree);
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     CHECK_CUDA_ERROR();
 
     const char *sizeStr;
@@ -515,7 +515,7 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
                                   total_thread_block_count, matrix_type, can_use_texture);
         ///////// -----------------               Main kernel                ----------------- /////////
         ////////////////////////////////////////////////////////////////////////////////////////////////
-        cudaThreadSynchronize();
+        hipDeviceSynchronize();
         CHECK_CUDA_ERROR();
         t_krn += Timer::Stop(Tkernel, "Kernel Only");
 
@@ -523,7 +523,7 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
         if( thread_block_count > 1 ){
             // We are reducing 128 numbers or less, so one thread should be sufficient.
             reduce_card_device<<<grid2D(1), 1>>>((int *)cardnl, thread_block_count);
-            cudaThreadSynchronize();
+            hipDeviceSynchronize();
             CHECK_CUDA_ERROR();
         }
 
@@ -549,7 +549,7 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
                                           (int *)result, (char *)Ai_mask, (char *)clustered_pnts_mask,
                                           (int *)indr_mtrx, (int *)cardnl, (float *)dist_to_clust, (int *)degrees,
                                           point_count, max_point_count, max_degree, threshold, matrix_type, can_use_texture );
-        cudaThreadSynchronize();
+        hipDeviceSynchronize();
         CHECK_CUDA_ERROR();
         t_trim += Timer::Stop(Ttrim, "Trim Only");
 
@@ -572,7 +572,7 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
 
         int Tupdt = Timer::Start();
         update_clustered_pnts_mask<<<grid2D(1), tpb>>>((char *)clustered_pnts_mask, (char *)Ai_mask, max_point_count);
-        cudaThreadSynchronize();
+        hipDeviceSynchronize();
         CHECK_CUDA_ERROR();
         t_updt += Timer::Stop(Tupdt, "Update Only");
 
@@ -605,8 +605,8 @@ void QTC(const string& name, ResultDatabase &resultDB, OptionParser& op, int mat
     pmsFreeHostBuffer(dist_source);
     pmsFreeHostBuffer(indr_mtrx_host);
     if( can_use_texture ){
-        cudaFreeArray(distance_matrix_txt);
-        cudaUnbindTexture(texDistance);
+        hipFreeArray(distance_matrix_txt);
+        hipUnbindTexture(texDistance);
     }else{
         freeDeviceBuffer(distance_matrix_gmem);
     }
@@ -640,8 +640,8 @@ init(OptionParser& op)
         else {
             qtcDevice = 0;
         }
-        cudaSetDevice(qtcDevice);
-        cudaGetDevice(&qtcDevice);
+        hipSetDevice(qtcDevice);
+        hipGetDevice(&qtcDevice);
     }
 }
 
@@ -649,20 +649,20 @@ init(OptionParser& op)
 void
 allocDeviceBuffer(void** bufferp, unsigned long bytes)
 {
-    cudaMalloc(bufferp, bytes);
+    hipMalloc(bufferp, bytes);
     CHECK_CUDA_ERROR();
 }
 
 void
 freeDeviceBuffer(void* buffer)
 {
-    cudaFree(buffer);
+    hipFree(buffer);
 }
 
 void
 copyToDevice(void* to_device, void* from_host, unsigned long bytes)
 {
-    cudaMemcpy(to_device, from_host, bytes, cudaMemcpyHostToDevice);
+    hipMemcpy(to_device, from_host, bytes, hipMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
 }
 
@@ -670,7 +670,7 @@ copyToDevice(void* to_device, void* from_host, unsigned long bytes)
 void
 copyFromDevice(void* to_host, void* from_device, unsigned long bytes)
 {
-    cudaMemcpy(to_host, from_device, bytes, cudaMemcpyDeviceToHost);
+    hipMemcpy(to_host, from_device, bytes, hipMemcpyDeviceToHost);
     CHECK_CUDA_ERROR();
 }
 

@@ -1,6 +1,6 @@
 #include "cudacommon.h"
-#include <cuda.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,9 +60,9 @@ void
 RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
 {
     int device;
-    cudaGetDevice(&device);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    hipGetDevice(&device);
+    hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, device);
 
     cout << "Running single precision test" << endl;
     RunTest<float, float4>("Scan", resultDB, op);
@@ -103,9 +103,9 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     T* h_idata;
     T* reference;
     T* h_odata;
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &h_idata,   bytes));
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &reference, bytes));
-    CUDA_SAFE_CALL(cudaMallocHost((void**) &h_odata,   bytes));
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &h_idata,   bytes));
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &reference, bytes));
+    CUDA_SAFE_CALL(hipHostMalloc((void**) &h_odata,   bytes));
 
     // Initialize host memory
     cout << "Initializing host memory." << endl;
@@ -123,23 +123,23 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
 
     // Allocate device memory
     T* d_idata, *d_odata, *d_block_sums;
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_idata, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_odata, bytes));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_block_sums, num_blocks * sizeof(T)));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_idata, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_odata, bytes));
+    CUDA_SAFE_CALL(hipMalloc((void**) &d_block_sums, num_blocks * sizeof(T)));
 
     // Copy data to GPU
     cout << "Copying data to device." << endl;
-    cudaEvent_t start, stop;
-    CUDA_SAFE_CALL(cudaEventCreate(&start));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop));
-    CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-    CUDA_SAFE_CALL(cudaMemcpy(d_idata, h_idata, bytes, cudaMemcpyHostToDevice));
-    cudaEventRecord(stop, 0);
-    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+    hipEvent_t start, stop;
+    CUDA_SAFE_CALL(hipEventCreate(&start));
+    CUDA_SAFE_CALL(hipEventCreate(&stop));
+    CUDA_SAFE_CALL(hipEventRecord(start, 0));
+    CUDA_SAFE_CALL(hipMemcpy(d_idata, h_idata, bytes, hipMemcpyHostToDevice));
+    hipEventRecord(stop, 0);
+    CUDA_SAFE_CALL(hipEventSynchronize(stop));
 
     // Get elapsed time
     float transferTime = 0.0f;
-    cudaEventElapsedTime(&transferTime, start, stop);
+    hipEventElapsedTime(&transferTime, start, stop);
     transferTime *= 1.e-3;
 
     int passes = op.getOptionInt("passes");
@@ -149,7 +149,7 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     for (int k = 0; k < passes; k++)
     {
         float totalScanTime = 0.0f;
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
             // For scan, we use a reduce-then-scan approach
@@ -169,17 +169,17 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
             bottom_scan<T, vecT, 256><<<num_blocks, num_threads, 2*smem_size>>>
                 (d_idata, d_odata, d_block_sums, size);
         }
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&totalScanTime, start, stop);
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&totalScanTime, start, stop);
 
         float oTransferTime = 0.0f;
-        CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-        CUDA_SAFE_CALL(cudaMemcpy(h_odata, d_odata, bytes,
-                cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
-        CUDA_SAFE_CALL(cudaEventSynchronize(stop));
-        cudaEventElapsedTime(&oTransferTime, start, stop);
+        CUDA_SAFE_CALL(hipEventRecord(start, 0));
+        CUDA_SAFE_CALL(hipMemcpy(h_odata, d_odata, bytes,
+                hipMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(hipEventRecord(stop, 0));
+        CUDA_SAFE_CALL(hipEventSynchronize(stop));
+        hipEventElapsedTime(&oTransferTime, start, stop);
         oTransferTime *= 1.e-3;
 
         // Only add output transfer time once
@@ -205,14 +205,14 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
         resultDB.AddResult(testName+"_Parity", atts, "N",
                 transferTime / avgTime);
     }
-    CUDA_SAFE_CALL(cudaFree(d_idata));
-    CUDA_SAFE_CALL(cudaFree(d_odata));
-    CUDA_SAFE_CALL(cudaFree(d_block_sums));
-    CUDA_SAFE_CALL(cudaFreeHost(h_idata));
-    CUDA_SAFE_CALL(cudaFreeHost(h_odata));
-    CUDA_SAFE_CALL(cudaFreeHost(reference));
-    CUDA_SAFE_CALL(cudaEventDestroy(start));
-    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(hipFree(d_idata));
+    CUDA_SAFE_CALL(hipFree(d_odata));
+    CUDA_SAFE_CALL(hipFree(d_block_sums));
+    CUDA_SAFE_CALL(hipHostFree(h_idata));
+    CUDA_SAFE_CALL(hipHostFree(h_odata));
+    CUDA_SAFE_CALL(hipHostFree(reference));
+    CUDA_SAFE_CALL(hipEventDestroy(start));
+    CUDA_SAFE_CALL(hipEventDestroy(stop));
 }
 
 
