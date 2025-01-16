@@ -3,7 +3,7 @@
 #include <string>
 #include "hip/hip_runtime.h"
 #include "cudacommon.h"
-#include "hipblas.h"
+#include "hipblas/hipblas.h"
 #include "hip/hip_runtime.h"
 #include "Timer.h"
 #include "ResultDatabase.h"
@@ -14,6 +14,28 @@
 #endif
 
 using namespace std;
+
+hipblasHandle_t handle;
+
+hipblasOperation_t char2hipblas_operation(char value)
+{
+    switch(value)
+    {
+    case 'N':
+        return HIPBLAS_OP_N;
+    case 'T':
+        return HIPBLAS_OP_T;
+    case 'C':
+        return HIPBLAS_OP_C;
+    case 'n':
+        return HIPBLAS_OP_N;
+    case 't':
+        return HIPBLAS_OP_T;
+    case 'c':
+        return HIPBLAS_OP_C;
+    }
+    return HIPBLAS_OP_N;
+}
 
 template <class T>
 void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op);
@@ -166,7 +188,8 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     }
 
     // Initialize the cublas library
-    cublasInit();
+    //cublasInit();
+    hipblasCreate(&handle);
 
     // Allocate GPU memory
     T *dA, *dB, *dC;
@@ -284,19 +307,20 @@ void RunTest(string testName, ResultDatabase &resultDB, OptionParser &op)
     CUDA_SAFE_CALL(hipHostFree(C));
     CUDA_SAFE_CALL(hipEventDestroy(start));
     CUDA_SAFE_CALL(hipEventDestroy(stop));
-    cublasShutdown();
+    //cublasShutdown();
+    hipblasDestroy(handle);
 }
 
 template<>
 inline void devGEMM<double>(char transa, char transb, int m, int n, int k,
         double alpha, const double *A, int lda, const double *B, int ldb,
         double beta, double *C, int ldc) {
-    hipblasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+    hipblasDgemm(handle, char2hipblas_operation(transa), char2hipblas_operation(transb), m, n, k, &alpha, A, lda, B, ldb, &beta, C, ldc);
 }
 
 template <>
 inline void devGEMM<float>(char transa, char transb, int m, int n, int k,
         float alpha, const float *A, int lda, const float *B, int ldb,
         float beta, float *C, int ldc) {
-    hipblasSgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+    hipblasSgemm(handle, char2hipblas_operation(transa), char2hipblas_operation(transb), m, n, k, &alpha, A, lda, B, ldb, &beta, C, ldc);
 }

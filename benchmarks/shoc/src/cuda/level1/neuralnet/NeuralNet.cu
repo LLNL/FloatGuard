@@ -12,12 +12,34 @@
 #include "OptionParser.h"
 #include "ResultDatabase.h"
 
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 
 #define TRAINING_SIZE 5000
 #define TEST_SIZE 1000
 
 #define IMAGE_SIZE 784
+
+hipblasHandle_t handle;
+
+hipblasOperation_t char2hipblas_operation(char value)
+{
+    switch(value)
+    {
+    case 'N':
+        return HIPBLAS_OP_N;
+    case 'T':
+        return HIPBLAS_OP_T;
+    case 'C':
+        return HIPBLAS_OP_C;
+    case 'n':
+        return HIPBLAS_OP_N;
+    case 't':
+        return HIPBLAS_OP_T;
+    case 'c':
+        return HIPBLAS_OP_C;
+    }
+    return HIPBLAS_OP_N;
+}
 
 float ONE=1.0;
 float ZERO=0.0;
@@ -131,7 +153,7 @@ __global__ void kernelBackprop1(float *delta_nabla_w,int w_off,float *activation
 
 __global__ void kernelBackprop2(float *delta_nabla_b,int b_off,float *activations,float *zs,float y) {
 
-  int y_[10]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  int y_[10]={0,0,0,0,0,0,0,0,0,0};
 
   y_[(int)(y+0.1)]=1.0;
   delta_nabla_b[b_off+threadIdx.x]=(activations[threadIdx.x]-y_[threadIdx.x])*(1.0/(1.0+expf(-zs[threadIdx.x])))*(1.0-(1.0/(1.0+expf(-zs[threadIdx.x]))));
@@ -211,8 +233,10 @@ void backprop(float y) {
 
     // Feed forward using all training sets in mini batch
     for (k=1; k<NUM_LAYERS; k++) {
+      float alpha = 1.0f;
+      float beta = 0.0f;
 
-      hipblasSgemm('t','n',SIZES[k],MINI_BATCH_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TRAINING[k-1],SIZES[k-1],0,D__ZS_2D_TRAINING[k-1],SIZES[k]);
+      hipblasSgemm(handle, char2hipblas_operation('t'), char2hipblas_operation('n'),SIZES[k],MINI_BATCH_SIZE,SIZES[k-1],&alpha,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TRAINING[k-1],SIZES[k-1],&beta,D__ZS_2D_TRAINING[k-1],SIZES[k]);
 
       {dim3 dimBlock(SIZES[k],1,1); dim3 dimGrid(MINI_BATCH_SIZE,1,1);
       kernelFeedForward3<<< dimGrid, dimBlock >>>(D__ZS_2D_TRAINING[k-1],D__BIASES,b_offset,D__ACTIVATIONS_2D_TRAINING[k]);}
@@ -273,15 +297,18 @@ void update_mini_batch(int *mini_batch_y) {
 
     backprop(mini_batch_y[i]);
 
-    hipblasSaxpy(TBS,1,D__DELTA_NABLA_B,1,D__NABLA_B,1);
+    float alpha = 1.0f;
 
-    hipblasSaxpy(TWS,1,D__DELTA_NABLA_W,1,D__NABLA_W,1);
+    hipblasSaxpy(handle,TBS,&alpha,D__DELTA_NABLA_B,1,D__NABLA_B,1);
+
+    hipblasSaxpy(handle,TWS,&alpha,D__DELTA_NABLA_W,1,D__NABLA_W,1);
 
   }
 
-  hipblasSaxpy(TBS,-(ETA/MINI_BATCH_SIZE),D__NABLA_B,1,D__BIASES,1);
+  float alpha = -(ETA/MINI_BATCH_SIZE);
+  hipblasSaxpy(handle,TBS,&alpha,D__NABLA_B,1,D__BIASES,1);
 
-  hipblasSaxpy(TWS,-(ETA/MINI_BATCH_SIZE),D__NABLA_W,1,D__WEIGHTS,1);
+  hipblasSaxpy(handle,TWS,&alpha,D__NABLA_W,1,D__WEIGHTS,1);
 
 }
 
@@ -494,7 +521,8 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
   CUDA_SAFE_CALL(hipMalloc((void**)&D__DELTA_NABLA_B,TBS*sizeof(float)));
   CUDA_SAFE_CALL(hipMalloc((void**)&D__DELTA_NABLA_W,TWS*sizeof(float)));
 
-  cublasInit();
+  //cublasInit();
+  hipblasCreate(&handle);
 
   ////int probSizes[4] = { 1, 8, 48, 96 };
   ////int size = probSizes[op.getOptionInt("size")-1];
@@ -565,8 +593,10 @@ void RunBenchmark(ResultDatabase &resultDB, OptionParser &op)
         b_offset=w_offset=0;
 
         for (k=1; k<NUM_LAYERS; k++) {
+          float alpha = 1.0f;
+          float beta = 0.0f;
 
-          hipblasSgemm('t','n',SIZES[k],TEST_SIZE,SIZES[k-1],1,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TEST[k-1],SIZES[k-1],0,D__ZS_2D_TEST[k-1],SIZES[k]);
+          hipblasSgemm(handle, char2hipblas_operation('t'),char2hipblas_operation('n'),SIZES[k],TEST_SIZE,SIZES[k-1],&alpha,&D__WEIGHTS[w_offset],SIZES[k-1],D__ACTIVATIONS_2D_TEST[k-1],SIZES[k-1],&beta,D__ZS_2D_TEST[k-1],SIZES[k]);
 
           {dim3 dimBlock(SIZES[k],1,1); dim3 dimGrid(TEST_SIZE,1,1);
           kernelFeedForward3<<< dimGrid, dimBlock >>>(D__ZS_2D_TEST[k-1],D__BIASES,b_offset,D__ACTIVATIONS_2D_TEST[k]);}

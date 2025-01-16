@@ -1466,22 +1466,22 @@ __global__ void MAddU(float *target, float val1, float val2)
     int index = blockIdx.x*blockDim.x + threadIdx.x;
 
     // Create a bunch of local variables we can use up to 32 steps..
-    register float v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
-    register float v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
-    register float v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
-    register float v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
-    register float v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
-    register float v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
-    register float v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
-    register float v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
-    register float s0=v0,   s1=v1,   s2=v2,   s3=v3;
-    register float s4=v4,   s5=v5,   s6=v6,   s7=v7;
-    register float s8=v8,   s9=v9,   s10=v10, s11=v11;
-    register float s12=v12, s13=v13, s14=v14, s15=v15;
-    register float s16=v16, s17=v17, s18=v18, s19=v19;
-    register float s20=v20, s21=v21, s22=v22, s23=v23;
-    register float s24=v24, s25=v25, s26=v26, s27=v27;
-    register float s28=v28, s29=v29, s30=v30, s31=v31;
+    float v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
+    float v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
+    float v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
+    float v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
+    float v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
+    float v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
+    float v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
+    float v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
+    float s0=v0,   s1=v1,   s2=v2,   s3=v3;
+    float s4=v4,   s5=v5,   s6=v6,   s7=v7;
+    float s8=v8,   s9=v9,   s10=v10, s11=v11;
+    float s12=v12, s13=v13, s14=v14, s15=v15;
+    float s16=v16, s17=v17, s18=v18, s19=v19;
+    float s20=v20, s21=v21, s22=v22, s23=v23;
+    float s24=v24, s25=v25, s26=v26, s27=v27;
+    float s28=v28, s29=v29, s30=v30, s31=v31;
 
     // 10 OP10s inside the loop = 6400 FLOPS in the .ptx code
     // and 5 loops of 10 OP10s = 32000 FLOPS per pixel total
@@ -1502,22 +1502,22 @@ __global__ void MAddU(float *target, float val1, float val2)
 __global__ void MAddU_DP(double *target, double val1, double val2)
 {
     int index = blockIdx.x*blockDim.x + threadIdx.x;
-    register double v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
-    register double v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
-    register double v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
-    register double v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
-    register double v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
-    register double v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
-    register double v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
-    register double v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
-    register double s0=v0,   s1=v1,   s2=v2,   s3=v3;
-    register double s4=v4,   s5=v5,   s6=v6,   s7=v7;
-    register double s8=v8,   s9=v9,   s10=v10, s11=v11;
-    register double s12=v12, s13=v13, s14=v14, s15=v15;
-    register double s16=v16, s17=v17, s18=v18, s19=v19;
-    register double s20=v20, s21=v21, s22=v22, s23=v23;
-    register double s24=v24, s25=v25, s26=v26, s27=v27;
-    register double s28=v28, s29=v29, s30=v30, s31=v31;
+    double v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
+    double v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
+    double v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
+    double v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
+    double v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
+    double v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
+    double v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
+    double v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
+    double s0=v0,   s1=v1,   s2=v2,   s3=v3;
+    double s4=v4,   s5=v5,   s6=v6,   s7=v7;
+    double s8=v8,   s9=v9,   s10=v10, s11=v11;
+    double s12=v12, s13=v13, s14=v14, s15=v15;
+    double s16=v16, s17=v17, s18=v18, s19=v19;
+    double s20=v20, s21=v21, s22=v22, s23=v23;
+    double s24=v24, s25=v25, s26=v26, s27=v27;
+    double s28=v28, s29=v29, s30=v30, s31=v31;
 
 
     // 10 OP10s inside the loop = 6400 FLOPS in the .ptx code
@@ -1539,22 +1539,22 @@ __global__ void MulMAddU(float *target, float val1, float val2)
 {
     int index = blockIdx.x*blockDim.x + threadIdx.x;
 
-    register float v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
-    register float v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
-    register float v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
-    register float v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
-    register float v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
-    register float v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
-    register float v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
-    register float v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
-    register float s0=v0,   s1=v1,   s2=v2,   s3=v3;
-    register float s4=v4,   s5=v5,   s6=v6,   s7=v7;
-    register float s8=v8,   s9=v9,   s10=v10, s11=v11;
-    register float s12=v12, s13=v13, s14=v14, s15=v15;
-    register float s16=v16, s17=v17, s18=v18, s19=v19;
-    register float s20=v20, s21=v21, s22=v22, s23=v23;
-    register float s24=v24, s25=v25, s26=v26, s27=v27;
-    register float s28=v28, s29=v29, s30=v30, s31=v31;
+    float v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
+    float v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
+    float v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
+    float v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
+    float v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
+    float v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
+    float v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
+    float v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
+    float s0=v0,   s1=v1,   s2=v2,   s3=v3;
+    float s4=v4,   s5=v5,   s6=v6,   s7=v7;
+    float s8=v8,   s9=v9,   s10=v10, s11=v11;
+    float s12=v12, s13=v13, s14=v14, s15=v15;
+    float s16=v16, s17=v17, s18=v18, s19=v19;
+    float s20=v20, s21=v21, s22=v22, s23=v23;
+    float s24=v24, s25=v25, s26=v26, s27=v27;
+    float s28=v28, s29=v29, s30=v30, s31=v31;
 
     // 10 OP10s inside the loop = 2400 FLOPS in the .ptx code
     // and 5 loops of 10 OP10s = 12000 FLOPS per pixel total
@@ -1574,22 +1574,22 @@ __global__ void MulMAddU(float *target, float val1, float val2)
 __global__ void MulMAddU_DP(double *target, double val1, double val2)
 {
     int index = blockIdx.x*blockDim.x + threadIdx.x;
-    register double v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
-    register double v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
-    register double v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
-    register double v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
-    register double v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
-    register double v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
-    register double v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
-    register double v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
-    register double s0=v0,   s1=v1,   s2=v2,   s3=v3;
-    register double s4=v4,   s5=v5,   s6=v6,   s7=v7;
-    register double s8=v8,   s9=v9,   s10=v10, s11=v11;
-    register double s12=v12, s13=v13, s14=v14, s15=v15;
-    register double s16=v16, s17=v17, s18=v18, s19=v19;
-    register double s20=v20, s21=v21, s22=v22, s23=v23;
-    register double s24=v24, s25=v25, s26=v26, s27=v27;
-    register double s28=v28, s29=v29, s30=v30, s31=v31;
+    double v0=val1,     v1=val2,     v2=v0+v1,    v3=v0+v2;
+    double v4=v0+v3,    v5=v0+v4,    v6=v0+v5,    v7=v0+v6;
+    double v8=v0+v7,    v9=v0+v8,    v10=v0+v9,   v11=v0+v10;
+    double v12=v0+v11,  v13=v0+v12,  v14=v0+v13,  v15=v0+v14;
+    double v16=v0+v15,  v17=v16+v0,  v18=v16+v1,  v19=v16+v2;
+    double v20=v16+v3,  v21=v16+v4,  v22=v16+v5,  v23=v16+v6;
+    double v24=v16+v7,  v25=v16+v8,  v26=v16+v9,  v27=v16+v10;
+    double v28=v16+v11, v29=v16+v12, v30=v16+v13, v31=v16+v14;
+    double s0=v0,   s1=v1,   s2=v2,   s3=v3;
+    double s4=v4,   s5=v5,   s6=v6,   s7=v7;
+    double s8=v8,   s9=v9,   s10=v10, s11=v11;
+    double s12=v12, s13=v13, s14=v14, s15=v15;
+    double s16=v16, s17=v17, s18=v18, s19=v19;
+    double s20=v20, s21=v21, s22=v22, s23=v23;
+    double s24=v24, s25=v25, s26=v26, s27=v27;
+    double s28=v28, s29=v29, s30=v30, s31=v31;
 
     // 10 OP10s inside the loop = 2400 FLOPS in the .ptx code
     // and 5 loops of 10 OP10s = 12000 FLOPS per pixel total
@@ -1681,7 +1681,7 @@ __global__ void MulMAddU_DP(double *target, double val1, double val2)
 template <class T>
 __global__ void Add1(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid];
+  T s = data[gid];
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 12 more times for 240 operations total.
@@ -1695,7 +1695,7 @@ __global__ void Add1(T *data, int nIters, T v) {
 template <class T>
 __global__ void Add2(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s;
+  T s = data[gid], s2=10.0f-s;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 6 more times for 120 operations total.
@@ -1709,7 +1709,7 @@ __global__ void Add2(T *data, int nIters, T v) {
 template <class T>
 __global__ void Add4(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 10 operations.
         Unroll 6 more times for 60 operations total.
@@ -1723,7 +1723,7 @@ __global__ void Add4(T *data, int nIters, T v) {
 template <class T>
 __global__ void Add8(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 5 operations.
         Unroll 6 more times for 30 operations total.
@@ -1738,7 +1738,7 @@ __global__ void Add8(T *data, int nIters, T v) {
 template <class T>
 __global__ void Mul1(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid]-data[gid]+0.999f;
+  T s = data[gid]-data[gid]+0.999f;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 10 more times for 200 operations total.
@@ -1752,7 +1752,7 @@ __global__ void Mul1(T *data, int nIters, T v) {
 template <class T>
 __global__ void Mul2(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f;
+  T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 5 more times for 100 operations total.
@@ -1766,7 +1766,7 @@ __global__ void Mul2(T *data, int nIters, T v) {
 template <class T>
 __global__ void Mul4(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f, s3=s-0.0002f, s4=s-0.0003f;
+  T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f, s3=s-0.0002f, s4=s-0.0003f;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 10 operations.
         Unroll 5 more times for 50 operations total.
@@ -1780,7 +1780,7 @@ __global__ void Mul4(T *data, int nIters, T v) {
 template <class T>
 __global__ void Mul8(T *data, int nIters, T v) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f, s3=s-0.0002f, s4=s-0.0003f, s5=s-0.0004f, s6=s-0.0005f, s7=s-0.0006f, s8=s-0.0007f;
+  T s = data[gid]-data[gid]+0.999f, s2=s-0.0001f, s3=s-0.0002f, s4=s-0.0003f, s5=s-0.0004f, s6=s-0.0005f, s7=s-0.0006f, s8=s-0.0007f;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 5 operations.
         Unroll 5 more times for 25 operations total.
@@ -1795,7 +1795,7 @@ __global__ void Mul8(T *data, int nIters, T v) {
 template <class T>
 __global__ void MAdd1(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid];
+  T s = data[gid];
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 12 more times for 240 operations total.
@@ -1809,7 +1809,7 @@ __global__ void MAdd1(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MAdd2(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s;
+  T s = data[gid], s2=10.0f-s;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 6 more times for 120 operations total.
@@ -1823,7 +1823,7 @@ __global__ void MAdd2(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MAdd4(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 10 operations.
         Unroll 6 more times for 60 operations total.
@@ -1837,7 +1837,7 @@ __global__ void MAdd4(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MAdd8(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 5 operations.
         Unroll 6 more times for 30 operations total.
@@ -1852,7 +1852,7 @@ __global__ void MAdd8(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MulMAdd1(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid];
+  T s = data[gid];
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 8 more times for 160 operations total.
@@ -1866,7 +1866,7 @@ __global__ void MulMAdd1(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MulMAdd2(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s;
+  T s = data[gid], s2=10.0f-s;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 20 operations.
         Unroll 4 more times for 80 operations total.
@@ -1880,7 +1880,7 @@ __global__ void MulMAdd2(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MulMAdd4(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 10 operations.
         Unroll 4 more times for 40 operations total.
@@ -1894,7 +1894,7 @@ __global__ void MulMAdd4(T *data, int nIters, T v1, T v2) {
 template <class T>
 __global__ void MulMAdd8(T *data, int nIters, T v1, T v2) {
   int gid = blockIdx.x*blockDim.x + threadIdx.x;
-  register T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
+  T s = data[gid], s2=10.0f-s, s3=9.0f-s, s4=9.0f-s2, s5=8.0f-s, s6=8.0f-s2, s7=7.0f-s, s8=7.0f-s2;
   for (int j=0 ; j<nIters ; ++j) {
      /* Each macro op has 5 operations.
         Unroll 4 more times for 20 operations total.

@@ -8,7 +8,7 @@
 #include "ResultDatabase.h"
 #include "Stability.h"
 
-#include "support.h"
+#include "../cuda/common/support.h"
 
 #define CHECKS 10
 #define ITERS_PER_CHECK 10

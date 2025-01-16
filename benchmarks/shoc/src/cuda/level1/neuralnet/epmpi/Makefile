@@ -196,7 +196,7 @@ epcudadir = $(bindir)/EP/CUDA
 
 # How to build those programs?
 NeuralNet_SOURCES = main.cpp
-NeuralNet_LDADD = NeuralNet.o $(CUDA_LIBS) $(LIBS) -lcublas
+NeuralNet_LDADD = NeuralNet.o $(CUDA_LIBS) $(LIBS) -lhipblas
 all: all-am
 
 .SUFFIXES:

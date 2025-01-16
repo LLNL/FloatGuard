@@ -237,7 +237,7 @@ serialcudadir = $(bindir)/Serial/CUDA
 Stability_SOURCES = Stability.cpp \
                 main.cpp
 
-Stability_LDADD = $(top_builddir)/src/cuda/level1/fft/fftlib.o $(CUDA_LIBS) -lcufft $(LIBS)
+Stability_LDADD = $(top_builddir)/src/cuda/level1/fft/fftlib.o $(CUDA_LIBS) $(LIBS)
 all: all-recursive
 
 .SUFFIXES:

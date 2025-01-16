@@ -236,7 +236,7 @@ serialcudadir = $(bindir)/Serial/CUDA
 GEMM_SOURCES = GEMM.cpp \
                 main.cpp
 
-GEMM_LDADD = $(CUDA_LIBS) -lcublas $(LIBS)
+GEMM_LDADD = $(CUDA_LIBS) -lhipblas $(LIBS)
 all: all-recursive
 
 .SUFFIXES:
