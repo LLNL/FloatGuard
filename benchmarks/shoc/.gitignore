@@ -1,0 +1,18 @@
+*.o
+*.a
+*.d
+*_cl.cpp
+*.buildflags
+tools/Logs/*
+tools/results.csv
+autom4te.cache
+*.suo
+*.sdf
+*.opensdf
+ipch
+bin
+libexec
+share
+
+# Ignore some generated files for in-place build
+.deps
