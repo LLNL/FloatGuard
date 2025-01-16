@@ -1,4 +1,4 @@
 #!/bin/sh
 
-perl /root/GPU-FPX/benchmarks_new/shoc/shoc/libexec/driver.pl -bindir /root/GPU-FPX/benchmarks_new/shoc/shoc/bin $*
+perl ${HOME}/FloatGuard/benchmarks/shoc/shoc/libexec/driver.pl -bindir ${HOME}/FloatGuard/benchmarks/shoc/shoc/bin $*
 

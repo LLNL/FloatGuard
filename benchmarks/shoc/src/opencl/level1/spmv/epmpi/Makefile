@@ -82,7 +82,7 @@ CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
 CPPFLAGS =  $(MPI_CPPFLAGS) $(OCL_CPPFLAGS) \
 	-I${top_srcdir}/src/mpi/common
-CUDA_CPPFLAGS = -gencode=arch=compute_89,code=sm_89 
+CUDA_CPPFLAGS =  
 CUDA_INCDIR = /usr/local/cuda/include
 
 # which compiler to use
@@ -113,7 +113,7 @@ MAKEINFO = ${SHELL} /root/GPU-FPX/benchmarks_new/shoc/build-aux/missing --run ma
 MKDIR_P = /usr/bin/mkdir -p
 MPICXX = 
 MPI_SUBDIRS =  cuda
-NVCC = /usr/local/cuda/bin/nvcc
+NVCC = hipcc
 NVCXXFLAGS = -g -O2
 OBJEXT = o
 OPENCL_LIBS = 
@@ -139,7 +139,7 @@ abs_srcdir = /root/GPU-FPX/benchmarks_new/shoc/src/opencl/level1/spmv/epmpi
 abs_top_builddir = /root/GPU-FPX/benchmarks_new/shoc
 abs_top_srcdir = /root/GPU-FPX/benchmarks_new/shoc
 ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CXX = hipcc
 am__include = include
 am__leading_dot = .
 am__quote = 

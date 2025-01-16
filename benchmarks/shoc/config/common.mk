@@ -27,15 +27,15 @@ OCL_CPPFLAGS    = -I$(top_srcdir)/src/opencl/common
 OCL_LDFLAGS		= -L$(top_builddir)/src/opencl/common
 OCL_LIBS        = -lSHOCCommonOpenCL -lSHOCCommon 
 
-NVCC            = /usr/local/cuda/bin/nvcc
-CUDA_CXX        = /usr/local/cuda/bin/nvcc
+NVCC            = hipcc
+CUDA_CXX        = hipcc
 CUDA_INC        = -I/usr/local/cuda/include -I$(top_srcdir)/src/cuda/common
 CUDA_LDFLAGS	= -L$(top_builddir)/src/cuda/common
-CUDA_CPPFLAGS   = -gencode=arch=compute_89,code=sm_89  -I$(top_srcdir)/src/cuda/common
+CUDA_CPPFLAGS   =   -I$(top_srcdir)/src/cuda/common
 
 USE_CUDA        = yes
 ifeq ($(USE_CUDA),yes)
-CUDA_LIBS		:= -lSHOCCommon "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib/stubs" "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib"  -lcudadevrt  -lcudart_static  -lrt -lpthread  -ldl #$(shell $(top_srcdir)/config/find_cuda_libs.sh /usr/local/cuda/bin/nvcc)
+CUDA_LIBS		:= -fgpu-rdc --hip-link -lSHOCCommon #-lSHOCCommon "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib/stubs" "-L/usr/local/cuda/bin/../targets/x86_64-linux/lib"  -lcudadevrt  -lcudart_static  -lrt -lpthread  -ldl #$(shell $(top_srcdir)/config/find_cuda_libs.sh /usr/local/cuda/bin/nvcc)
 else
 CUDA_LIBS       =
 endif
