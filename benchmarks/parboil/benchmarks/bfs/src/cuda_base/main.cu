@@ -31,7 +31,7 @@ typedef int2 Node;
 typedef int2 Edge;
 
 #include "kernel.cu"
-//Somehow "cudaMemset" does not work. So I use cudaMemcpy of constant variables for initialization
+//Somehow "hipMemset" does not work. So I use hipMemcpy of constant variables for initialization
 const int h_top = 1;
 const int zero = 0;
 
@@ -105,50 +105,50 @@ int main(int argc, char** argv)
 
   //Copy the Node list to device memory
   Node* d_graph_nodes;
-  cudaMalloc((void**) &d_graph_nodes, sizeof(Node)*num_of_nodes);
-  cudaMemcpy(d_graph_nodes, h_graph_nodes, sizeof(Node)*num_of_nodes, cudaMemcpyHostToDevice);
+  hipMalloc((void**) &d_graph_nodes, sizeof(Node)*num_of_nodes);
+  hipMemcpy(d_graph_nodes, h_graph_nodes, sizeof(Node)*num_of_nodes, hipMemcpyHostToDevice);
   //Copy the Edge List to device Memory
   Edge* d_graph_edges;
-  cudaMalloc((void**) &d_graph_edges, sizeof(Edge)*num_of_edges);
-  cudaMemcpy(d_graph_edges, h_graph_edges, sizeof(Edge)*num_of_edges, cudaMemcpyHostToDevice);
+  hipMalloc((void**) &d_graph_edges, sizeof(Edge)*num_of_edges);
+  hipMemcpy(d_graph_edges, h_graph_edges, sizeof(Edge)*num_of_edges, hipMemcpyHostToDevice);
 
   int* d_color;
-  cudaMalloc((void**) &d_color, sizeof(int)*num_of_nodes);
+  hipMalloc((void**) &d_color, sizeof(int)*num_of_nodes);
   int* d_cost;
-  cudaMalloc((void**) &d_cost, sizeof(int)*num_of_nodes);
+  hipMalloc((void**) &d_cost, sizeof(int)*num_of_nodes);
   int * d_q1;
   int * d_q2;
-  cudaMalloc( (void**) &d_q1, sizeof(int)*num_of_nodes);
-  cudaMalloc( (void**) &d_q2, sizeof(int)*num_of_nodes);
+  hipMalloc( (void**) &d_q1, sizeof(int)*num_of_nodes);
+  hipMalloc( (void**) &d_q2, sizeof(int)*num_of_nodes);
   int * tail;
-  cudaMalloc( (void**) &tail, sizeof(int));
+  hipMalloc( (void**) &tail, sizeof(int));
   int *front_cost_d;
-  cudaMalloc( (void**) &front_cost_d, sizeof(int));
-  cudaMemcpy( d_color, color, sizeof(int)*num_of_nodes, cudaMemcpyHostToDevice);
-  cudaMemcpy( d_cost, h_cost, sizeof(int)*num_of_nodes, cudaMemcpyHostToDevice);
+  hipMalloc( (void**) &front_cost_d, sizeof(int));
+  hipMemcpy( d_color, color, sizeof(int)*num_of_nodes, hipMemcpyHostToDevice);
+  hipMemcpy( d_cost, h_cost, sizeof(int)*num_of_nodes, hipMemcpyHostToDevice);
 
   //bind the texture memory with global memory
-  cudaBindTexture(0,g_graph_node_ref,d_graph_nodes, sizeof(Node)*num_of_nodes);
-  cudaBindTexture(0,g_graph_edge_ref,d_graph_edges,sizeof(Edge)*num_of_edges);
+  hipBindTexture(0,g_graph_node_ref,d_graph_nodes, sizeof(Node)*num_of_nodes);
+  hipBindTexture(0,g_graph_edge_ref,d_graph_edges,sizeof(Edge)*num_of_edges);
 
   printf("Starting GPU kernel\n");
-  (cudaThreadSynchronize());
+  (hipDeviceSynchronize());
   pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);
   
   int num_of_blocks; 
   int num_of_threads_per_block;
 
-  cudaMemcpy(tail,&h_top,sizeof(int),cudaMemcpyHostToDevice);
-  cudaMemcpy(&d_cost[source],&zero,sizeof(int),cudaMemcpyHostToDevice);
+  hipMemcpy(tail,&h_top,sizeof(int),hipMemcpyHostToDevice);
+  hipMemcpy(&d_cost[source],&zero,sizeof(int),hipMemcpyHostToDevice);
 
-  cudaMemcpy( &d_q1[0], &source, sizeof(int), cudaMemcpyHostToDevice);
+  hipMemcpy( &d_q1[0], &source, sizeof(int), hipMemcpyHostToDevice);
   int num_t;//number of threads
   int k=0;//BFS level index
 
   do
   {
-    (cudaMemcpy(&num_t, tail, sizeof(int), cudaMemcpyDeviceToHost) );
-    (cudaMemcpy(tail,&zero,sizeof(int),cudaMemcpyHostToDevice));
+    (hipMemcpy(&num_t, tail, sizeof(int), hipMemcpyDeviceToHost) );
+    (hipMemcpy(tail,&zero,sizeof(int),hipMemcpyHostToDevice));
 
     if(num_t == 0){//frontier is empty
       break;
@@ -182,22 +182,22 @@ int main(int argc, char** argv)
     k++;
   }
   while(1);
-  cudaThreadSynchronize();
+  hipDeviceSynchronize();
   pb_SwitchToTimer(&timers, pb_TimerID_COPY);
   printf("GPU kernel done\n");
 
   // copy result from device to host
-  cudaMemcpy(h_cost, d_cost, sizeof(int)*num_of_nodes, cudaMemcpyDeviceToHost);
-  cudaMemcpy(color, d_color, sizeof(int)*num_of_nodes, cudaMemcpyDeviceToHost);
-  cudaUnbindTexture(g_graph_node_ref);
-  cudaUnbindTexture(g_graph_edge_ref);
+  hipMemcpy(h_cost, d_cost, sizeof(int)*num_of_nodes, hipMemcpyDeviceToHost);
+  hipMemcpy(color, d_color, sizeof(int)*num_of_nodes, hipMemcpyDeviceToHost);
+  hipUnbindTexture(g_graph_node_ref);
+  hipUnbindTexture(g_graph_edge_ref);
 
-  cudaFree(d_graph_nodes);
-  cudaFree(d_graph_edges);
-  cudaFree(d_color);
-  cudaFree(d_cost);
-  cudaFree(tail);
-  cudaFree(front_cost_d);
+  hipFree(d_graph_nodes);
+  hipFree(d_graph_edges);
+  hipFree(d_color);
+  hipFree(d_cost);
+  hipFree(tail);
+  hipFree(front_cost_d);
   //Store the result into a file
   pb_SwitchToTimer(&timers, pb_TimerID_IO);
   FILE *fp = fopen(params->outFile,"w");

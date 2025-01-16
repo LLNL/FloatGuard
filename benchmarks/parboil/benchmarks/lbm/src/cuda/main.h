@@ -32,9 +32,9 @@ void MAIN_finalize( const MAIN_Param* param );
 
 #ifndef __MCUDA__
 #define CUDA_ERRCK                                                      \
-  {cudaError_t err;                                                     \
-    if ((err = cudaGetLastError()) != cudaSuccess) {                    \
-      fprintf(stderr, "CUDA error on line %d: %s\n", __LINE__, cudaGetErrorString(err)); \
+  {hipError_t err;                                                     \
+    if ((err = hipGetLastError()) != hipSuccess) {                    \
+      fprintf(stderr, "CUDA error on line %d: %s\n", __LINE__, hipGetErrorString(err)); \
       exit(-1);                                                         \
     }                                                                   \
   }

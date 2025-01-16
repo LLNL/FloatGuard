@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -10,7 +11,7 @@
 #include "sad4.h"
 
 /* The part of the reference image that is in the search range */
-texture<unsigned short, 2, cudaReadModeElementType> ref;
+texture<unsigned short, 2, hipReadModeElementType> ref;
 
 /* The compute kernel. */
 /* The macros THREADS_W and THREADS_H specify the width and height of the
@@ -93,7 +94,7 @@ __global__ void mb_sad_calc(unsigned short *blk_sad,
     }
 }
 
-texture<unsigned short, 2, cudaReadModeElementType> &get_ref(void)
+texture<unsigned short, 2, hipReadModeElementType> &get_ref(void)
 {
   return ref;
 }

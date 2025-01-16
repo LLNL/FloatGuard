@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the
@@ -219,8 +220,8 @@ void scanLargeArray( unsigned int gridNumElements, unsigned int* data_d) {
       }
     }
 
-    cudaMalloc( (void**) &inter_d, current_max*sizeof(unsigned int));
-    cudaMemset (inter_d, 0, current_max*sizeof(unsigned int));
+    hipMalloc( (void**) &inter_d, current_max*sizeof(unsigned int));
+    hipMemset (inter_d, 0, current_max*sizeof(unsigned int));
 
     for (unsigned int i=0; i < (size+GRID_SIZE-1)/GRID_SIZE; i++){
         unsigned int gridSize = ((size-(i*GRID_SIZE)) > GRID_SIZE) ? GRID_SIZE : (size-i*GRID_SIZE);
@@ -242,7 +243,7 @@ void scanLargeArray( unsigned int gridNumElements, unsigned int* data_d) {
         stride *= dim_block;
     }
 
-    cudaMemset(&(inter_d[current_max-1]), 0, sizeof(unsigned int));
+    hipMemset(&(inter_d[current_max-1]), 0, sizeof(unsigned int));
 
     for (unsigned int d = dim_block; d <= current_max; d *= dim_block)
     {
@@ -263,5 +264,5 @@ void scanLargeArray( unsigned int gridNumElements, unsigned int* data_d) {
         uniformAdd<<<grid, block>>>(numElems, data_d+(i*GRID_SIZE*BLOCK_SIZE), inter_d+(i*GRID_SIZE));
     }
 
-    cudaFree(inter_d);
+    hipFree(inter_d);
 }

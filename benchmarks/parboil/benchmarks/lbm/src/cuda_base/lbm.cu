@@ -19,7 +19,7 @@
 #include "lbm.h"
 #include "main.h"
 #ifndef __MCUDA__
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #else
 #include <mcuda.h>
 #endif
@@ -68,7 +68,7 @@ void LBM_allocateGrid( float** ptr ) {
 
 void CUDA_LBM_allocateGrid( float** ptr ) {
 	const size_t size = TOTAL_PADDED_CELLS*N_CELL_ENTRIES*sizeof( float ) + 2*TOTAL_MARGIN*sizeof( float );
-	cudaMalloc((void**)ptr, size);
+	hipMalloc((void**)ptr, size);
         CUDA_ERRCK;
 	*ptr += REAL_MARGIN;
 }
@@ -83,7 +83,7 @@ void LBM_freeGrid( float** ptr ) {
 /******************************************************************************/
 
 void CUDA_LBM_freeGrid( float** ptr ) {
-	cudaFree( *ptr-REAL_MARGIN );
+	hipFree( *ptr-REAL_MARGIN );
 	*ptr = NULL;
 }
 
@@ -122,15 +122,15 @@ void LBM_initializeGrid( LBM_Grid grid ) {
 void CUDA_LBM_initializeGrid( float** d_grid, float** h_grid ) {
 	const size_t size   = TOTAL_PADDED_CELLS*N_CELL_ENTRIES*sizeof( float ) + 2*TOTAL_MARGIN*sizeof( float );
 
-	cudaMemcpy(*d_grid - REAL_MARGIN, *h_grid - REAL_MARGIN, size, cudaMemcpyHostToDevice);
+	hipMemcpy(*d_grid - REAL_MARGIN, *h_grid - REAL_MARGIN, size, hipMemcpyHostToDevice);
         CUDA_ERRCK;
 }
 
 void CUDA_LBM_getDeviceGrid( float** d_grid, float** h_grid ) {
 	const size_t size   = TOTAL_PADDED_CELLS*N_CELL_ENTRIES*sizeof( float ) + 2*TOTAL_MARGIN*sizeof( float );
-        cudaThreadSynchronize();
+        hipDeviceSynchronize();
         CUDA_ERRCK;
-	cudaMemcpy(*h_grid - REAL_MARGIN, *d_grid - REAL_MARGIN, size, cudaMemcpyDeviceToHost);
+	hipMemcpy(*h_grid - REAL_MARGIN, *d_grid - REAL_MARGIN, size, hipMemcpyDeviceToHost);
         CUDA_ERRCK;
 }
 

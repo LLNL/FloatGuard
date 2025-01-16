@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #include <inttypes.h>
 #include <parboil.h>
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 
 #include "sad.h"
 #include "sad4.h"
@@ -20,8 +20,8 @@
 #include "image.h"
 
 #define CUDA_ERRCK \
-  {cudaError_t err = cudaGetLastError(); \
-    if (err) fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err)); \
+  {hipError_t err = hipGetLastError(); \
+    if (err) fprintf(stderr, "CUDA error: %s\n", hipGetErrorString(err)); \
   }
 
 static unsigned short *
@@ -289,40 +289,40 @@ main(int argc, char **argv)
 
   /* Run the kernel code */
   {
-    struct cudaArray *ref_ary;  /* Reference image on the device */
+    struct hipArray *ref_ary;  /* Reference image on the device */
     short *d_cur_image;         /* Current image on the device */
     unsigned short *d_sads;     /* SADs on the device */
     dim3 macroblock_grid(image_width_macroblocks, image_height_macroblocks);
 
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
-    cudaMalloc((void **)&d_cur_image, image_size_bytes);
+    hipMalloc((void **)&d_cur_image, image_size_bytes);
     CUDA_ERRCK
-    cudaMallocArray(&ref_ary, &get_ref().channelDesc,
+    hipMallocArray(&ref_ary, &get_ref().channelDesc,
                     ref_image->width, ref_image->height);
     CUDA_ERRCK
 
     /* Transfer current image to device */
-    cudaMemcpy(d_cur_image, cur_image->data, image_size_bytes,
-               cudaMemcpyHostToDevice);
+    hipMemcpy(d_cur_image, cur_image->data, image_size_bytes,
+               hipMemcpyHostToDevice);
     CUDA_ERRCK
 
     /* Transfer reference image to device */
-    cudaMemcpy2DToArray(ref_ary,
+    hipMemcpy2DToArray(ref_ary,
                         0, 0,
                         ref_image->data,
                         ref_image->width * sizeof(unsigned short),
                         ref_image->width * sizeof(unsigned short),
                         ref_image->height,
-                        cudaMemcpyHostToDevice);
+                        hipMemcpyHostToDevice);
     CUDA_ERRCK
-    cudaBindTextureToArray(get_ref(), ref_ary);
+    hipBindTextureToArray(get_ref(), ref_ary);
     CUDA_ERRCK
 
     /* Allocate SAD data on the device */
-    cudaMalloc((void **)&d_sads, 41 * MAX_POS_PADDED * image_size_macroblocks *
+    hipMalloc((void **)&d_sads, 41 * MAX_POS_PADDED * image_size_macroblocks *
 	       sizeof(unsigned short));
     CUDA_ERRCK
-    cudaMemset(d_sads, 0, 41 * MAX_POS_PADDED * image_size_macroblocks *
+    hipMemset(d_sads, 0, 41 * MAX_POS_PADDED * image_size_macroblocks *
 	       sizeof(unsigned short));
     CUDA_ERRCK
 
@@ -355,21 +355,21 @@ main(int argc, char **argv)
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 
     /* Transfer SAD data to the host */
-    cudaMemcpy(sads_computed,// + 25 * MAX_POS_PADDED * image_size_macroblocks,
+    hipMemcpy(sads_computed,// + 25 * MAX_POS_PADDED * image_size_macroblocks,
 	       d_sads,// + 25 * MAX_POS_PADDED * image_size_macroblocks,
 	       41 * MAX_POS_PADDED * image_size_macroblocks * sizeof(unsigned short)
 ,
-           cudaMemcpyDeviceToHost);
+           hipMemcpyDeviceToHost);
     CUDA_ERRCK
 
     /* Free GPU memory */
-    cudaFree(d_sads);
+    hipFree(d_sads);
     CUDA_ERRCK
-    cudaUnbindTexture(get_ref());
+    hipUnbindTexture(get_ref());
     CUDA_ERRCK
-    cudaFreeArray(ref_ary);
+    hipFreeArray(ref_ary);
     CUDA_ERRCK
-    cudaFree(d_cur_image);
+    hipFree(d_cur_image);
     CUDA_ERRCK
 
     pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);

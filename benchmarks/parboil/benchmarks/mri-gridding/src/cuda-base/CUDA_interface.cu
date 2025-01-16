@@ -7,8 +7,8 @@
  ***************************************************************************/
 
 #include <stdio.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,9 +31,9 @@
 #define PI 3.14159265359
 #define CUERR \
   do { \
-    cudaError_t err; \
-    if ((err = cudaGetLastError()) != cudaSuccess) { \
-      printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+    hipError_t err; \
+    if ((err = hipGetLastError()) != hipSuccess) { \
+      printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
       return; \
     } \
   } while (0)
@@ -103,11 +103,11 @@ void CUDA_interface (
   /* Allocating device memory */
   pb_SwitchToTimer(timers, pb_TimerID_COPY);
 
-  cudaMalloc((void**)&sortedSample_d, n*sizeof(ReconstructionSample));
-  cudaMalloc((void**)&binStartAddr_d, (gridNumElems+1)*sizeof(unsigned int));
-  cudaMalloc((void**)&sample_d, n*sizeof(ReconstructionSample));
-  cudaMalloc((void**)&idxKey_d, (((n+3)/4)*4)*sizeof(unsigned int));   //Pad to nearest multiple of 4 to 
-  cudaMalloc((void**)&idxValue_d, (((n+3)/4)*4)*sizeof(unsigned int)); //satisfy a property of the sorting kernel.
+  hipMalloc((void**)&sortedSample_d, n*sizeof(ReconstructionSample));
+  hipMalloc((void**)&binStartAddr_d, (gridNumElems+1)*sizeof(unsigned int));
+  hipMalloc((void**)&sample_d, n*sizeof(ReconstructionSample));
+  hipMalloc((void**)&idxKey_d, (((n+3)/4)*4)*sizeof(unsigned int));   //Pad to nearest multiple of 4 to 
+  hipMalloc((void**)&idxValue_d, (((n+3)/4)*4)*sizeof(unsigned int)); //satisfy a property of the sorting kernel.
 
 /*The CUDPP library features highly optimizes implementations for radix sort
   and prefix sum. However for portability reasons, we implemented our own,
@@ -118,24 +118,24 @@ void CUDA_interface (
   therefore we reuse the binCount_d array to get the starting offset of each
   bin. */
 #if USE_CUDPP
-  cudaMalloc((void**)&binCount_d, (gridNumElems+1)*sizeof(unsigned int));
+  hipMalloc((void**)&binCount_d, (gridNumElems+1)*sizeof(unsigned int));
 #else
   binCount_d = binStartAddr_d;
 #endif
   CUERR;
 
   /* Transfering data from Host to Device */
-  cudaMemcpyToSymbol(cutoff2_c, &cutoff2, sizeof(float), 0);
-  cudaMemcpyToSymbol(cutoff_c, &cutoff, sizeof(float), 0);
-  cudaMemcpyToSymbol(gridSize_c, params.gridSize, 3*sizeof(int), 0);
-  cudaMemcpyToSymbol(size_xy_c, &size_xy, sizeof(int), 0);
-  cudaMemcpyToSymbol(_1overCutoff2_c, &_1overCutoff2, sizeof(float), 0);
-  cudaMemcpy(sample_d, sample, n*sizeof(ReconstructionSample), cudaMemcpyHostToDevice);
-  cudaMemset(binCount_d, 0, (gridNumElems+1)*sizeof(unsigned int));
+  hipMemcpyToSymbol(HIP_SYMBOL(cutoff2_c), &cutoff2, sizeof(float), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(cutoff_c), &cutoff, sizeof(float), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(gridSize_c), params.gridSize, 3*sizeof(int), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(size_xy_c), &size_xy, sizeof(int), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(_1overCutoff2_c), &_1overCutoff2, sizeof(float), 0);
+  hipMemcpy(sample_d, sample, n*sizeof(ReconstructionSample), hipMemcpyHostToDevice);
+  hipMemset(binCount_d, 0, (gridNumElems+1)*sizeof(unsigned int));
 
   // Initialize padding to max integer value, so that when sorted,
   // these elements get pushed to the end of the array.
-  cudaMemset(idxKey_d+n, 0xFF, (((n+3)&~(3))-n)*sizeof(unsigned int));
+  hipMemset(idxKey_d+n, 0xFF, (((n+3)&~(3))-n)*sizeof(unsigned int));
 
   pb_SwitchToTimer(timers, pb_TimerID_KERNEL);
 
@@ -182,9 +182,9 @@ void CUDA_interface (
 
   pb_SwitchToTimer(timers, pb_TimerID_COPY);
 
-  cudaFree(idxValue_d);
-  cudaFree(idxKey_d);
-  cudaFree(sample_d);
+  hipFree(idxValue_d);
+  hipFree(idxKey_d);
+  hipFree(sample_d);
 
   pb_SwitchToTimer(timers, pb_TimerID_KERNEL);
 
@@ -211,28 +211,28 @@ void CUDA_interface (
 
   // Copy back to the CPU the indices of the input elements that will be processed on the CPU
   int cpuStart;
-  cudaMemcpy(&cpuStart, binCount_d+gridNumElems, sizeof(unsigned int), cudaMemcpyDeviceToHost);
+  hipMemcpy(&cpuStart, binCount_d+gridNumElems, sizeof(unsigned int), hipMemcpyDeviceToHost);
 
   int CPUbin_size = int(n)-int(cpuStart);
 
   ReconstructionSample* CPUbin;
-  cudaMallocHost((void**)&CPUbin,CPUbin_size*sizeof(ReconstructionSample));
-  cudaMemcpy(CPUbin, sortedSample_d+cpuStart, CPUbin_size*sizeof(ReconstructionSample), cudaMemcpyDeviceToHost);
+  hipHostMalloc((void**)&CPUbin,CPUbin_size*sizeof(ReconstructionSample));
+  hipMemcpy(CPUbin, sortedSample_d+cpuStart, CPUbin_size*sizeof(ReconstructionSample), hipMemcpyDeviceToHost);
 
 #if USE_CUDPP
-  cudaFree(binCount_d);
+  hipFree(binCount_d);
 #endif
 
   /* STEP 5: Perform the binning on the GPU. The results are computed in a gather fashion
    * where each thread computes the value of one output element by reading the relevant
    * bins.
    */
-  cudaMalloc((void**)&gridData_d, gridNumElems*sizeof(float2));
-  cudaMalloc((void**)&sampleDensity_d, gridNumElems*sizeof(float));
+  hipMalloc((void**)&gridData_d, gridNumElems*sizeof(float2));
+  hipMalloc((void**)&sampleDensity_d, gridNumElems*sizeof(float));
   CUERR;
 
-  cudaMemset(gridData_d, 0, gridNumElems*sizeof(float2));
-  cudaMemset(sampleDensity_d, 0, gridNumElems*sizeof(float));
+  hipMemset(gridData_d, 0, gridNumElems*sizeof(float2));
+  hipMemset(sampleDensity_d, 0, gridNumElems*sizeof(float));
 
   pb_SwitchToTimer(timers, pb_TimerID_KERNEL);
 
@@ -244,8 +244,8 @@ void CUDA_interface (
   pb_SwitchToTimer(timers, pb_TimerID_COPY);
 
   /* Copying the results from the Device to the Host */
-  cudaMemcpy(sampleDensity, sampleDensity_d, gridNumElems*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaMemcpy(gridData, gridData_d, gridNumElems*sizeof(float2),cudaMemcpyDeviceToHost);
+  hipMemcpy(sampleDensity, sampleDensity_d, gridNumElems*sizeof(float),hipMemcpyDeviceToHost);
+  hipMemcpy(gridData, gridData_d, gridNumElems*sizeof(float2),hipMemcpyDeviceToHost);
 
   pb_SwitchToTimer(timers, pb_TimerID_COMPUTE);
 
@@ -256,11 +256,11 @@ void CUDA_interface (
 
   pb_SwitchToTimer(timers, pb_TimerID_COPY);
 
-  cudaFreeHost(CPUbin);
-  cudaFree(gridData_d);
-  cudaFree(sampleDensity_d);
-  cudaFree(binCount_d);
-  cudaFree(sortedSample_d);
+  hipHostFree(CPUbin);
+  hipFree(gridData_d);
+  hipFree(sampleDensity_d);
+  hipFree(binCount_d);
+  hipFree(sortedSample_d);
 
   pb_SwitchToTimer(timers, pb_TimerID_NONE);
 

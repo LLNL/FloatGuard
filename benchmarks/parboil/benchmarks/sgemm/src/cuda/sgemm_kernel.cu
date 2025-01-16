@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2010 The Board of Trustees of the
@@ -14,10 +15,10 @@
 
 
 #define CHECK_ERROR(errorMessage) {                                    \
-  cudaError_t err = cudaGetLastError();                                    \
-  if( cudaSuccess != err) {                                                \
+  hipError_t err = hipGetLastError();                                    \
+  if( hipSuccess != err) {                                                \
     fprintf(stderr, "Cuda error: %s in file '%s' in line %i : %s.\n",    \
-	errorMessage, __FILE__, __LINE__, cudaGetErrorString( err) );\
+	errorMessage, __FILE__, __LINE__, hipGetErrorString( err) );\
     exit(EXIT_FAILURE);                                                  \
   }                                                                        \
 }

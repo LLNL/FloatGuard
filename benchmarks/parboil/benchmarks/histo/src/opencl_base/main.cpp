@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the
@@ -354,7 +355,7 @@ int main(int argc, char* argv[]) {
     // if (threadIdx.x == 0) {s_ranges[0] = ranges[0]; s_ranges[1] = ranges[1];}
     // __syncthreads();
     
-    // Although then removing the blocking cudaMemcpy's might cause something about
+    // Although then removing the blocking hipMemcpy's might cause something about
     // concurrent kernel execution.
     // If kernel launches are synchronous, then how can 2 kernels run concurrently? different host threads?
 

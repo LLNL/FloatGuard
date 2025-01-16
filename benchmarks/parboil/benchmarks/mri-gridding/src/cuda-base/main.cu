@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include "parboil.h"
 
 #include "UDTypes.h"
@@ -20,9 +20,9 @@
 #define PI 3.14159265
 #define CUERR \
   do { \
-    cudaError_t err; \
-    if ((err = cudaGetLastError()) != cudaSuccess) { \
-      printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+    hipError_t err; \
+    if ((err = hipGetLastError()) != hipSuccess) { \
+      printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
       return 0; \
     } \
   } while (0)
@@ -41,8 +41,8 @@ void setParameters(FILE* file, parameters* p){
   fscanf(file,"kernel.width=%f\n", &(p->kernelWidth));
   fscanf(file,"kernel.useLUT=%d\n", &(p->useLUT));
 
-  cudaDeviceProp deviceProp;
-  cudaGetDeviceProperties(&deviceProp, 0);
+  hipDeviceProp_t deviceProp;
+  hipGetDeviceProperties(&deviceProp, 0);
   printf("  Total amount of GPU memory: %llu bytes\n", (unsigned long long) deviceProp.totalGlobalMem);
   printf("  Number of samples = %d\n", p->numSamples);
   if (p->numSamples > 10000000 && deviceProp.totalGlobalMem/1024/1024 < 3000) {
@@ -149,7 +149,7 @@ int main (int argc, char* argv[]){
   cmplx* gridData_gold; //Gold Output Data
   float* sampleDensity_gold; //Gold Output Data
 
-  cudaMallocHost((void**)&samples, params.numSamples*sizeof(ReconstructionSample));
+  hipHostMalloc((void**)&samples, params.numSamples*sizeof(ReconstructionSample));
   CUERR;
   if (samples == NULL){
     printf("ERROR: Unable to allocate memory for input data\n");
@@ -189,8 +189,8 @@ int main (int argc, char* argv[]){
 
   gridding_Gold(n, params, samples, LUT, sizeLUT, gridData_gold, sampleDensity_gold);
 
-  cudaMallocHost((void**)&gridData, gridNumElems*sizeof(cmplx));
-  cudaMallocHost((void**)&sampleDensity, gridNumElems*sizeof(float));
+  hipHostMalloc((void**)&gridData, gridNumElems*sizeof(cmplx));
+  hipHostMalloc((void**)&sampleDensity, gridNumElems*sizeof(float));
   CUERR;
   if (sampleDensity == NULL || gridData == NULL){
     printf("ERROR: Unable to allocate memory for output data\n");
@@ -231,9 +231,9 @@ int main (int argc, char* argv[]){
   if (params.useLUT){
     free(LUT);
   }
-  cudaFreeHost(samples);
-  cudaFreeHost(gridData);
-  cudaFreeHost(sampleDensity);
+  hipHostFree(samples);
+  hipHostFree(gridData);
+  hipHostFree(sampleDensity);
   free(gridData_gold);
   free(sampleDensity_gold);
 

@@ -9,7 +9,7 @@
 
 
 
-#define CUERR { cudaError_t err; \
-  if ((err = cudaGetLastError()) != cudaSuccess) { \
-  printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+#define CUERR { hipError_t err; \
+  if ((err = hipGetLastError()) != hipSuccess) { \
+  printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
   return -1; }}

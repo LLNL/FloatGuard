@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the
@@ -11,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 
 #include "util.h"
 
@@ -134,18 +135,18 @@ int main(int argc, char* argv[]) {
   unsigned int* global_overflow;
   unsigned char* final_histo;
 
-  cudaMalloc((void**)&input           , even_width*(((img_height+UNROLL-1)/UNROLL)*UNROLL)*sizeof(unsigned int));
-  cudaMalloc((void**)&ranges          , 2*sizeof(unsigned int));
-  cudaMalloc((void**)&sm_mappings     , img_width*img_height*sizeof(uchar4));
-  cudaMalloc((void**)&global_subhisto , BLOCK_X*img_width*histo_height*sizeof(unsigned int));
-  cudaMalloc((void**)&global_histo    , img_width*histo_height*sizeof(unsigned short));
-  cudaMalloc((void**)&global_overflow , img_width*histo_height*sizeof(unsigned int));
-  cudaMalloc((void**)&final_histo     , img_width*histo_height*sizeof(unsigned char));
+  hipMalloc((void**)&input           , even_width*(((img_height+UNROLL-1)/UNROLL)*UNROLL)*sizeof(unsigned int));
+  hipMalloc((void**)&ranges          , 2*sizeof(unsigned int));
+  hipMalloc((void**)&sm_mappings     , img_width*img_height*sizeof(uchar4));
+  hipMalloc((void**)&global_subhisto , BLOCK_X*img_width*histo_height*sizeof(unsigned int));
+  hipMalloc((void**)&global_histo    , img_width*histo_height*sizeof(unsigned short));
+  hipMalloc((void**)&global_overflow , img_width*histo_height*sizeof(unsigned int));
+  hipMalloc((void**)&final_histo     , img_width*histo_height*sizeof(unsigned char));
 
-  cudaMemset(final_histo , 0 , img_width*histo_height*sizeof(unsigned char));
+  hipMemset(final_histo , 0 , img_width*histo_height*sizeof(unsigned char));
 
   for (int y=0; y < img_height; y++){
-    cudaMemcpy(&(((unsigned int*)input)[y*even_width]),&img[y*img_width],img_width*sizeof(unsigned int), cudaMemcpyHostToDevice);
+    hipMemcpy(&(((unsigned int*)input)[y*even_width]),&img[y*img_width],img_width*sizeof(unsigned int), hipMemcpyHostToDevice);
   }
 
   pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);
@@ -153,7 +154,7 @@ int main(int argc, char* argv[]) {
   for (int iter = 0; iter < numIterations; iter++) {
     unsigned int ranges_h[2] = {UINT32_MAX, 0};
 
-    cudaMemcpy(ranges,ranges_h, 2*sizeof(unsigned int), cudaMemcpyHostToDevice);
+    hipMemcpy(ranges,ranges_h, 2*sizeof(unsigned int), hipMemcpyHostToDevice);
     
     pb_SwitchToSubTimer(&timers, prescans , pb_TimerID_KERNEL);
 
@@ -161,9 +162,9 @@ int main(int argc, char* argv[]) {
     
     pb_SwitchToSubTimer(&timers, postpremems , pb_TimerID_KERNEL);
 
-    cudaMemcpy(ranges_h,ranges, 2*sizeof(unsigned int), cudaMemcpyDeviceToHost);
+    hipMemcpy(ranges_h,ranges, 2*sizeof(unsigned int), hipMemcpyDeviceToHost);
 
-    cudaMemset(global_subhisto,0,img_width*histo_height*sizeof(unsigned int));
+    hipMemset(global_subhisto,0,img_width*histo_height*sizeof(unsigned int));
     
     pb_SwitchToSubTimer(&timers, intermediates, pb_TimerID_KERNEL);
 
@@ -201,15 +202,15 @@ int main(int argc, char* argv[]) {
   }
   pb_SwitchToTimer(&timers, pb_TimerID_IO);
 
-  cudaMemcpy(histo,final_histo, histo_height*histo_width*sizeof(unsigned char), cudaMemcpyDeviceToHost);
+  hipMemcpy(histo,final_histo, histo_height*histo_width*sizeof(unsigned char), hipMemcpyDeviceToHost);
 
-  cudaFree(input);
-  cudaFree(ranges);
-  cudaFree(sm_mappings);
-  cudaFree(global_subhisto);
-  cudaFree(global_histo);
-  cudaFree(global_overflow);
-  cudaFree(final_histo);
+  hipFree(input);
+  hipFree(ranges);
+  hipFree(sm_mappings);
+  hipFree(global_subhisto);
+  hipFree(global_histo);
+  hipFree(global_overflow);
+  hipFree(final_histo);
 
   if (parameters->outFile) {
     dump_histo_img(histo, histo_height, histo_width, parameters->outFile);

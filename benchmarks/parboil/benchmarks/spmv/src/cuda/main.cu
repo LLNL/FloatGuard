@@ -98,30 +98,30 @@ int main(int argc, char** argv) {
 
 	pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 	
-	cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, 0);
+	hipDeviceProp_t deviceProp;
+    hipGetDeviceProperties(&deviceProp, 0);
 	
 	
 	pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 	//memory allocation
-	cudaMalloc((void **)&d_data, len*sizeof(float));
-	cudaMalloc((void **)&d_indices, len*sizeof(int));
-	cudaMalloc((void **)&d_ptr, depth*sizeof(int));
-	cudaMalloc((void **)&d_perm, dim*sizeof(int));
-	cudaMalloc((void **)&d_nzcnt, nzcnt_len*sizeof(int));
-	cudaMalloc((void **)&d_x_vector, dim*sizeof(float));
-	cudaMalloc((void **)&d_Ax_vector,dim*sizeof(float));
-	cudaMemset( (void *) d_Ax_vector, 0, dim*sizeof(float));
+	hipMalloc((void **)&d_data, len*sizeof(float));
+	hipMalloc((void **)&d_indices, len*sizeof(int));
+	hipMalloc((void **)&d_ptr, depth*sizeof(int));
+	hipMalloc((void **)&d_perm, dim*sizeof(int));
+	hipMalloc((void **)&d_nzcnt, nzcnt_len*sizeof(int));
+	hipMalloc((void **)&d_x_vector, dim*sizeof(float));
+	hipMalloc((void **)&d_Ax_vector,dim*sizeof(float));
+	hipMemset( (void *) d_Ax_vector, 0, dim*sizeof(float));
 	
 	//memory copy
-	cudaMemcpy(d_data, h_data, len*sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_indices, h_indices, len*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_perm, h_perm, dim*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_x_vector, h_x_vector, dim*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpyToSymbol(jds_ptr_int, h_ptr, depth*sizeof(int));
-	cudaMemcpyToSymbol(sh_zcnt_int, h_nzcnt,nzcnt_len*sizeof(int));
+	hipMemcpy(d_data, h_data, len*sizeof(float), hipMemcpyHostToDevice);
+	hipMemcpy(d_indices, h_indices, len*sizeof(int), hipMemcpyHostToDevice);
+	hipMemcpy(d_perm, h_perm, dim*sizeof(int), hipMemcpyHostToDevice);
+	hipMemcpy(d_x_vector, h_x_vector, dim*sizeof(int), hipMemcpyHostToDevice);
+	hipMemcpyToSymbol(HIP_SYMBOL(jds_ptr_int), h_ptr, depth*sizeof(int));
+	hipMemcpyToSymbol(HIP_SYMBOL(sh_zcnt_int), h_nzcnt,nzcnt_len*sizeof(int));
 	
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
 	pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 	unsigned int grid;
 	unsigned int block;
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
 					deviceProp.warpSize,deviceProp.multiProcessorCount);
 
 	
-  cudaFuncSetCacheConfig(spmv_jds, cudaFuncCachePreferL1);
+  hipFuncSetCacheConfig(spmv_jds, hipFuncCachePreferL1);
 
 	//main execution
 	pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);
@@ -140,21 +140,21 @@ int main(int argc, char** argv) {
 							
     CUERR // check and clear any existing errors
 	
-	cudaThreadSynchronize();
+	hipDeviceSynchronize();
 	
 	pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 	//HtoD memory copy
-	cudaMemcpy(h_Ax_vector, d_Ax_vector,dim*sizeof(float), cudaMemcpyDeviceToHost);	
+	hipMemcpy(h_Ax_vector, d_Ax_vector,dim*sizeof(float), hipMemcpyDeviceToHost);	
 
-	cudaThreadSynchronize();
+	hipDeviceSynchronize();
 
-	cudaFree(d_data);
-    cudaFree(d_indices);
-    cudaFree(d_ptr);
-	cudaFree(d_perm);
-    cudaFree(d_nzcnt);
-    cudaFree(d_x_vector);
-	cudaFree(d_Ax_vector);
+	hipFree(d_data);
+    hipFree(d_indices);
+    hipFree(d_ptr);
+	hipFree(d_perm);
+    hipFree(d_nzcnt);
+    hipFree(d_x_vector);
+	hipFree(d_Ax_vector);
  
 	if (parameters->outFile) {
 		pb_SwitchToTimer(&timers, pb_TimerID_IO);

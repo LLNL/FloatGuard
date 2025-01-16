@@ -14,9 +14,9 @@
 #include "model.h"
 #include "tpacf_kernel.cu"  
 
-#define CUDA_ERRCK { cudaError_t err; \
-  if ((err = cudaGetLastError()) != cudaSuccess) { \
-  printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+#define CUDA_ERRCK { hipError_t err; \
+  if ((err = hipGetLastError()) != hipSuccess) { \
+  printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
   return -1; }}
 
 extern unsigned int NUM_SETS;
@@ -92,7 +92,7 @@ main( int argc, char** argv)
 
   // allocate cuda memory to hold all points
   REAL * d_x_data;
-  cudaMalloc((void**) & d_x_data, 3*f_mem_size);
+  hipMalloc((void**) & d_x_data, 3*f_mem_size);
   CUDA_ERRCK
   REAL * d_y_data = d_x_data + NUM_ELEMENTS*(NUM_SETS+1);
   REAL * d_z_data = d_y_data + NUM_ELEMENTS*(NUM_SETS+1);
@@ -100,7 +100,7 @@ main( int argc, char** argv)
   // allocate cuda memory to hold final histograms
   // (1 for dd, and NUM_SETS for dr and rr apiece)
   hist_t * d_hists;
-  cudaMalloc((void**) & d_hists, NUM_BINS*(NUM_SETS*2+1)*sizeof(hist_t) );
+  hipMalloc((void**) & d_hists, NUM_BINS*(NUM_SETS*2+1)*sizeof(hist_t) );
   CUDA_ERRCK
   pb_SwitchToTimer( &timers, pb_TimerID_COMPUTE );
 
@@ -114,15 +114,15 @@ main( int argc, char** argv)
 
   // **===------------------ Kick off TPACF on CUDA------------------===**
   pb_SwitchToTimer( &timers, pb_TimerID_COPY );
-  cudaMemcpy(d_x_data, h_x_data, 3*f_mem_size, cudaMemcpyHostToDevice);
+  hipMemcpy(d_x_data, h_x_data, 3*f_mem_size, hipMemcpyHostToDevice);
   CUDA_ERRCK
   pb_SwitchToTimer( &timers, pb_TimerID_KERNEL );
 
   TPACF(d_hists, d_x_data, d_y_data, d_z_data);
 
   pb_SwitchToTimer( &timers, pb_TimerID_COPY );
-  cudaMemcpy(new_hists, d_hists, NUM_BINS*(NUM_SETS*2+1)*
-	     sizeof(hist_t), cudaMemcpyDeviceToHost);
+  hipMemcpy(new_hists, d_hists, NUM_BINS*(NUM_SETS*2+1)*
+	     sizeof(hist_t), hipMemcpyDeviceToHost);
   CUDA_ERRCK
   pb_SwitchToTimer( &timers, pb_TimerID_COMPUTE );
   // **===-----------------------------------------------------------===**
@@ -190,8 +190,8 @@ main( int argc, char** argv)
   free( h_x_data);
 
   pb_SwitchToTimer( &timers, pb_TimerID_COPY );
-  cudaFree( d_hists );
-  cudaFree( d_x_data );
+  hipFree( d_hists );
+  hipFree( d_x_data );
 
   pb_SwitchToTimer(&timers, pb_TimerID_NONE);
   pb_PrintTimerSet(&timers);

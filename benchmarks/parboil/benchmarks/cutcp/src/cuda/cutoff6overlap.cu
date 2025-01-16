@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2008-2010 The Board of Trustees of the
@@ -44,9 +45,9 @@
 /* report error from CUDA */
 #define CUERR \
   do { \
-    cudaError_t err; \
-    if ((err = cudaGetLastError()) != cudaSuccess) { \
-      printf("CUDA error: %s, line %d\n", cudaGetErrorString(err), __LINE__); \
+    hipError_t err; \
+    if ((err = hipGetLastError()) != hipSuccess) { \
+      printf("CUDA error: %s, line %d\n", hipGetErrorString(err), __LINE__); \
       return -1; \
     } \
   } while (0)
@@ -565,31 +566,31 @@ extern "C" int gpu_compute_cutoff_potential_lattice6overlap(
     printf("Allocating %.2fMB on CUDA device for potentials\n",
            lnall * sizeof(float) / (double) (1024*1024));
   }
-  cudaMalloc((void **) &regionZeroCuda, lnall * sizeof(ener_t));
+  hipMalloc((void **) &regionZeroCuda, lnall * sizeof(ener_t));
   CUERR;
-  cudaMemset(regionZeroCuda, 0, lnall * sizeof(ener_t));
+  hipMemset(regionZeroCuda, 0, lnall * sizeof(ener_t));
   CUERR;
   if (verbose) {
     printf("Allocating %.2fMB on CUDA device for atom bins\n",
            nbins * BIN_DEPTH * sizeof(float4) / (double) (1024*1024));
   }
-  cudaMalloc((void **) &binBaseCuda, nbins * BIN_DEPTH * sizeof(float4));
+  hipMalloc((void **) &binBaseCuda, nbins * BIN_DEPTH * sizeof(float4));
   CUERR;
-  cudaMemcpy(binBaseCuda, binBaseAddr, nbins * BIN_DEPTH * sizeof(float4),
-      cudaMemcpyHostToDevice);
+  hipMemcpy(binBaseCuda, binBaseAddr, nbins * BIN_DEPTH * sizeof(float4),
+      hipMemcpyHostToDevice);
   CUERR;
   binZeroCuda = binBaseCuda + ((c * binDim.y + c) * binDim.x + c) * BIN_DEPTH;
-  cudaMemcpyToSymbol(NbrListLen, &nbrlistlen, sizeof(int), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(NbrListLen), &nbrlistlen, sizeof(int), 0);
   CUERR;
-  cudaMemcpyToSymbol(NbrList, nbrlist, nbrlistlen * sizeof(int3), 0);
+  hipMemcpyToSymbol(HIP_SYMBOL(NbrList), nbrlist, nbrlistlen * sizeof(int3), 0);
   CUERR;
 
   if (verbose) 
     printf("\n");
 
 
-  cudaStream_t cutoffstream;
-  cudaStreamCreate(&cutoffstream);
+  hipStream_t cutoffstream;
+  hipStreamCreate(&cutoffstream);
 
   /* loop over z-dimension, invoke CUDA kernel for each x-y plane */
   pb_SwitchToTimer(timers, pb_TimerID_KERNEL);
@@ -616,21 +617,21 @@ extern "C" int gpu_compute_cutoff_potential_lattice6overlap(
     printf("\n");
   }
 
-  cudaStreamSynchronize(cutoffstream);
+  hipStreamSynchronize(cutoffstream);
   CUERR;
-  cudaThreadSynchronize();
-  cudaStreamDestroy(cutoffstream);
+  hipDeviceSynchronize();
+  hipStreamDestroy(cutoffstream);
   printf("Finished CUDA kernel calls                        \n");
 
   /* copy result regions from CUDA device */
   pb_SwitchToTimer(timers, pb_TimerID_COPY);
-  cudaMemcpy(regionZeroAddr, regionZeroCuda, lnall * sizeof(ener_t),
-      cudaMemcpyDeviceToHost);
+  hipMemcpy(regionZeroAddr, regionZeroCuda, lnall * sizeof(ener_t),
+      hipMemcpyDeviceToHost);
   CUERR;
 
   /* free CUDA memory allocations */
-  cudaFree(regionZeroCuda);
-  cudaFree(binBaseCuda);
+  hipFree(regionZeroCuda);
+  hipFree(binBaseCuda);
 
   /*
    * transpose on CPU, updating, producing the final lattice

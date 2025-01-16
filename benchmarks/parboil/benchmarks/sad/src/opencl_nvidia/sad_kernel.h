@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -51,7 +52,7 @@ extern "C" __global__ void mb_sad_calc(unsigned short*,
 /* A function to get a reference to the "ref" texture, because sharing
  * of textures between files isn't really supported. */
  /*
-texture<unsigned short, 2, cudaReadModeElementType> &get_ref(void);
+texture<unsigned short, 2, hipReadModeElementType> &get_ref(void);
 
 extern "C" __global__ void larger_sad_calc_8(unsigned short*, int, int);
 extern "C" __global__ void larger_sad_calc_16(unsigned short*, int, int);*/

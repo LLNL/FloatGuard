@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -40,7 +41,7 @@
 __shared__ unsigned short frame_loc[THREADS_W * THREADS_H * 16];
 
 /* The part of the reference image that is in the search range */
-texture<unsigned short, 2, cudaReadModeElementType> ref;
+texture<unsigned short, 2, hipReadModeElementType> ref;
 
 /* The local SAD array on the device.  This is an array of short ints.  It is
  * interpreted as an array of 8-byte data for global data transfers. */
@@ -217,7 +218,7 @@ __global__ void mb_sad_calc(unsigned short *blk_sad,
   }
 }
 
-texture<unsigned short, 2, cudaReadModeElementType> &get_ref(void)
+texture<unsigned short, 2, hipReadModeElementType> &get_ref(void)
 {
   return ref;
 }

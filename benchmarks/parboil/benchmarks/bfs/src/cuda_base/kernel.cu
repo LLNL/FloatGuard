@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***********************************************************************************
   Implementing Breadth first search on CUDA using algorithm given in DAC'10
   paper "An Effective GPU Implementation of Breadth-First Search"

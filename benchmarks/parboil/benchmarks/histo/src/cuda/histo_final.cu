@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the

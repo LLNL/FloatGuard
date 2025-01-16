@@ -75,16 +75,16 @@ main (int argc, char *argv[]) {
 
   // CUDA memory allocation
   std::vector<float> matC(matArow*matBcol);
-  cudaMalloc((void**)&dA, A_sz);
-  cudaMalloc((void**)&dB, B_sz);
-  cudaMalloc((void**)&dC, C_sz);
+  hipMalloc((void**)&dA, A_sz);
+  hipMalloc((void**)&dB, B_sz);
+  hipMalloc((void**)&dC, C_sz);
 
   // Copy A and B^T into device memory
   pb_SwitchToTimer( &timers, pb_TimerID_COPY );
-  cudaMemcpy(dA, &matA.front(), A_sz, cudaMemcpyHostToDevice); 
-  cudaMemcpy(dB, &matBT.front(), B_sz, cudaMemcpyHostToDevice); 
+  hipMemcpy(dA, &matA.front(), A_sz, hipMemcpyHostToDevice); 
+  hipMemcpy(dB, &matBT.front(), B_sz, hipMemcpyHostToDevice); 
 
-  cudaThreadSynchronize();
+  hipDeviceSynchronize();
 
   pb_SwitchToTimer( &timers, pb_TimerID_KERNEL );
 
@@ -92,11 +92,11 @@ main (int argc, char *argv[]) {
   basicSgemm('N', 'T', matArow, matBcol, matAcol, 1.0f, \
       dA, matArow, dB, matBcol, 0.0f, dC, matArow);
 
-  cudaThreadSynchronize();
+  hipDeviceSynchronize();
 
   if (params->outFile) {
     pb_SwitchToTimer( &timers, pb_TimerID_COPY );
-    cudaMemcpy(&matC.front(), dC, C_sz, cudaMemcpyDeviceToHost);
+    hipMemcpy(&matC.front(), dC, C_sz, hipMemcpyDeviceToHost);
     /* Write C to file */
     pb_SwitchToTimer(&timers, pb_TimerID_IO);
     writeColMajorMatrixFile(params->outFile,
@@ -109,8 +109,8 @@ main (int argc, char *argv[]) {
   std::cout<< "GFLOPs = " << 2.* matArow * matBcol * matAcol/GPUtime/1e9 << std::endl;
   pb_PrintTimerSet(&timers);
   pb_FreeParameters(params);
-  cudaFree(dA);
-  cudaFree(dB);
-  cudaFree(dC);
+  hipFree(dA);
+  hipFree(dB);
+  hipFree(dC);
   return 0;
 }

@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #define WARP_BITS 5
 __global__ void spmv_jds_texture(float *dst_vector,
             const float *d_data,const int *d_index, const int *d_perm,

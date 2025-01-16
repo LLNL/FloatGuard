@@ -38,18 +38,18 @@
 static void
 setupMemoryGPU(int num, int size, float*& dev_ptr, float*& host_ptr)
 {
-  cudaMalloc ((void **) &dev_ptr, num * size);
+  hipMalloc ((void **) &dev_ptr, num * size);
   CUDA_ERRCK;
-  cudaMemcpy (dev_ptr, host_ptr, num * size, cudaMemcpyHostToDevice);
+  hipMemcpy (dev_ptr, host_ptr, num * size, hipMemcpyHostToDevice);
   CUDA_ERRCK;
 }
 
 static void
 cleanupMemoryGPU(int num, int size, float *& dev_ptr, float * host_ptr)
 {
-  cudaMemcpy (host_ptr, dev_ptr, num * size, cudaMemcpyDeviceToHost);
+  hipMemcpy (host_ptr, dev_ptr, num * size, hipMemcpyDeviceToHost);
   CUDA_ERRCK;
-  cudaFree(dev_ptr);
+  hipFree(dev_ptr);
   CUDA_ERRCK;
 }
 
@@ -121,20 +121,20 @@ main (int argc, char *argv[]) {
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
     setupMemoryGPU(numK, sizeof(float), phiR_d, phiR);
     setupMemoryGPU(numK, sizeof(float), phiI_d, phiI);
-    cudaMalloc((void **)&phiMag_d, numK * sizeof(float));
+    hipMalloc((void **)&phiMag_d, numK * sizeof(float));
     CUDA_ERRCK;
 
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);
 
     computePhiMag_GPU(numK, phiR_d, phiI_d, phiMag_d);
 
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 
     cleanupMemoryGPU(numK, sizeof(float), phiMag_d, phiMag);
-    cudaFree(phiR_d);
-    cudaFree(phiI_d);
+    hipFree(phiR_d);
+    hipFree(phiI_d);
   }
 
   pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
@@ -159,24 +159,24 @@ main (int argc, char *argv[]) {
     setupMemoryGPU(numX, sizeof(float), x_d, x);
     setupMemoryGPU(numX, sizeof(float), y_d, y);
     setupMemoryGPU(numX, sizeof(float), z_d, z);
-    cudaMalloc((void **)&Qr_d, numX * sizeof(float));
+    hipMalloc((void **)&Qr_d, numX * sizeof(float));
     CUDA_ERRCK;
-    cudaMemset((void *)Qr_d, 0, numX * sizeof(float));
-    cudaMalloc((void **)&Qi_d, numX * sizeof(float));
+    hipMemset((void *)Qr_d, 0, numX * sizeof(float));
+    hipMalloc((void **)&Qi_d, numX * sizeof(float));
     CUDA_ERRCK;
-    cudaMemset((void *)Qi_d, 0, numX * sizeof(float));
+    hipMemset((void *)Qi_d, 0, numX * sizeof(float));
 
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);
 
     computeQ_GPU(numK, numX, x_d, y_d, z_d, kVals, Qr_d, Qi_d);
 
-    cudaThreadSynchronize();
+    hipDeviceSynchronize();
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 
-    cudaFree(x_d);
-    cudaFree(y_d);
-    cudaFree(z_d);
+    hipFree(x_d);
+    hipFree(y_d);
+    hipFree(z_d);
     cleanupMemoryGPU(numX, sizeof(float), Qr_d, Qr);
     cleanupMemoryGPU(numX, sizeof(float), Qi_d, Qi);
   }

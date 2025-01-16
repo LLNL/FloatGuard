@@ -83,7 +83,7 @@ char* readFile(const char* fileName)
   return buffer;
 }
 //#include "kernel.cl"
-//Somehow "cudaMemset" does not work. So I use cudaMemcpy of constant variables for initialization
+//Somehow "hipMemset" does not work. So I use hipMemcpy of constant variables for initialization
 const int h_top = 1;
 const int zero = 0;
 

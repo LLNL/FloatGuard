@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -41,7 +42,7 @@ void initBinB( struct pb_TimerSet *timers )
 		    / 60.0*D2R);
     }
   pb_SwitchToTimer( timers, pb_TimerID_COPY );
-  cudaMemcpyToSymbol(dev_binb, binb, (NUM_BINS+1)*sizeof(float));
+  hipMemcpyToSymbol(HIP_SYMBOL(dev_binb), binb, (NUM_BINS+1)*sizeof(float));
   pb_SwitchToTimer( timers, pb_TimerID_COMPUTE );
   free(binb);
 }

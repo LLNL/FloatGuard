@@ -95,16 +95,16 @@ int main(int argc, char** argv) {
 	
 	pb_SwitchToTimer(&timers, pb_TimerID_COPY);
 	//memory allocation
-	cudaMalloc((void **)&d_A0, size*sizeof(float));
-	cudaMalloc((void **)&d_Anext, size*sizeof(float));
-	cudaMemset(d_Anext,0,size*sizeof(float));
+	hipMalloc((void **)&d_A0, size*sizeof(float));
+	hipMalloc((void **)&d_Anext, size*sizeof(float));
+	hipMemset(d_Anext,0,size*sizeof(float));
 
 	//memory copy
-	cudaMemcpy(d_A0, h_A0, size*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_Anext, d_A0, size*sizeof(float), cudaMemcpyDeviceToDevice);
+	hipMemcpy(d_A0, h_A0, size*sizeof(float), hipMemcpyHostToDevice);
+  hipMemcpy(d_Anext, d_A0, size*sizeof(float), hipMemcpyDeviceToDevice);
 
 	
-	cudaThreadSynchronize();
+	hipDeviceSynchronize();
 	pb_SwitchToTimer(&timers, pb_TimerID_COMPUTE);
 
 	//only use 1D thread block
@@ -126,12 +126,12 @@ int main(int argc, char** argv) {
   d_A0 = d_Anext;
   d_Anext = d_temp;
 	
-	cudaThreadSynchronize();
+	hipDeviceSynchronize();
 	pb_SwitchToTimer(&timers, pb_TimerID_COPY);
-	cudaMemcpy(h_Anext, d_Anext,size*sizeof(float), cudaMemcpyDeviceToHost);
-	cudaThreadSynchronize();
-	cudaFree(d_A0);
-  cudaFree(d_Anext);
+	hipMemcpy(h_Anext, d_Anext,size*sizeof(float), hipMemcpyDeviceToHost);
+	hipDeviceSynchronize();
+	hipFree(d_A0);
+  hipFree(d_Anext);
  
 	if (parameters->outFile) {
 		 pb_SwitchToTimer(&timers, pb_TimerID_IO);

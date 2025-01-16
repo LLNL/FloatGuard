@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #include "util.h"
 
 /* Combine all the sub-histogram results into one final histogram */

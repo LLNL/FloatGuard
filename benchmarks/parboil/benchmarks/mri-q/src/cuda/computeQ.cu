@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *cr
  *cr            (C) Copyright 2007 The Board of Trustees of the
@@ -17,9 +18,9 @@
 #define KERNEL_Q_K_ELEMS_PER_GRID 1024
 
 #define CUDA_ERRCK							\
-  {cudaError_t err;							\
-    if ((err = cudaGetLastError()) != cudaSuccess) {			\
-      fprintf(stderr, "CUDA error on line %d: %s\n", __LINE__, cudaGetErrorString(err)); \
+  {hipError_t err;							\
+    if ((err = hipGetLastError()) != hipSuccess) {			\
+      fprintf(stderr, "CUDA error on line %d: %s\n", __LINE__, hipGetErrorString(err)); \
       exit(-1);								\
     }									\
   }
@@ -128,7 +129,7 @@ void computeQ_GPU(int numK, int numX,
     kValues* kValsTile = kVals + QGridBase;
     int numElems = MIN(KERNEL_Q_K_ELEMS_PER_GRID, numK - QGridBase);
 
-    cudaMemcpyToSymbol(ck, kValsTile, numElems * sizeof(kValues), 0);
+    hipMemcpyToSymbol(HIP_SYMBOL(ck), kValsTile, numElems * sizeof(kValues), 0);
 
     ComputeQ_GPU <<< DimQGrid, DimQBlock >>>
       (numK, QGridBase, x_d, y_d, z_d, Qr_d, Qi_d);

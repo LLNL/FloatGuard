@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the
@@ -6,7 +7,7 @@
  *
  ***************************************************************************/
 
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 
 #include "scanLargeArray.h"
@@ -228,9 +229,9 @@ void sort (int numElems, unsigned int max_value, unsigned int* &dkeys, unsigned 
   unsigned int *dhisto;
   unsigned int *dkeys_o, *dvalues_o;
 
-  cudaMalloc((void**)&dhisto, (1<<BITS)*grid.x*sizeof(unsigned int));
-  cudaMalloc((void**)&dkeys_o, numElems*sizeof(unsigned int));
-  cudaMalloc((void**)&dvalues_o, numElems*sizeof(unsigned int));
+  hipMalloc((void**)&dhisto, (1<<BITS)*grid.x*sizeof(unsigned int));
+  hipMalloc((void**)&dkeys_o, numElems*sizeof(unsigned int));
+  hipMalloc((void**)&dvalues_o, numElems*sizeof(unsigned int));
 
   for (int i=0; i<iterations; i++){
     splitSort<<<grid,block>>>(numElems, i, dkeys, dvalues, dhisto);
@@ -248,7 +249,7 @@ void sort (int numElems, unsigned int max_value, unsigned int* &dkeys, unsigned 
     dvalues_o = temp;
   }
 
-  cudaFree(dkeys_o);
-  cudaFree(dvalues_o);
-  cudaFree(dhisto);
+  hipFree(dkeys_o);
+  hipFree(dvalues_o);
+  hipFree(dhisto);
 }

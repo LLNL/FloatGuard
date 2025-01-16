@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /***************************************************************************
  *
  *            (C) Copyright 2010 The Board of Trustees of the
@@ -8,7 +9,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 
 #include "util.h"
 
