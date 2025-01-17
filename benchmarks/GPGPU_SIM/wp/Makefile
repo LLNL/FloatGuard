@@ -93,8 +93,12 @@ clean :
 	rm -f *.o *.cu.cpp *.f.cu wsm5_driver_* *.mod *.f90 compare_snaps gpgpu_inst_stats.txt snap_gpu_010 gpgpu_inst_stats.txt *.log *.ptx
 	rm -f $(TARGETDIR)/WP
 	rm -rf wp
-	rm -rf makelog
+	rm -rf makelog *.s
 	make clean_imm
+
+cleanall: clean
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
+
 clean_imm :
 	rm -f $(INTERMED_FILES)
 

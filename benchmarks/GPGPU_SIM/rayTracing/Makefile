@@ -14,4 +14,7 @@ makebmp.o: makebmp.cpp
 	
 clean:
 	rm -f *.o reduction
-	rm -f rayTracing makelog
+	rm -f rayTracing makelog *.s
+
+cleanall: clean
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/

@@ -20,7 +20,10 @@ PoolMalloc.o: PoolMalloc.cpp
 	
 clean:
 	rm -f *.o mummergpu
-	rm -f mum makelog
+	rm -f mum makelog *.s
+
+cleanall: clean
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
 
 
 
