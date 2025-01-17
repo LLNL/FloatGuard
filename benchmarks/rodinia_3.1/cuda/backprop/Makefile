@@ -21,7 +21,7 @@ ifeq ($(emu),1)
 endif
 
 backprop: backprop.o facetrain.o imagenet.o backprop_cuda.o 
-	$(NVCC) $(CC_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
+	$(NVCC) $(CC_FLAGS)  backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
 
 %.o: %.[ch]
 	$(CC) $(CC_FLAGS) $< -c

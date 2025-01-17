@@ -14,7 +14,7 @@ endif
 
 div0: div0.cpp
 	${HIPCC} ${HIPFLAGS} -c div0.cpp -o div0.o
-	${HIPCC} ${LINKFLAGS} div0.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o div0
+	${HIPCC} ${LINKFLAGS} div0.o  -o div0
 
 .PHONY: clean
 

@@ -12,8 +12,8 @@ clean: clean_base
 	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
 
 nn : nn_cuda.cu
-	$(CC) -c $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o nn_cuda.cu
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o nn nn_cuda.o
+	$(CC) -c $(INST_FLAGS)  nn_cuda.cu
+	$(CC) $(INST_FLAGS)  -o nn nn_cuda.o
 
 hurricane_gen : hurricane_gen.c
 	$(LOCAL_CC) -o $@ $< -lm

@@ -50,7 +50,7 @@ diff -ruN rodinia_3.1/cuda/backprop/Makefile rodinia_3.1_new/cuda/backprop/Makef
 -
  backprop: backprop.o facetrain.o imagenet.o backprop_cuda.o 
 -	$(CC) $(CC_FLAGS) backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
-+	$(NVCC) $(CC_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
++	$(NVCC) $(CC_FLAGS)  backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -lm
  
  %.o: %.[ch]
  	$(CC) $(CC_FLAGS) $< -c
@@ -202,12 +202,12 @@ diff -ruN rodinia_3.1/cuda/cfd/Makefile rodinia_3.1_new/cuda/cfd/Makefile
  
  euler3d: euler3d.cu
 -	nvcc $(KERNEL_DIM) -O2 -Xptxas -v --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d.cu -o euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
-+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS)  $(KERNEL_DIM) -g -O2 euler3d.cu -o euler3d
  
  euler3d_double: euler3d_double.cu
 -	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 euler3d_double.cu -o euler3d_double -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
 -
-+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -g -O3 euler3d_double.cu -o euler3d_double 
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS)  -g -O3 euler3d_double.cu -o euler3d_double 
  
  pre_euler3d: pre_euler3d.cu
 -	nvcc -Xptxas -v -O3 --gpu-architecture=compute_20 --gpu-code=compute_20 pre_euler3d.cu -o pre_euler3d -I$(CUDA_SDK_PATH)/common/inc  -L$(CUDA_SDK_PATH)/lib $(CUTIL_LIB)
@@ -7965,7 +7965,7 @@ diff -ruN rodinia_3.1/cuda/gaussian/Makefile rodinia_3.1_new/cuda/gaussian/Makef
  
  release: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(SRC) -o $(EXE)
  
  clean:
  	rm gaussian
@@ -8218,12 +8218,12 @@ diff -ruN rodinia_3.1/cuda/heartwall/Makefile rodinia_3.1_new/cuda/heartwall/Mak
  # link objects(binaries) together
  heartwall: main.o ./AVI/avilib.o ./AVI/avimod.o 
 -	nvcc main.o ./AVI/avilib.o ./AVI/avimod.o -I/usr/local/cuda/include -lm -o heartwall
-+	hipcc $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o main.o ./AVI/avilib.o ./AVI/avimod.o -lm -o heartwall
++	hipcc $(INST_FLAGS)  main.o ./AVI/avilib.o ./AVI/avimod.o -lm -o heartwall
  
  # compile main function file into object (binary)
  main.o: main.cu kernel.cu define.c
 -	nvcc $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
-+	hipcc $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
++	hipcc $(INST_FLAGS)  $(OUTPUT) $(KERNEL_DIM) main.cu -I./AVI -c -O3
  
  ./AVI/avilib.o ./AVI/avimod.o:
  	cd AVI; make;
@@ -8577,19 +8577,19 @@ diff -ruN rodinia_3.1/cuda/hotspot/Makefile rodinia_3.1_new/cuda/hotspot/Makefil
  
  release: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(SRC) -o $(EXE)
  
  enum: $(SRC)
 -	$(CC) $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) -deviceemu $(SRC) -o $(EXE)
  
  debug: $(SRC)
 -	$(CC) $(KERNEL_DIM) -g $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) -g $(SRC) -o $(EXE)
  
  debugenum: $(SRC)
 -	$(CC) $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) -g -deviceemu $(SRC) -o $(EXE)
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo result.txt
@@ -8735,19 +8735,19 @@ diff -ruN rodinia_3.1/cuda/hotspot3D/Makefile rodinia_3.1_new/cuda/hotspot3D/Mak
 +FLAGS = -g #-arch sm_20 --ptxas-options=-v
  release: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(FLAGS) $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(FLAGS) $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(FLAGS) $(SRC) -o $(EXE)
  
  enum: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(FLAGS) -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(FLAGS) -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(FLAGS) -deviceemu $(SRC) -o $(EXE)
  
  debug: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(FLAGS) -g $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(FLAGS) -g $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(FLAGS) -g $(SRC) -o $(EXE)
  
  debugenum: $(SRC)
 -	$(CC) $(KERNEL_DIM) $(FLAGS) -g -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(FLAGS) -g -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(FLAGS) -g -deviceemu $(SRC) -o $(EXE)
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo $(OUTPUT) 
@@ -8971,7 +8971,7 @@ diff -ruN rodinia_3.1/cuda/lavaMD/makefile rodinia_3.1_new/cuda/lavaMD/makefile
  OMP_FLAG = -fopenmp
  
 -CUD_C = $(CUDA_DIR)/bin/nvcc
-+CUD_C = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
++CUD_C = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) 
  # OMP_FLAG = 	-Xcompiler paste_one_here
 -CUDA_FLAG = -arch sm_13
 +CUDA_FLAG = 
@@ -9098,12 +9098,12 @@ diff -ruN rodinia_3.1/cuda/lud/cuda/Makefile rodinia_3.1_new/cuda/lud/cuda/Makef
  
  %.o:	%.cu 
 -	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
-+	$(NVCC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
++	$(NVCC) $(INST_FLAGS)  $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
  
  
  $(EXECUTABLE) : $(OBJS)
 -	$(NVCC) $(NVCCFLAGS) -o $@  $?
-+	$(NVCC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(NVCCFLAGS) -o $@  $?
++	$(NVCC) $(INST_FLAGS)  $(NVCCFLAGS) -o $@  $?
  
  clean:
  	rm -f $(EXECUTABLE) $(OBJS) *.linkinfo
@@ -9357,7 +9357,7 @@ diff -ruN rodinia_3.1/cuda/myocyte/Makefile rodinia_3.1_new/cuda/myocyte/Makefil
 -				-I/usr/local/cuda/include \
 -				-L/usr/local/cuda/lib \
 -				-lm -lcuda -lcudart \
-+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o \
++	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o  \
                                  -o myocyte.out
  
  # compile main function file into object (binary)
@@ -9675,8 +9675,8 @@ diff -ruN rodinia_3.1/cuda/nn/Makefile rodinia_3.1_new/cuda/nn/Makefile
  nn : nn_cuda.cu
 -	$(CC) -cuda nn_cuda.cu
 -	$(CC) -o nn nn_cuda.cu
-+	$(CC) -c $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o nn_cuda.cu
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o nn nn_cuda.o
++	$(CC) -c $(INST_FLAGS)  nn_cuda.cu
++	$(CC) $(INST_FLAGS)  -o nn nn_cuda.o
  
  hurricane_gen : hurricane_gen.c
  	$(LOCAL_CC) -o $@ $< -lm
@@ -9817,20 +9817,20 @@ diff -ruN rodinia_3.1/cuda/nw/Makefile rodinia_3.1_new/cuda/nw/Makefile
  
  release: $(SRC)
 -	$(CC) ${KERNEL_DIM} $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} $(SRC) -o $(EXE)
  
  enum: $(SRC)
 -	$(CC) ${KERNEL_DIM} -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
 -
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} -deviceemu $(SRC) -o $(EXE)
 +	
  debug: $(SRC)
 -	$(CC) ${KERNEL_DIM} -g $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} -g $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} -g $(SRC) -o $(EXE)
  
  debugenum: $(SRC)
 -	$(CC) ${KERNEL_DIM} -g -deviceemu $(SRC) -o $(EXE) -I$(INCLUDE) -L$(CUDA_LIB_DIR) 
-+	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o${KERNEL_DIM} -g -deviceemu $(SRC) -o $(EXE)
++	$(CC) $(INST_FLAGS) ${KERNEL_DIM} -g -deviceemu $(SRC) -o $(EXE)
  
  clean: $(SRC)
  	rm -f $(EXE) $(EXE).linkinfo result.txt
@@ -9916,11 +9916,11 @@ diff -ruN rodinia_3.1/cuda/particlefilter/Makefile rodinia_3.1_new/cuda/particle
  
  naive: ex_particle_CUDA_naive_seq.cu
 -	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
-+	$(CC)  -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
++	$(CC)  -g -lm -O3 -ffast-math $(INST_FLAGS)  ex_particle_CUDA_naive_seq.cu -o particlefilter_naive
  	
  float: ex_particle_CUDA_float_seq.cu
 -	$(CC) -I$(INCLUDE) -L$(CUDA_LIB_DIR) -lcuda -g -lm -O3 -use_fast_math -arch sm_13 ex_particle_CUDA_float_seq.cu -o particlefilter_float
-+	$(CC) -g -lm -O3 -ffast-math $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ex_particle_CUDA_float_seq.cu -o particlefilter_float
++	$(CC) -g -lm -O3 -ffast-math $(INST_FLAGS)  ex_particle_CUDA_float_seq.cu -o particlefilter_float
  
  clean:
  	rm particlefilter_naive particlefilter_float
@@ -11061,7 +11061,7 @@ diff -ruN rodinia_3.1/cuda/streamcluster/Makefile rodinia_3.1_new/cuda/streamclu
  
  $(TARGET_G): streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu
 -	$(NVCC) $(NVCC_FLAGS) streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu -o $(TARGET_G) -lcuda
-+	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu -o $(TARGET_G)
++	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS)  streamcluster_cuda_cpu.cpp streamcluster_cuda.cu streamcluster_header.cu -o $(TARGET_G)
  	
  
  clean:

@@ -14,7 +14,7 @@ endif
 
 test: test.hip
 	${HIPCC} ${HIPFLAGS} -c test.hip -o test.o
-	${HIPCC} ${LINKFLAGS} -o test test.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
+	${HIPCC} ${LINKFLAGS} -o test test.o 
 
 run:
 	./test `cat input.txt`

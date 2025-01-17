@@ -9,7 +9,7 @@
 
 # link objects(binaries) together
 myocyte.out:		main.o
-	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o \
+	${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh main.o  \
                                 -o myocyte.out
 
 # compile main function file into object (binary)

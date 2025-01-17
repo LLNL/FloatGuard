@@ -8,7 +8,7 @@ SRC = gaussian.cu
 EXE = gaussian
 
 release: $(SRC)
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(SRC) -o $(EXE)
+	$(CC) $(INST_FLAGS)  $(KERNEL_DIM) $(SRC) -o $(EXE)
 
 clean_base:
 	-rm gaussian *.s *.o

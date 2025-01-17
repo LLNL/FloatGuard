@@ -16,7 +16,7 @@ C_C = gcc
 OMP_LIB = -lgomp
 OMP_FLAG = -fopenmp
 
-CUD_C = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
+CUD_C = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh $(INST_FLAGS) 
 # OMP_FLAG = 	-Xcompiler paste_one_here
 CUDA_FLAG = 
 

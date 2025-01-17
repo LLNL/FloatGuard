@@ -8091,7 +8091,7 @@ index bdc3180..980c595 100644
  # These macros are passed to the linker 
  #---------------------------------------------------------------------------
 -C_LIB = -lm 
-+C_LIB  = ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -lm 
++C_LIB  =  -lm 
  
  #---------------------------------------------------------------------------
  # These macros are passed to the compiler 

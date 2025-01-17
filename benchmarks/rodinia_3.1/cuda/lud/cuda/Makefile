@@ -35,11 +35,11 @@ all : $(EXECUTABLE)
 	$(CC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
 
 %.o:	%.cu 
-	$(NVCC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
+	$(NVCC) $(INST_FLAGS)  $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $< 
 
 
 $(EXECUTABLE) : $(OBJS)
-	$(NVCC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o $(NVCCFLAGS) -o $@  $?
+	$(NVCC) $(INST_FLAGS)  $(NVCCFLAGS) -o $@  $?
 
 clean_base:
 	-rm -f *.s *.o $(EXECUTABLE) $(OBJS) *.linkinfo

@@ -22,7 +22,7 @@ $(TARGET_G):
 	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda_cpu.cpp 
 	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda.cu 
 	$(NVCC) -c $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_header.cu 
-	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda_cpu.o streamcluster_cuda.o streamcluster_header.o ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o -o $(TARGET_G)
+	$(NVCC) $(NVCC_FLAGS) $(INST_FLAGS) streamcluster_cuda_cpu.o streamcluster_cuda.o streamcluster_header.o  -o $(TARGET_G)
 	
 
 clean_base:

@@ -7,16 +7,16 @@ SRC = needle.cu
 EXE = needle
 
 release: $(SRC)
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} $(SRC) -o $(EXE)
+	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} $(SRC) -o $(EXE)
 
 enum: $(SRC)
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} -deviceemu $(SRC) -o $(EXE)
+	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} -deviceemu $(SRC) -o $(EXE)
 	
 debug: $(SRC)
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o ${KERNEL_DIM} -g $(SRC) -o $(EXE)
+	$(CC) $(INST_FLAGS)  ${KERNEL_DIM} -g $(SRC) -o $(EXE)
 
 debugenum: $(SRC)
-	$(CC) $(INST_FLAGS) ${HOME}/FloatGuard/inst_pass/Inst/InstStub.o${KERNEL_DIM} -g -deviceemu $(SRC) -o $(EXE)
+	$(CC) $(INST_FLAGS) ${KERNEL_DIM} -g -deviceemu $(SRC) -o $(EXE)
 
 clean_base: $(SRC)
 	-rm -f *.s $(EXE) $(EXE).linkinfo result.txt
