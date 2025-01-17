@@ -13,11 +13,11 @@ include $(PARBOIL_ROOT)/common/platform/c.default.mk
 CUDAHOME=
 
 # Programs
-CUDACC=hipcc
-CUDALINK=hipcc
+CUDACC=${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
+CUDALINK=${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 
 # Flags
 PLATFORM_CUDACFLAGS=-O3
-PLATFORM_CUDALDFLAGS=-lm -lpthread
+PLATFORM_CUDALDFLAGS=-lm -lpthread -fgpu-rdc --hip-link
 
 
