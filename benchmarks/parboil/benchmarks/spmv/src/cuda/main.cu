@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
 					deviceProp.warpSize,deviceProp.multiProcessorCount);
 
 	
-  hipFuncSetCacheConfig(spmv_jds, hipFuncCachePreferL1);
+  	hipFuncSetCacheConfig((const void*)spmv_jds, hipFuncCachePreferL1);
 
 	//main execution
 	pb_SwitchToTimer(&timers, pb_TimerID_KERNEL);

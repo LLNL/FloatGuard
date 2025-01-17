@@ -1,16 +1,15 @@
 /*
  * (c) 2007 The Board of Trustees of the University of Illinois.
  */
-
+#ifndef __MCUDA__
+#include <hip/hip_runtime.h>
+#else
+#include <mcuda.h>
+#endif
 #include <parboil.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef __MCUDA__
-#include <cuda_runtime_api.h>
-#else
-#include <mcuda.h>
-#endif
 
 #if _POSIX_VERSION >= 200112L
 # include <sys/time.h>
@@ -270,15 +269,15 @@ static void insert_marker(struct pb_TimerSet* tset, enum pb_TimerID timer)
   if(*new_event == NULL) {
     *new_event = (struct pb_async_time_marker_list *) 
       			malloc(sizeof(struct pb_async_time_marker_list));
-    (*new_event)->marker = malloc(sizeof(cudaEvent_t));
-    cudaEventCreate((*new_event)->marker);
+    (*new_event)->marker = malloc(sizeof(hipEvent_t));
+    hipEventCreate((hipEvent_t*)(*new_event)->marker);
     (*new_event)->next = NULL;
   }
 
   /* valid event handle now aquired: insert the event record */
   (*new_event)->label = NULL;
   (*new_event)->timerID = timer;
-  cudaEventRecord(*((cudaEvent_t *)((*new_event)->marker)), 0);
+  hipEventRecord(*((hipEvent_t *)((*new_event)->marker)), 0);
 
 }
 
@@ -292,8 +291,8 @@ static void insert_submarker(struct pb_TimerSet* tset, char *label, enum pb_Time
   if(*new_event == NULL) {
     *new_event = (struct pb_async_time_marker_list *) 
       			malloc(sizeof(struct pb_async_time_marker_list));
-    (*new_event)->marker = malloc(sizeof(cudaEvent_t));
-    cudaEventCreate((*new_event)->marker);
+    (*new_event)->marker = malloc(sizeof(hipEvent_t));
+    hipEventCreate((hipEvent_t*)(*new_event)->marker);
 
     (*new_event)->next = NULL;
   }
@@ -301,7 +300,7 @@ static void insert_submarker(struct pb_TimerSet* tset, char *label, enum pb_Time
   /* valid event handle now aquired: insert the event record */
   (*new_event)->label = label;
   (*new_event)->timerID = timer;
-  cudaEventRecord(*((cudaEvent_t *)((*new_event)->marker)), 0);
+  hipEventRecord(*((hipEvent_t *)((*new_event)->marker)), 0);
 
 }
 
@@ -316,8 +315,8 @@ static pb_Timestamp record_async_times(struct pb_TimerSet* tset)
   for(next_interval = tset->async_markers; next_interval != last_marker; 
       next_interval = next_interval->next) {
     float interval_time_ms;
-    cudaEventElapsedTime(&interval_time_ms, *((cudaEvent_t *)next_interval->marker), 
-                                         *((cudaEvent_t *)next_interval->next->marker));
+    hipEventElapsedTime(&interval_time_ms, *((hipEvent_t *)next_interval->marker), 
+                                         *((hipEvent_t *)next_interval->next->marker));
     pb_Timestamp interval = (pb_Timestamp) (interval_time_ms * 1e3);
     tset->timers[next_interval->timerID].elapsed += interval;
     if (next_interval->label != NULL) {
@@ -615,8 +614,8 @@ pb_SwitchToTimer(struct pb_TimerSet *timers, enum pb_TimerID timer)
       (!is_async(timers->current) || is_blocking(timer) ) ) {
 
     struct pb_async_time_marker_list * last_event = get_last_async(timers);
-    /* cudaSuccess if completed */
-    cudaError_t async_done = cudaEventQuery(*((cudaEvent_t *)last_event->marker));
+    /* hipSuccess if completed */
+    hipError_t async_done = hipEventQuery(*((hipEvent_t *)last_event->marker));
 
     if(is_blocking(timer)) {
       /* Async operations completed after previous CPU operations: 
@@ -624,24 +623,24 @@ pb_SwitchToTimer(struct pb_TimerSet *timers, enum pb_TimerID timer)
        * operations were first issued */
        
       // timer to switch to is COPY or NONE 
-      if(async_done != cudaSuccess) 
+      if(async_done != hipSuccess) 
         accumulate_time(&(timers->timers[pb_TimerID_OVERLAP].elapsed), 
 	                  timers->async_begin,currentTime);
 
       /* Wait on async operation completion */
-      cudaEventSynchronize(*((cudaEvent_t *)last_event->marker));
+      hipEventSynchronize(*((hipEvent_t *)last_event->marker));
       pb_Timestamp total_async_time = record_async_times(timers);
 
       /* Async operations completed before previous CPU operations: 
        * overlapped time is the total async time */
-      if(async_done == cudaSuccess)
+      if(async_done == hipSuccess)
         timers->timers[pb_TimerID_OVERLAP].elapsed += total_async_time;
 
     } else 
     /* implies (!is_async(timers->current) && asyncs_outstanding(timers)) */
     // i.e. Current Not Async (not KERNEL/COPY_ASYNC) but there are outstanding
     // so something is deeper in stack
-    if(async_done == cudaSuccess) {
+    if(async_done == hipSuccess) {
       /* Async operations completed before previous CPU operations: 
        * overlapped time is the total async time */
       timers->timers[pb_TimerID_OVERLAP].elapsed += record_async_times(timers);
@@ -714,8 +713,8 @@ pb_SwitchToSubTimer(struct pb_TimerSet *timers, char *label, enum pb_TimerID cat
       (!is_async(timers->current) || is_blocking(category) ) ) {
 
     struct pb_async_time_marker_list * last_event = get_last_async(timers);
-    /* cudaSuccess if completed */
-    cudaError_t async_done = cudaEventQuery(*((cudaEvent_t *)last_event->marker));
+    /* hipSuccess if completed */
+    hipError_t async_done = hipEventQuery(*((hipEvent_t *)last_event->marker));
 
     if(is_blocking(category)) {
       /* Async operations completed after previous CPU operations: 
@@ -726,26 +725,26 @@ pb_SwitchToSubTimer(struct pb_TimerSet *timers, char *label, enum pb_TimerID cat
       // if it hasn't already finished, then just take now and use that as the elapsed time in OVERLAP
       // anything happening after now isn't OVERLAP because everything is being stopped to wait for synchronization
       // it seems that the extra sync wall time isn't being recorded anywhere
-      if(async_done != cudaSuccess) 
+      if(async_done != hipSuccess) 
         accumulate_time(&(timers->timers[pb_TimerID_OVERLAP].elapsed), 
 	                  timers->async_begin,currentTime);
 
       /* Wait on async operation completion */
-      cudaEventSynchronize(*((cudaEvent_t *)last_event->marker));
+      hipEventSynchronize(*((hipEvent_t *)last_event->marker));
       pb_Timestamp total_async_time = record_async_times(timers);
 
       /* Async operations completed before previous CPU operations: 
        * overlapped time is the total async time */
        // If it did finish, then accumulate all the async time that did happen into OVERLAP
        // the immediately preceding EventSynchronize theoretically didn't have any effect since it was already completed.
-      if(async_done == cudaSuccess)
+      if(async_done == hipSuccess)
         timers->timers[pb_TimerID_OVERLAP].elapsed += total_async_time;
 
     } else 
     /* implies (!is_async(timers->current) && asyncs_outstanding(timers)) */
     // i.e. Current Not Async (not KERNEL/COPY_ASYNC) but there are outstanding
     // so something is deeper in stack
-    if(async_done == cudaSuccess) {
+    if(async_done == hipSuccess) {
       /* Async operations completed before previous CPU operations: 
        * overlapped time is the total async time */
       timers->timers[pb_TimerID_OVERLAP].elapsed += record_async_times(timers);
@@ -876,8 +875,8 @@ void pb_DestroyTimerSet(struct pb_TimerSet * timers)
   /* clean up all of the async event markers */
   struct pb_async_time_marker_list ** event = &(timers->async_markers);
   while( *event != NULL) {
-    cudaEventSynchronize(*((cudaEvent_t *)(*event)->marker));
-    cudaEventDestroy(*((cudaEvent_t *)(*event)->marker));
+    hipEventSynchronize(*((hipEvent_t *)(*event)->marker));
+    hipEventDestroy(*((hipEvent_t *)(*event)->marker));
     free((*event)->marker);
     struct pb_async_time_marker_list ** next = &((*event)->next);
     free(*event);

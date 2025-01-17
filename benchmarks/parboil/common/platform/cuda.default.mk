@@ -10,11 +10,11 @@
 include $(PARBOIL_ROOT)/common/platform/c.default.mk
 
 # Paths
-CUDAHOME=/usr/local/cuda
+CUDAHOME=
 
 # Programs
-CUDACC=$(CUDAHOME)/bin/nvcc
-CUDALINK=$(CUDAHOME)/bin/nvcc
+CUDACC=hipcc
+CUDALINK=hipcc
 
 # Flags
 PLATFORM_CUDACFLAGS=-O3

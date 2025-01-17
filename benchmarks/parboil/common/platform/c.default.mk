@@ -6,12 +6,12 @@
 # with gcc
 
 # gcc (default)
-CC = gcc
-PLATFORM_CFLAGS = 
+CC = hipcc
+PLATFORM_CFLAGS = -x hip
   
-CXX = g++
-PLATFORM_CXXFLAGS = 
+CXX = hipcc
+PLATFORM_CXXFLAGS = -x hip
   
-LINKER = g++
+LINKER = hipcc
 PLATFORM_LDFLAGS = -lm -lpthread
 

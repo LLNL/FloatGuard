@@ -3,5 +3,5 @@
 LANGUAGE=cuda
 SRCDIR_OBJS=main.o CPU_kernels.o CUDA_interface.o scanLargeArray.o sort.o
 
-APP_CUDACFLAGS=-arch=compute_89
+APP_CUDACFLAGS=
 

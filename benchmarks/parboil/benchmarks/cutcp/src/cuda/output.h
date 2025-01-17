@@ -11,15 +11,7 @@
 
 #include "cutoff.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void
 write_lattice_summary(const char *filename, Lattice *lattice);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

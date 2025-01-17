@@ -806,14 +806,14 @@ pb_SwitchToSubTimer(struct pb_TimerSet *timers, char *label, enum pb_TimerID cat
        * overlapped time is the total async time */
        // If it did finish, then accumulate all the async time that did happen into OVERLAP
        // the immediately preceding EventSynchronize theoretically didn't have any effect since it was already completed.
-      if(async_done == CL_COMPLETE /*cudaSuccess*/)
+      if(async_done == CL_COMPLETE /*hipSuccess*/)
         timers->timers[pb_TimerID_OVERLAP].elapsed += total_async_time;
 
     } else 
     /* implies (!is_async(timers->current) && asyncs_outstanding(timers)) */
     // i.e. Current Not Async (not KERNEL/COPY_ASYNC) but there are outstanding
     // so something is deeper in stack
-    if(async_done == CL_COMPLETE /*cudaSuccess*/) {
+    if(async_done == CL_COMPLETE /*hipSuccess*/) {
       /* Async operations completed before previous CPU operations: 
        * overlapped time is the total async time */
       timers->timers[pb_TimerID_OVERLAP].elapsed += record_async_times(timers);

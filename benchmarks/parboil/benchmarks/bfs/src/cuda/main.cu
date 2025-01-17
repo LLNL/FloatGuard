@@ -24,6 +24,7 @@
   Author: Lijiuan Luo (lluo3@uiuc.edu)
   Revised for Parboil 2 Benchmark Suite by: Geng Daniel Liu (gengliu2@illinois.edu)
 */
+#include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

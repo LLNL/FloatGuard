@@ -4,4 +4,4 @@ LANGUAGE=cuda
 
 SRCDIR_OBJS=file.o main.o
 APP_LDFLAGS=-lm -lstdc++
-APP_CUDACFLAGS=--use_fast_math
+APP_CUDACFLAGS=-ffast-math
