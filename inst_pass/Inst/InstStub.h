@@ -22,7 +22,7 @@ __device__ int FP_EXCEPTION_ENABLED_CONSTANT(RANDINT)[1];
 //#pragma message "The value of RANDINT: " XSTR(RANDINT)
 
 #ifndef EXP_FLAG_TOTAL
-#define EXP_FLAG_TOTAL 0x0004D2F0
+#define EXP_FLAG_TOTAL 0x0005F2F0
 #endif
 
 #ifndef EXP_FLAG_LOW 
