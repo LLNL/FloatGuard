@@ -101,8 +101,12 @@ if __name__ == "__main__":
 
         # replace argv with a link-only version
         extra_compile_argv = ["hipcc"]
+        first_object = True
         for arg in argv[1:]:
             if arg in source_files:
+                if first_object:
+                    extra_compile_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
+                    first_object = False
                 arg_s = arg.split(".")[0] + ".s"
                 extra_compile_argv.append(arg_s)
             else:
@@ -114,9 +118,8 @@ if __name__ == "__main__":
     if exp_flag_str:
         exp_flag = int(exp_flag_str, 0)
     else:
-        if link_time:
-            # if link time, read EXP_FLAG_TOTAL flag from a file
-            if os.path.exists("exp_flag.txt"):
+        # if link time, read EXP_FLAG_TOTAL flag from a file
+        if link_time and os.path.exists("exp_flag.txt"):
                 with open("exp_flag.txt", "r") as f:
                     exp_flag_str = f.readline().strip()
                     exp_flag = int(exp_flag_str, 0)
@@ -150,10 +153,14 @@ if __name__ == "__main__":
         if has_link_param == 0 or has_link_param == 2:
             replaced_argv.append("--hip-link")
     assembly_list = []
+    first_object = True
     for arg in argv[1:]:
         if "InstStub.cpp" in arg:
             build_lib = True
         if not disable_all and arg.endswith(".o") and not "InstStub.o" in arg:
+            if link_time and first_object:
+                replaced_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
+                first_object = False
             arg_s = arg[:-2] + ".s"
             if not link_time:
                 replaced_argv.append(arg_s) 
@@ -315,4 +322,6 @@ if __name__ == "__main__":
                 with open(assembly, "w") as f:
                     f.writelines(injected_lines)
 
-    subprocess.run(replaced_argv)   
+    print("final run:", " ".join(replaced_argv))
+    if True:#not link_time:
+        subprocess.run(replaced_argv)   

@@ -53,17 +53,26 @@ def run_commands(commands):
     return totaltime, output
     
 if __name__ == "__main__":
-    if len(sys.argv) >= 2:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-d", "--directory", type=str, help="the directory to be tested", required=True)
-        args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--directory", type=str, help="the directory to be tested")
+    parser.add_argument("-s", "--setup", type=str, help="setup file")
+    args = parser.parse_args()
+    setup_file = "setup.ini"
+    if args.directory:
         dir = args.directory
+        if args.setup:        
+            setup_file = os.path.abspath(args.setup)
     else:
-        dir = os.getcwd()
+        if args.setup:
+            dir = os.path.dirname(os.path.abspath(args.setup))
+            setup_file = os.path.abspath(args.setup)
+        else:
+            dir = os.getcwd()
+
     os.chdir(dir)
     home = str(Path.home())
     config = configparser.ConfigParser()
-    config.read("setup.ini")
+    config.read(setup_file)
 
     if 'runs' in config['DEFAULT']:
         runs = config['DEFAULT']['runs']
