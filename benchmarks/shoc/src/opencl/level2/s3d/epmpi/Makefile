@@ -122,7 +122,7 @@ MAKEINFO = ${SHELL} /root/GPU-FPX/benchmarks_new/shoc/build-aux/missing --run ma
 MKDIR_P = /usr/bin/mkdir -p
 MPICXX = 
 MPI_SUBDIRS =  cuda
-NVCC = hipcc
+NVCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 NVCXXFLAGS = -g -O2
 OBJEXT = o
 OPENCL_LIBS = 
@@ -148,7 +148,7 @@ abs_srcdir = /root/GPU-FPX/benchmarks_new/shoc/src/opencl/level2/s3d/epmpi
 abs_top_builddir = /root/GPU-FPX/benchmarks_new/shoc
 abs_top_srcdir = /root/GPU-FPX/benchmarks_new/shoc
 ac_ct_CC = gcc
-ac_ct_CXX = hipcc
+ac_ct_CXX = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -313,7 +313,7 @@ S3D$(EXEEXT): $(S3D_OBJECTS) $(S3D_DEPENDENCIES)
 	$(CXXLINK) $(S3D_OBJECTS) $(S3D_LDADD) $(LIBS)
 
 mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
+	-rm -f *.$(OBJEXT) *.s
 
 distclean-compile:
 	-rm -f *.tab.c

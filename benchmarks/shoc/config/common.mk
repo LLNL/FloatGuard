@@ -27,8 +27,8 @@ OCL_CPPFLAGS    = -I$(top_srcdir)/src/opencl/common
 OCL_LDFLAGS		= -L$(top_builddir)/src/opencl/common
 OCL_LIBS        = -lSHOCCommonOpenCL -lSHOCCommon 
 
-NVCC            = hipcc
-CUDA_CXX        = hipcc
+NVCC            = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
+CUDA_CXX        = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 CUDA_INC        = -I../../common #-I/usr/local/cuda/include -I$(top_srcdir)/src/cuda/common
 CUDA_LDFLAGS	= -L$(top_builddir)/src/cuda/common
 CUDA_CPPFLAGS   =   -I$(top_srcdir)/src/cuda/common

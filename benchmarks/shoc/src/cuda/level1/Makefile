@@ -102,7 +102,7 @@ CFLAGS = -g -O2
 CPPFLAGS = 
 CUDA_CPPFLAGS =  
 CUDA_INCDIR = /usr/local/cuda/include
-CXX = hipcc
+CXX = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 CXXCPP = @CXXCPP@
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
@@ -129,7 +129,7 @@ MAKEINFO = ${SHELL} /root/GPU-FPX/benchmarks_new/shoc/build-aux/missing --run ma
 MKDIR_P = /usr/bin/mkdir -p
 MPICXX = 
 MPI_SUBDIRS =  cuda
-NVCC = hipcc
+NVCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 NVCXXFLAGS = -g -O2
 OBJEXT = o
 OPENCL_LIBS = 
@@ -155,7 +155,7 @@ abs_srcdir = /root/GPU-FPX/benchmarks_new/shoc/src/cuda/level1
 abs_top_builddir = /root/GPU-FPX/benchmarks_new/shoc
 abs_top_srcdir = /root/GPU-FPX/benchmarks_new/shoc
 ac_ct_CC = gcc
-ac_ct_CXX = hipcc
+ac_ct_CXX = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -464,6 +464,9 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
+
+cleanall: clean
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
 
 clean-am: clean-generic mostlyclean-am
 
