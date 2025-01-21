@@ -51,6 +51,42 @@ def is_executable_compilation(command):
     # If all conditions pass, it is likely compiling a single source file into an executable
     return True, source_files
 
+def code_injection_top(asm_file):
+    inside_hip_region = False
+    inside_function = False
+    code_injected_in_function = False
+    with open(asm_file, "r") as f:
+        lines = f.readlines()
+
+    injected_lines = []
+    for line in lines:
+        if "hip-amdgcn-amd-amdhsa" in line:
+            if "__CLANG_OFFLOAD_BUNDLE____START__" in line:
+                inside_hip_region = True
+            elif "__CLANG_OFFLOAD_BUNDLE____END__" in line:
+                inside_hip_region = False
+        elif inside_hip_region:
+            if line.startswith(".Lfunc_begin"):
+                inside_function = True
+                code_injected_in_function = False
+            elif "s_endpgm" in line or line.startswith(".Lfunc_end"):
+                inside_function = False
+                code_injected_in_function = False
+            elif inside_function:
+                if not code_injected_in_function and line.strip() != "" and not line.strip().startswith(";") and not line.strip().startswith("."):                    
+                    injected_lines.append("\ts_mov_b32 s31, s0\n")
+                    injected_lines.append("\ts_mov_b32 s0, 0x5F2F0\n")
+                    injected_lines.append("\ts_setreg_b32 hwreg(HW_REG_MODE), s0\n")
+                    injected_lines.append("\ts_mov_b32 s0, s31\n")
+                    #injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
+                    #injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")  
+                    code_injected_in_function = True                                      
+        injected_lines.append(line)
+
+    with open(asm_file, "w") as f:
+        f.writelines(injected_lines)
+    return
+
 if __name__ == "__main__":
     link_time = False
     compile_time = False
@@ -172,6 +208,10 @@ if __name__ == "__main__":
         else:
             replaced_argv.append(arg)
 
+    # inject initial code first
+    inject_code = os.getenv('INJECT_CODE', 0)
+    print(f"INJECT_CODE in inner Python script: {inject_code}")
+
     # if first time, store asm
     if not disable_all and link_time and not build_lib:
         if os.path.exists("./asm_info/"):
@@ -182,12 +222,16 @@ if __name__ == "__main__":
                 print("read assembly file:", asm_file)
                 os.system("cp asm_info/" + os.path.basename(asm_file) + " " + os.path.dirname(os.path.abspath(asm_file)))
         else:
-            os.mkdir("./asm_info")
-            with open("asm_info/link_command.txt", "w") as f:
-                f.write(" ".join(argv) + "\n")
+            if inject_code != 0:
+                # basic injection at the beginning. then save the assembly
                 for asm_file in assembly_list:
-                    f.write(asm_file + "\n")
-                    os.system("cp " + asm_file + " asm_info/")
+                    code_injection_top(asm_file)
+                os.mkdir("./asm_info")
+                with open("asm_info/link_command.txt", "w") as f:
+                    f.write(" ".join(argv) + "\n")
+                    for asm_file in assembly_list:
+                        f.write(asm_file + "\n")
+                        os.system("cp " + asm_file + " asm_info/")
 
     # write EXP_FLAG_TOTAL flag if the file does not exist
     if not build_lib and not os.path.exists("exp_flag.txt"):

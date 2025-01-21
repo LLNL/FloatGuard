@@ -103,31 +103,27 @@ if __name__ == "__main__":
 
     # 2. detect to use Clang plugin or LLVM pass
     use_clang = config['DEFAULT'].getboolean('use_clang_plugin')
+    asm_inject = True
 
-    if use_clang:
+    if asm_inject:
+        # 3. if using ASM inject, compile and run program with code injection; measure time
+        print("Compiling code with ASM code injection...")
+        subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_CODE': '1'})      
+    elif use_clang:
         # 2a. if using Clang plugin, convert code with the plugin
         print("Injecting code to original program with Clang plugin...")
         convert_command = config['DEFAULT']['clang_convert'].split()
-        subprocess.run(convert_command, stdout=subprocess.PIPE)
         os.system(clean_command)
 
         # 2b. if using Clang plugin, compile and run program with code injection; measure time
         print("Compiling injected program...")
 
         subprocess.run(compile_command, stdout=subprocess.PIPE)
-        print("Running injected program...")
-        totaltime, output = run_commands(run_command_list)
-        time_array.append(str(totaltime))
-        print("total time for injected program:", totaltime)
     else:
         # 3. if using LLVM pass, compile and run program with code injection; measure time
         print("Compiling code with LLVM pass code injection...")
         llvm_pass_command = config['DEFAULT']['llvm_pass'].split()
         subprocess.run(llvm_pass_command, stdout=subprocess.PIPE)
-
-        totaltime, output = run_commands(run_command_list)
-        time_array.append(str(totaltime))
-        print("total time for injected program:", totaltime)
 
     # 4. run program with code injection with control script; measure time
     print("Running exception capture for the injected program...")
