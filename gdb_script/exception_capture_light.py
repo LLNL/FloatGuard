@@ -241,19 +241,19 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                         print("error loc:", error_loc)                    
             trapsts = (int)(send(gdb, "p", "$trapsts&0x1ff").strip().split("=")[1].strip()) & exception_flags
             if trapsts & 0x01:
-                print("exception type: invalid")
+                print("exception type: 0 invalid")
             if trapsts & 0x02:
-                print("exception type: input denormal")                                
+                print("exception type: 1 input denormal")                                
             if trapsts & 0x04:
-                print("exception type: divide by zero")
+                print("exception type: 2 divide by zero")
             if trapsts & 0x08:
-                print("exception type: overflow")
+                print("exception type: 3 overflow")
             if trapsts & 0x10:
-                print("exception type: underflow")
-            if trapsts & 0x20:
-                print("exception type: inexact")
+                print("exception type: 4 underflow")
+            #if trapsts & 0x20:
+            #    print("exception type: 5 inexact")
             if trapsts & 0x40:
-                print("exception type: integer divide by zero")
+                print("exception type: 6 integer divide by zero")
             bt_list = send(gdb, "bt", display=True).splitlines()
             idx = len(bt_list) - 1
             while idx >= 0:

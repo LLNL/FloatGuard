@@ -130,9 +130,10 @@ if __name__ == "__main__":
                     prev_is_object = False
                     #arg_s = arg.split(".")[0] + ".s"
                     #extra_compile_argv.append(arg_s)
-                else:
+                elif not "fgpu-rdc" in arg and not "hip-link" in arg:
                     extra_compile_argv.append(arg)
 
+        print("initial run:", " ".join(extra_compile_argv))
         subprocess.run(extra_compile_argv)
 
         # replace argv with a link-only version
@@ -367,5 +368,4 @@ if __name__ == "__main__":
                     f.writelines(injected_lines)
 
     print("final run:", " ".join(replaced_argv))
-    if True:#not link_time:
-        subprocess.run(replaced_argv)   
+    subprocess.run(replaced_argv)   
