@@ -219,7 +219,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             error_loc = "(none)"
             print("----------------- EXCEPTION CAPTURED -----------------")
             for line in outlines:
-                pattern = r'at\s+([\w\.]+):(\d+)'
+                pattern = r'at\s+([\w\.\/\-]+):(\d+)'
                 match = re.search(pattern, line)
                 if match:
                     filename = match.group(1)
