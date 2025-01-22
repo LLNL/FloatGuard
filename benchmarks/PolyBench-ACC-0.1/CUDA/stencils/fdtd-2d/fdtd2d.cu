@@ -235,8 +235,22 @@ void print_array(int nx,
 int main(int argc, char *argv[])
 {
 	int tmax = TMAX;
-	int nx = NX;
-	int ny = NY;
+	int nx, ny;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: nx = ny = 512; break;
+			case 1: nx = ny = 1024; break;
+			case 2: nx = ny = 2048; break;
+			case 3: nx = ny = 4096; break;
+			case 4: nx = ny = 8192; break;
+		}
+	}
+	else
+	{
+		nx = ny = 2048;
+	}
 
 	POLYBENCH_1D_ARRAY_DECL(_fict_,DATA_TYPE,TMAX,TMAX);
 	POLYBENCH_2D_ARRAY_DECL(ex,DATA_TYPE,NX,NY,nx,ny);

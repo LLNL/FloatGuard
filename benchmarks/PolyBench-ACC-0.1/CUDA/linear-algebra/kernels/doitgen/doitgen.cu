@@ -207,10 +207,22 @@ void print_array(int nr, int nq, int np,
 
 int main(int argc, char *argv[])
 {
-	/* Retrieve problem size. */
-	int nr = NR;
-	int nq = NQ;
-	int np = NP;
+	int nr, nq, np;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: nr = nq = np = 32; break;
+			case 1: nr = nq = np = 64; break;
+			case 2: nr = nq = np = 128; break;
+			case 3: nr = nq = np = 256; break;
+			case 4: nr = nq = np = 512; break;
+		}
+	}
+	else
+	{
+		nr = nq = np = 128;
+	}
 
 	/* Variable declaration/allocation. */
 	POLYBENCH_3D_ARRAY_DECL(A,DATA_TYPE,NR,NQ,NP,nr,nq,np);

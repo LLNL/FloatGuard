@@ -298,7 +298,22 @@ void print_array(int n,
 int main(int argc, char *argv[])
 {
 	int tsteps = TSTEPS;
-	int n = N;
+	int n;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: n = 256; break;
+			case 1: n = 512; break;
+			case 2: n = 1024; break;
+			case 3: n = 2048; break;
+			case 4: n = 4096; break;
+		}
+	}
+	else
+	{
+		n = 1024;
+	}
 
 	GPU_argv_init();
 

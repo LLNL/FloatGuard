@@ -242,11 +242,22 @@ void mm2Cuda(int ni, int nj, int nk, int nl, DATA_TYPE alpha, DATA_TYPE beta, DA
 
 int main(int argc, char** argv)
 {
-	/* Retrieve problem size. */
-	int ni = NI;
-	int nj = NJ;
-	int nk = NK;
-	int nl = NL;
+	int ni, nj, nk, nl;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = nk = nl = 256; break;
+			case 1: ni = nj = nk = nl = 512; break;
+			case 2: ni = nj = nk = nl = 1024; break;
+			case 3: ni = nj = nk = nl = 2048; break;
+			case 4: ni = nj = nk = nl = 4096; break;
+		}
+	}
+	else
+	{
+		 ni = nj = nk = nl = 1024;
+	}
 
 	/* Variable declaration/allocation. */
 	DATA_TYPE alpha;

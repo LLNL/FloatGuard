@@ -171,8 +171,22 @@ void print_array(int ni, int nj,
 int main(int argc, char *argv[])
 {
 	/* Retrieve problem size */
-	int ni = NI;
-	int nj = NJ;
+	int ni, nj;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = 1024; break;
+			case 1: ni = nj = 2048; break;
+			case 2: ni = nj = 4096; break;
+			case 3: ni = nj = 8192; break;
+			case 4: ni = nj = 16384; break;
+		}
+	}
+	else
+	{
+		ni = nj = 4096;
+	}
 
 	POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,NI,NJ,ni,nj);
   	POLYBENCH_2D_ARRAY_DECL(B,DATA_TYPE,NI,NJ,ni,nj);

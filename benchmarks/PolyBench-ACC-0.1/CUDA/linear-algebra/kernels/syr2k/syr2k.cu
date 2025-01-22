@@ -196,9 +196,22 @@ void print_array(int ni, DATA_TYPE POLYBENCH_2D(C,NI,NI,ni,ni))
 
 int main(int argc, char *argv[])
 {
-	/* Retrieve problem size. */
-	int ni = NI;
-	int nj = NJ;
+	int ni, nj;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = 256; break;
+			case 1: ni = nj = 512; break;
+			case 2: ni = nj = 1024; break;
+			case 3: ni = nj = 2048; break;
+			case 4: ni = nj = 4096; break;
+		}
+	}
+	else
+	{
+		ni = nj = 1024;
+	}
 
 	/* Variable declaration/allocation. */
 	DATA_TYPE alpha;

@@ -222,8 +222,22 @@ void bicgCuda(int nx, int ny, DATA_TYPE POLYBENCH_2D(A,NX,NY,nx,ny), DATA_TYPE P
 
 int main(int argc, char** argv)
 {
-	int nx = NX;
-	int ny = NY;
+	int nx, ny;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: nx = ny = 1024; break;
+			case 1: nx = ny = 2048; break;
+			case 2: nx = ny = 4096; break;
+			case 3: nx = ny = 8192; break;
+			case 4: nx = ny = 16384; break;
+		}
+	}
+	else
+	{
+		nx = 4096; ny = 4096;
+	}
 
 	POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,NX,NY,nx,ny);
 	POLYBENCH_1D_ARRAY_DECL(s,DATA_TYPE,NY,ny);

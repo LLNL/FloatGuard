@@ -192,9 +192,22 @@ void print_array(int ni, int nj, int nk,
 
 int main(int argc, char *argv[])
 {
-	int ni = NI;
-	int nj = NJ;
-	int nk = NK;
+	int ni, nj, nk;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = nk = 64; break;
+			case 1: ni = nj = nk = 128; break;
+			case 2: ni = nj = nk = 256; break;
+			case 3: ni = nj = nk = 384; break;
+			case 4: ni = nj = nk = 512; break;
+		}
+	}
+	else
+	{
+		ni = nj = nk = 256;
+	}
 
 	POLYBENCH_3D_ARRAY_DECL(A,DATA_TYPE,NI,NJ,NK,ni,nj,nk);
 	POLYBENCH_3D_ARRAY_DECL(B,DATA_TYPE,NI,NJ,NK,ni,nj,nk);

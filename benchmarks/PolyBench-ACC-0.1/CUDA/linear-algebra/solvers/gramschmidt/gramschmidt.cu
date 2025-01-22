@@ -230,9 +230,22 @@ void print_array(int ni, int nj, DATA_TYPE POLYBENCH_2D(A,NI,NJ,ni,nj))
 
 int main(int argc, char *argv[])
 {
-	/* Retrieve problem size. */
-	int ni = NI;
-	int nj = NJ;
+	int ni, nj;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = 512; break;
+			case 1: ni = nj = 1024; break;
+			case 2: ni = nj = 2048; break;
+			case 3: ni = nj = 4096; break;
+			case 4: ni = nj = 8192; break;
+		}
+	}
+	else
+	{
+		ni = nj = 2048;
+	}
 
 	POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,NI,NJ,ni,nj);
   	POLYBENCH_2D_ARRAY_DECL(A_outputFromGpu,DATA_TYPE,NI,NJ,ni,nj);

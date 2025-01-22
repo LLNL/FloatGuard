@@ -287,11 +287,22 @@ void print_array(int ni, int nl,
 
 int main(int argc, char** argv)
 {
-	int ni = NI;
-	int nj = NJ;
-	int nk = NK;
-	int nl = NL;
-	int nm = NM;
+	int ni, nj, nk, nl, nm;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = nk = nl = nm = 128; break;
+			case 1: ni = nj = nk = nl = nm = 256; break;
+			case 2: ni = nj = nk = nl = nm = 512; break;
+			case 3: ni = nj = nk = nl = nm = 1024; break;
+			case 4: ni = nj = nk = nl = nm = 2048; break;
+		}
+	}
+	else
+	{
+		 ni = nj = nk = nl = nm = 512;
+	}
 
 	/* Variable declaration/allocation. */
 	POLYBENCH_2D_ARRAY_DECL(E, DATA_TYPE, NI, NJ, ni, nj);

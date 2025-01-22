@@ -170,8 +170,23 @@ void print_array(int n,
 int main(int argc, char** argv)
 {
 	/* Retrieve problem size. */
-	int n = N;
 	int tsteps = TSTEPS;
+	int n;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: n = 1024; break;
+			case 1: n = 2048; break;
+			case 2: n = 4096; break;
+			case 3: n = 8192; break;
+			case 4: n = 16384; break;
+		}
+	}
+	else
+	{
+		n = 4096;
+	}
 
 	POLYBENCH_1D_ARRAY_DECL(a,DATA_TYPE,N,n);
 	POLYBENCH_1D_ARRAY_DECL(b,DATA_TYPE,N,n);

@@ -189,10 +189,22 @@ void print_array(int ni, int nj,
 
 int main(int argc, char *argv[])
 {
-	/* Retrieve problem size. */
-	int ni = NI;
-	int nj = NJ;
-	int nk = NK;
+	int ni, nj, nk;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: ni = nj = nk = 128; break;
+			case 1: ni = nj = nk = 256; break;
+			case 2: ni = nj = nk = 512; break;
+			case 3: ni = nj = nk = 1024; break;
+			case 4: ni = nj = nk = 2048; break;
+		}
+	}
+	else
+	{
+		ni = nj = nk = 512;
+	}
 
 	/* Variable declaration/allocation. */
 	DATA_TYPE alpha;

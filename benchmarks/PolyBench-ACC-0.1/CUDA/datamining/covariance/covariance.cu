@@ -233,8 +233,22 @@ void print_array(int m, DATA_TYPE POLYBENCH_2D(symmat,M,M,m,m))
 
 int main(int argc, char** argv)
 {
-	int m = M;
-	int n = N;
+	int m, n;
+	if (argc == 2) 
+	{
+		switch (atoi(argv[1]))
+		{
+			case 0: m = 512; n = 512; break;
+			case 1: m = 1024; n = 1024; break;
+			case 2: m = 2048; n = 2048; break;
+			case 3: m = 4096; n = 4096; break;
+			case 4: m = 8192; n = 8192; break;
+		}
+	}
+	else
+	{
+		m = 2048; n = 2048;
+	}
 
 	POLYBENCH_2D_ARRAY_DECL(data,DATA_TYPE,M,N,m,n);
 	POLYBENCH_2D_ARRAY_DECL(symmat,DATA_TYPE,M,M,m,m);
