@@ -17,7 +17,7 @@ CUDACC=${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 CUDALINK=${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 
 # Flags
-PLATFORM_CUDACFLAGS=-O3
+PLATFORM_CUDACFLAGS=-O3 -g
 PLATFORM_CUDALDFLAGS=-lm -lpthread -fgpu-rdc --hip-link
 
 
