@@ -55,7 +55,7 @@ def code_injection_top(asm_file):
     inside_hip_region = False
     inside_function = False
     code_injected_in_function = False
-    with open(asm_file, "r") as f:
+    with open(asm_file, "r", encoding='latin1') as f:
         lines = f.readlines()
 
     injected_lines = []
@@ -137,14 +137,14 @@ if __name__ == "__main__":
         subprocess.run(extra_compile_argv)
 
         # replace argv with a link-only version
-        extra_compile_argv = ["hipcc"]
+        extra_compile_argv = ["${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh"]
         first_object = True
         for arg in argv[1:]:
             if arg in source_files:
                 if first_object:
-                    extra_compile_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
+                    #extra_compile_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
                     first_object = False
-                arg_s = arg.split(".")[0] + ".s"
+                arg_s = arg.split(".")[0] + ".o"
                 extra_compile_argv.append(arg_s)
             else:
                 extra_compile_argv.append(arg)
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             build_lib = True
         if not disable_all and arg.endswith(".o") and not "InstStub.o" in arg:
             if link_time and first_object:
-                replaced_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
+                #replaced_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
                 first_object = False
             arg_s = arg[:-2] + ".s"
             if not link_time:

@@ -31,10 +31,10 @@ endif
 
 
 ifeq ($(INJECT_CODE_LLVM), 1)
-INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so \
+INST_FLAGS = -Wno-everything -g -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so \
 			 -DEXP_FLAG_TOTAL=0x5F2F0
 else
-INST_FLAGS = -Wno-everything -g -include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h \
+INST_FLAGS = -Wno-everything -g \
 			 -DEXP_FLAG_TOTAL=0x5F2F0
 endif
 
