@@ -119,16 +119,14 @@ __constant__ double3 ff_flux_contribution_density_energy[1];
 
 __global__ void cuda_initialize_variables(int nelr, double* variables)
 {
-	ENABLE_FP_EXCEPTION(RANDINT);
-const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 	for(int j = 0; j < NVAR; j++)
 		variables[i + j*nelr] = ff_variable[j];
 }
 void initialize_variables(int nelr, double* variables)
 {
 	dim3 Dg(nelr / block_length), Db(block_length);
-	set_fp_exception_enabled("__device_stub__cuda_initialize_variables()");
-cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
+	cuda_initialize_variables<<<Dg, Db>>>(nelr, variables);
 	hipError_t error = hipGetLastError();
 	if (error != hipSuccess) 
 	  {
@@ -182,8 +180,7 @@ __device__ inline double compute_speed_of_sound(double& density, double& pressur
 
 __global__ void cuda_compute_step_factor(int nelr, double* variables, double* areas, double* step_factors)
 {
-	ENABLE_FP_EXCEPTION(RANDINT);
-const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 
 	double density = variables[i + VAR_DENSITY*nelr];
 	double3 momentum;
@@ -204,8 +201,7 @@ const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 void compute_step_factor(int nelr, double* variables, double* areas, double* step_factors)
 {
 	dim3 Dg(nelr / block_length), Db(block_length);
-	set_fp_exception_enabled("__device_stub__cuda_compute_step_factor()");
-cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
+	cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
 	hipError_t error = hipGetLastError();		
 	if (error != hipSuccess) 
 	  {
@@ -221,8 +217,7 @@ cuda_compute_step_factor<<<Dg, Db>>>(nelr, variables, areas, step_factors);
 */
 __global__ void cuda_compute_flux(int nelr, int* elements_surrounding_elements, double* normals, double* variables, double* fluxes)
 {
-	ENABLE_FP_EXCEPTION(RANDINT);
-const double smoothing_coefficient = double(0.2f);
+	const double smoothing_coefficient = double(0.2f);
 	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 	
 	int j, nb;
@@ -353,8 +348,7 @@ const double smoothing_coefficient = double(0.2f);
 void compute_flux(int nelr, int* elements_surrounding_elements, double* normals, double* variables, double* fluxes)
 {
 	dim3 Dg(nelr / block_length), Db(block_length);
-	set_fp_exception_enabled("__device_stub__cuda_compute_flux()");
-cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
+	cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
 	hipError_t error = hipGetLastError();
 	if (error != hipSuccess) 
 	  {
@@ -366,8 +360,7 @@ cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, varia
 
 __global__ void cuda_time_step(int j, int nelr, double* old_variables, double* variables, double* step_factors, double* fluxes)
 {
-	ENABLE_FP_EXCEPTION(RANDINT);
-const int i = (blockDim.x*blockIdx.x + threadIdx.x);
+	const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 
 	double factor = step_factors[i]/double(RK+1-j);
 
@@ -380,8 +373,7 @@ const int i = (blockDim.x*blockIdx.x + threadIdx.x);
 void time_step(int j, int nelr, double* old_variables, double* variables, double* step_factors, double* fluxes)
 {
 	dim3 Dg(nelr / block_length), Db(block_length);
-	set_fp_exception_enabled("__device_stub__cuda_time_step()");
-cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
+	cuda_time_step<<<Dg,Db>>>(j, nelr, old_variables, variables, step_factors, fluxes);
 	hipError_t error = hipGetLastError();
 	if (error != hipSuccess) 
 	  {
