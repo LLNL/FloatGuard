@@ -66,6 +66,9 @@ clean :
 	rm -f $(BUILDDIR)/*
 	if [ -d $(BUILDDIR) ]; then rmdir $(BUILDDIR); fi
 
+cleanall: clean
+	rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/
+
 $(BIN) : $(OBJS) $(BUILDDIR)/parboil.o
 	$(CXX) $^ -o $@ $(LDFLAGS)
 

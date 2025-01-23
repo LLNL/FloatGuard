@@ -48,7 +48,7 @@ def run_commands(commands):
     starttime = time.time()
     output = ""
     for command in commands:
-        output += subprocess.check_output(' '.join(command), shell=True).decode() + "\n"
+        output += subprocess.check_output(' '.join(command).replace("~", os.path.expanduser("~")), shell=True).decode() + "\n"
     totaltime = time.time() - starttime
     return totaltime, output
     
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--directory", type=str, help="the directory to be tested")
     parser.add_argument("-s", "--setup", type=str, help="setup file")
+    parser.add_argument("-c", "--clean", dest="clean", action="store_true", help="clean mode")
     args = parser.parse_args()
     setup_file = "setup.ini"
     if args.directory:
@@ -79,10 +80,13 @@ if __name__ == "__main__":
     else:
         runs = 1
 
-    os.system("rm seq.txt exp_flag.txt inject_points.txt")
+    os.system("rm -r exp_flag.txt seq.txt inject_points.txt loc.txt asm_info/")
     clean_command = config['DEFAULT']['clean']
     os.system(clean_command)
     time_array = []
+
+    if args.clean:
+        exit(0)
 
     # 1. compile and run the program without code injection; measure time
     print("Compiling original program...")
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     if asm_inject:
         # 3. if using ASM inject, compile and run program with code injection; measure time
         print("Compiling code with ASM code injection...")
-        subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_CODE': '1'})      
+        subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})      
     elif use_clang:
         # 2a. if using Clang plugin, convert code with the plugin
         print("Injecting code to original program with Clang plugin...")
@@ -132,7 +136,11 @@ if __name__ == "__main__":
     for run_command in run_command_list:
         capture_command = ['python3', '-u', os.path.join(home, "FloatGuard", "gdb_script", "exception_capture_light.py")]
         if use_clang:
-            capture_command.append('-u')        
+            capture_command.append('-u')    
+        capture_command.append("-s")
+        capture_command.append(setup_file)    
+        capture_command.append("-d")
+        capture_command.append(dir)  
         capture_command.extend(['-p', run_command[0]])
         if len(run_command) > 1:   
             capture_command.append('-a') 

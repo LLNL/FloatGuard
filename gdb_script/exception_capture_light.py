@@ -175,7 +175,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             f.write(loc+ "\n")
 
     if len(injected_points) > 0:
-        inj_file = os.path.join(os.getcwd(), "inject_points.txt")
+        inj_file = os.path.join(os.path.join(dir, "inject_points.txt"))
         with open(inj_file, "w") as f:
             for inj in injected_points:
                 f.write(inj[0] + "," + str(inj[1]) + "\n")
@@ -185,7 +185,9 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         if os.path.exists("asm_info/link_command.txt"):
             with open("asm_info/link_command.txt", "r") as f:
                 linker_command = f.readline()
-                os.system(linker_command.strip())
+                linker_dir = f.readline()
+                subprocess.run(linker_command.strip().split(), cwd=linker_dir.strip(), env={**os.environ, 'FG_WORKDIR': dir})
+                #os.system(linker_command.strip())
         else:
             clean_command = conf['DEFAULT']['clean']
             os.system(clean_command)        
@@ -329,7 +331,8 @@ if __name__ == "__main__":
    
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--interactive", dest='interactive', action='store_true', help='interactive mode')
-    parser.add_argument("-s", "--skip", dest="skip", action='store_true', help="skip mode; only finds one exception in one kernel")
+    parser.add_argument("-d", "--directory", type=str, help="the directory to be tested")
+    parser.add_argument("-s", "--setup", dest="setup", type=str, help="setup file path")
     parser.add_argument("-p", "--program", type=str, help="the program to be tested", required=True)
     parser.add_argument("-a", "--args", nargs='*', help="Program arguments")
     parser.add_argument("-u", "--useclang", dest='useclang', action='store_true', help='use clang instead of llvm pass')
@@ -349,7 +352,6 @@ if __name__ == "__main__":
     Verbose = args.verbose
     ProgramName = args.program
     Arguments = remaining
-    Skip = args.skip
     use_clang = False
     if args.useclang:
         use_clang = True
@@ -360,7 +362,18 @@ if __name__ == "__main__":
     exception_flags = 0x7F
 
     conf = configparser.ConfigParser()
-    conf.read("setup.ini")
+    setup_file = "setup.ini"
+    if args.directory:
+        dir = args.directory
+        if args.setup:        
+            setup_file = os.path.abspath(args.setup)
+    else:
+        if args.setup:
+            dir = os.path.dirname(os.path.abspath(args.setup))
+            setup_file = os.path.abspath(args.setup)
+        else:
+            dir = os.getcwd()
+    conf.read(setup_file)
 
     for kernel in kernel_names:
         print("kernel name:", kernel)            

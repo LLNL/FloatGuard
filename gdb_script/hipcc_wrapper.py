@@ -94,6 +94,7 @@ if __name__ == "__main__":
     exp_flag_str = None
     has_link_param = 0
     argv = sys.argv
+    fg_work_dir = os.getenv("FG_WORKDIR", default=os.getcwd())
     for arg in argv:
         # determine link time
         if arg == "--hip-link":
@@ -156,8 +157,8 @@ if __name__ == "__main__":
         exp_flag = int(exp_flag_str, 0)
     else:
         # if link time, read EXP_FLAG_TOTAL flag from a file
-        if link_time and os.path.exists("exp_flag.txt"):
-                with open("exp_flag.txt", "r") as f:
+        if link_time and os.path.exists(os.path.join(fg_work_dir, "exp_flag.txt")):
+                with open(os.path.join(fg_work_dir, "exp_flag.txt"), "r") as f:
                     exp_flag_str = f.readline().strip()
                     exp_flag = int(exp_flag_str, 0)
         else:     
@@ -171,8 +172,8 @@ if __name__ == "__main__":
     # read inject points
     # (kernel name, instruction index) tuples
     inject_points = []
-    if link_time and os.path.exists("inject_points.txt"):
-        with open("inject_points.txt", "r") as f:
+    if link_time and os.path.exists(os.path.join(fg_work_dir, "inject_points.txt")):
+        with open(os.path.join(fg_work_dir, "inject_points.txt"), "r") as f:
             while True:
                 line = f.readline()
                 if not line:
@@ -210,33 +211,34 @@ if __name__ == "__main__":
             replaced_argv.append(arg)
 
     # inject initial code first
-    inject_code = os.getenv('INJECT_CODE', 0)
-    print(f"INJECT_CODE in inner Python script: {inject_code}")
+    inject_code = os.getenv('INJECT_FG_CODE', 0)
+    print(f"INJECT_FG_CODE in inner Python script: {inject_code}")
 
     # if first time, store asm
     if not disable_all and link_time and not build_lib:
-        if os.path.exists("./asm_info/"):
-            with open("asm_info/link_command.txt", "r") as f:
+        if os.path.exists(os.path.join(fg_work_dir, "asm_info")):
+            with open(os.path.join(fg_work_dir, "asm_info/link_command.txt"), "r") as f:
                 lines = f.readlines()
-            for line in lines[1:]:
+            for line in lines[2:]:
                 asm_file = line.strip()
                 print("read assembly file:", asm_file)
-                os.system("cp asm_info/" + os.path.basename(asm_file) + " " + os.path.dirname(os.path.abspath(asm_file)))
+                os.system("cp " + os.path.join(fg_work_dir, "asm_info", os.path.basename(asm_file)) + " " + os.path.dirname(os.path.abspath(asm_file)))
         else:
             if inject_code != 0:
                 # basic injection at the beginning. then save the assembly
                 for asm_file in assembly_list:
                     code_injection_top(asm_file)
-                os.mkdir("./asm_info")
-                with open("asm_info/link_command.txt", "w") as f:
+                os.mkdir(os.path.join(fg_work_dir, "asm_info"))
+                with open(os.path.join(fg_work_dir, "asm_info/link_command.txt"), "w") as f:
                     f.write(" ".join(argv) + "\n")
+                    f.write(os.getcwd() + "\n")
                     for asm_file in assembly_list:
                         f.write(asm_file + "\n")
-                        os.system("cp " + asm_file + " asm_info/")
+                        os.system("cp " + os.path.abspath(asm_file) + " " + os.path.join(fg_work_dir, "asm_info"))
 
     # write EXP_FLAG_TOTAL flag if the file does not exist
-    if not build_lib and not os.path.exists("exp_flag.txt"):
-        with open("exp_flag.txt", "w") as f:
+    if not build_lib and not os.path.exists(os.path.join(fg_work_dir, "exp_flag.txt")):
+        with open(os.path.join(fg_work_dir, "exp_flag.txt"), "w") as f:
             f.write(exp_flag_str + "\n")
 
     if not disable_all and not link_time and not build_lib:
