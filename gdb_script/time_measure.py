@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     prog_name = os.path.basename(os.path.normpath(dir))
     if setup_file != "setup.ini":
-        prog_name += "_" + os.path.basename(os.path.normpath(setup_file)).replace("setup_", "")
+        prog_name += "_" + os.path.basename(os.path.normpath(setup_file)).replace("setup_", "").replace(".ini", "")
     if len(run_command_list) == 1:
         if len(run_command) > 1:
             prog_input = " ".join(run_command[1:])
