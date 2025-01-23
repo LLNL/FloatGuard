@@ -79,7 +79,7 @@ float kernel_value_LUT(float v, float* LUT, int sizeLUT, float _1overCutoff2)
   return  LUT[k0] + ((v-v0)*(LUT[k0+1]-LUT[k0])/_1overCutoff2);
 }
 
-int gridding_Gold(unsigned int n, parameters params, ReconstructionSample* sample, float* LUT, unsigned int sizeLUT, cmplx* gridData, float* sampleDensity){
+void gridding_Gold(unsigned int n, parameters params, ReconstructionSample* sample, float* LUT, unsigned int sizeLUT, cmplx* gridData, float* sampleDensity){
 
   unsigned int NxL, NxH;
   unsigned int NyL, NyH;
@@ -115,8 +115,7 @@ int gridding_Gold(unsigned int n, parameters params, ReconstructionSample* sampl
   float _1overCutoff2 = 1/cutoff2;              // 1 over square of cutoff radius
 
   float beta = PI * sqrt(4*params.kernelWidth*params.kernelWidth/(params.oversample*params.oversample) * (params.oversample-.5)*(params.oversample-.5)-.8);
-
-  int i;
+  unsigned int i;
   for (i=0; i < n; i++){
     ReconstructionSample pt = sample[i];
 
