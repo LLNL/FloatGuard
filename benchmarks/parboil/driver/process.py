@@ -82,6 +82,11 @@ def makefile(target=None, action=None, filepath=None, env={}):
             args.append('clean')
             rc = os.spawnvp(os.P_WAIT, "make", args)
             return rc == 0
+    elif action is 'cleanall':
+        def run():
+            args.append('cleanall')
+            rc = os.spawnvp(os.P_WAIT, "make", args)
+            return rc == 0
     elif action is 'run':
         def run():
             args.append('run')

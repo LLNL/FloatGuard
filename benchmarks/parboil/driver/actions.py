@@ -83,6 +83,22 @@ def clean_benchmark(bmk, version_name=None, platform=None):
         for impl in bmk.impls.itervalues():
             impl.clean(bmk, platform)
 
+def cleanall_benchmark(bmk, version_name=None, platform=None):
+    """Remove the compiled code for one implementation of 'bmk'.  If
+    no version is given, clean all versions."""
+
+    if version_name:
+        try: impl = bmk.impls[version_name]
+        except KeyError:
+            print "Cannot find benchmark version"
+            return
+
+        impl.cleanall(bmk, platform)
+    else:
+        # Clean all versions
+        for impl in bmk.impls.itervalues():
+            impl.cleanall(bmk, platform)
+
 def run_benchmark(bmk, version_name, input_name, check=True, extra_opts=[], platform=None):
     """Run the benchmark 'bmk'."""
     try: impl = bmk.impls[version_name]

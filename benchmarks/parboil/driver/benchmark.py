@@ -132,7 +132,7 @@ class BenchImpl(object):
             env.update(opt)
 
             mkfile = globals.root + os.sep + 'common' + os.sep + 'mk'
-
+            
             # Run the makefile to build the benchmark
             ret = process.makefile(target=target,
 				    action=action,
@@ -157,6 +157,10 @@ class BenchImpl(object):
     def clean(self, benchmark, platform):
         """Remove build files for this benchmark implementation."""
         return self.makefile(benchmark, action='clean', platform=platform)
+    
+    def cleanall(self, benchmark, platform):
+        """Remove build files for this benchmark implementation."""
+        return self.makefile(benchmark, action='cleanall', platform=platform)
 
     def run(self, benchmark, dataset, do_output=True, extra_opts=[], platform=None):
         """Run this benchmark implementation.

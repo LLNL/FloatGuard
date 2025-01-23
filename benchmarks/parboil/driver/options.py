@@ -120,6 +120,38 @@ def clean_options(progname, cmd, args):
 
     return OptionGetter(parser.print_help, run)
 
+def cleanall_options(progname, cmd, args):
+    usage_string = progname + " cleanall BENCHMARK [VERSION]\nDelete the object code and executable of BENCHMARK version VERSION;\nif no version is given, remove the object code and executable of all versions"
+    parser = OptionParser(usage=usage_string)
+    parser.add_option('-v', "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="Produce verbose status messages")
+
+    def run():
+        (opts, pos) = parser.parse_args(args)
+        globals.verbose = opts.verbose
+
+        if len(pos) == 0:
+            print "Expecting two or three parameters after 'cleanall'"
+            return None
+        elif len(pos) == 1:
+            bmkname = pos[0]
+            return lambda: actions.with_benchmark_named(bmkname, actions.cleanall_benchmark)
+        elif len(pos) == 2:
+            bmkname = pos[0]
+            ver = pos[1]
+            return lambda: actions.with_benchmark_named(bmkname, lambda b: actions.cleanall_benchmark(b, ver))
+        elif len(pos) == 3:
+            bmkname = pos[0]
+            ver = pos[1]
+            platform = pos[2]
+            return lambda: actions.with_benchmark_named(bmkname, lambda b: actions.cleanall_benchmark(b, ver, platform))
+        else:
+            print "Too many parameters after 'cleanall'"
+            return None
+
+    return OptionGetter(parser.print_help, run)
+
 def compile_options(progname, cmd, args):
     help_string = "usage :" + progname + " compile BENCHMARK VERSION [PLATFORM=default]\nCompile version VERSION of BENCHMARK [for platform PLATFORM]"
     parser = OptionParser(usage = help_string)
@@ -214,6 +246,7 @@ parse_mode_options = {
     'list'     : list_options,
     'describe' : describe_options,
     'clean'    : clean_options,
+    'cleanall' : cleanall_options,
     'compile'  : compile_options,
     'run'      : run_options,
     'debug'    : debug_options
