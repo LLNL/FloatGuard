@@ -24,32 +24,6 @@
 # linking is done with       $(CLINK) $(C_LIB) $(CLINKFLAGS)
 #---------------------------------------------------------------------------
 
-ifndef $(INJECT_CODE_LLVM)
-INJECT_CODE_LLVM = 0
-endif
-
-
-
-ifeq ($(INJECT_CODE_LLVM), 1)
-INST_FLAGS = -Wno-everything -g -fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so \
-			 -DEXP_FLAG_TOTAL=0x5F2F0
-else
-INST_FLAGS = -Wno-everything -g \
-			 -DEXP_FLAG_TOTAL=0x5F2F0
-endif
-
-ifdef $(NO_BRANCH)
-INST_FLAGS += -DNO_BRANCH=1
-endif
-
-ifndef $(INJECT_CODE_CLANG)
-INJECT_CODE_CLANG = 0
-endif
-
-ifeq ($(INJECT_CODE_CLANG), 1)
-INST_FLAGS += -c -emit-llvm -Xclang -load -Xclang ${HOME}/FloatGuard/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
-endif
-
 
 #---------------------------------------------------------------------------
 # This is the C compiler used for OpenMP programs
@@ -63,7 +37,7 @@ OPENMP_ENABLE=
 EXTRA_STUFF=-O3 -ffast-math
 # ${EXTRA_STUFF}
 
-CC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${COMPUTE_CAPABILITY} ${OPENMP_ENABLE} ${EXTRA_STUFF} ${INST_FLAGS}
+CC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh ${COMPUTE_CAPABILITY} ${OPENMP_ENABLE} ${EXTRA_STUFF}
 
 #backup old command
 #CC = nvcc -rdc=true -std=c++14 -gencode arch=compute_61,code=sm_61 -Xcompiler -fopenmp -lgomp -Xcompiler -mcmodel=medium
