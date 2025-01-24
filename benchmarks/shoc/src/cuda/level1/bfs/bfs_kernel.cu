@@ -5,7 +5,7 @@
 // the code is compiled for CC < 1.2.  So, we use this macro and stubs
 // so the code will compile cleanly.  If run on CC < 1.2, it will
 // return a "NoResult" flag.
-#if __CUDA_ARCH__ >= 120
+#if 1 //__CUDA_ARCH__ >= 120
 
 //Sungpack Hong, Sang Kyun Kim, Tayo Oguntebi, and Kunle Olukotun. 2011.
 //Accelerating CUDA graph algorithms at maximum warp.
