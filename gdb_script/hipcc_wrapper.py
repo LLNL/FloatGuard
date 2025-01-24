@@ -153,6 +153,10 @@ if __name__ == "__main__":
         argv = extra_compile_argv
         link_time = True
 
+    # inject initial code first
+    inject_code = os.getenv('INJECT_FG_CODE', 0)
+    print(f"INJECT_FG_CODE in inner Python script: {inject_code}")
+
     if exp_flag_str:
         exp_flag = int(exp_flag_str, 0)
     else:
@@ -210,12 +214,8 @@ if __name__ == "__main__":
         else:
             replaced_argv.append(arg)
 
-    # inject initial code first
-    inject_code = os.getenv('INJECT_FG_CODE', 0)
-    print(f"INJECT_FG_CODE in inner Python script: {inject_code}")
-
     # if first time, store asm
-    if not disable_all and link_time and not build_lib:
+    if not disable_all and link_time and not build_lib and inject_code != 0:
         if os.path.exists(os.path.join(fg_work_dir, "asm_info")):
             with open(os.path.join(fg_work_dir, "asm_info/link_command.txt"), "r") as f:
                 lines = f.readlines()
@@ -224,20 +224,19 @@ if __name__ == "__main__":
                 print("read assembly file:", asm_file)
                 os.system("cp " + os.path.join(fg_work_dir, "asm_info", os.path.basename(asm_file)) + " " + os.path.dirname(os.path.abspath(asm_file)))
         else:
-            if inject_code != 0:
-                # basic injection at the beginning. then save the assembly
+            # basic injection at the beginning. then save the assembly
+            for asm_file in assembly_list:
+                code_injection_top(asm_file)
+            os.mkdir(os.path.join(fg_work_dir, "asm_info"))
+            with open(os.path.join(fg_work_dir, "asm_info/link_command.txt"), "w") as f:
+                f.write(" ".join(argv) + "\n")
+                f.write(os.getcwd() + "\n")
                 for asm_file in assembly_list:
-                    code_injection_top(asm_file)
-                os.mkdir(os.path.join(fg_work_dir, "asm_info"))
-                with open(os.path.join(fg_work_dir, "asm_info/link_command.txt"), "w") as f:
-                    f.write(" ".join(argv) + "\n")
-                    f.write(os.getcwd() + "\n")
-                    for asm_file in assembly_list:
-                        f.write(asm_file + "\n")
-                        os.system("cp " + os.path.abspath(asm_file) + " " + os.path.join(fg_work_dir, "asm_info"))
+                    f.write(asm_file + "\n")
+                    os.system("cp " + os.path.abspath(asm_file) + " " + os.path.join(fg_work_dir, "asm_info"))
 
     # write EXP_FLAG_TOTAL flag if the file does not exist
-    if not build_lib and not os.path.exists(os.path.join(fg_work_dir, "exp_flag.txt")):
+    if not build_lib and inject_code != 0 and not os.path.exists(os.path.join(fg_work_dir, "exp_flag.txt")):
         with open(os.path.join(fg_work_dir, "exp_flag.txt"), "w") as f:
             f.write(exp_flag_str + "\n")
 
@@ -268,8 +267,9 @@ if __name__ == "__main__":
                         last_br_func_index = -1
                         demangled_name = demangle_name(func_m.group(1))
                         core_name = demangled_name
-                        if "(" in demangled_name:
-                            core_name = demangled_name.split("(")[0]
+                        func_core_m = re.search("^(?:[A-Za-z0-9_<>:]+\s+)?([A-Za-z0-9_<>:]+)", demangled_name)
+                        if func_core_m:
+                            core_name = func_core_m.group(1)
                         for inj in inject_points:
                             kernel_name = inj[0]
                             ins_index = inj[1]

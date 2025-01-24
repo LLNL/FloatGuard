@@ -159,8 +159,11 @@ if __name__ == "__main__":
     if setup_file != "setup.ini":
         prog_name += "_" + os.path.basename(os.path.normpath(setup_file)).replace("setup_", "").replace(".ini", "")
     if len(run_command_list) == 1:
+        prog_input = "(single)"
         if len(run_command) > 1:
             prog_input = " ".join(run_command[1:])
+            if len(prog_input) > 20:
+                prog_input = "(single)"
         else:
             prog_input = ""
     else:

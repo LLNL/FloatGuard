@@ -186,7 +186,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             with open("asm_info/link_command.txt", "r") as f:
                 linker_command = f.readline()
                 linker_dir = f.readline()
-                subprocess.run(linker_command.strip().split(), cwd=linker_dir.strip(), env={**os.environ, 'FG_WORKDIR': dir})
+                subprocess.run(linker_command.strip().split(), cwd=linker_dir.strip(), env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})
                 #os.system(linker_command.strip())
         else:
             clean_command = conf['DEFAULT']['clean']
@@ -260,7 +260,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             idx = len(bt_list) - 1
             while idx >= 0:
                 line = bt_list[idx].strip()
-                m = re.search("#[0-9]+\s+(?:0x[0-9a-f]+\s+in\s)?([a-zA-Z0-9_]+)", line)
+                m = re.search("#[0-9]+\s+(?:0x[0-9a-f]+\s+in\s)?([a-zA-Z0-9_<>]+)", line)
                 if m:
                     exception_kernel_name = m.group(1)
                     break
@@ -298,7 +298,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
             injected_points.append((exception_kernel_name, ins_index))
             injected_points = sorted(injected_points, key=get_key_from_kernel_ins_tuple)
 
-            #print("ins_index:", ins_index)
+            print("ins_index:", ins_index)
             print("----------------- EXCEPTION CAPTURE END -----------------")     
 
             #while True:
