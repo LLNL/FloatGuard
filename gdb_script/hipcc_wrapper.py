@@ -55,31 +55,37 @@ def code_injection_top(asm_file):
     inside_hip_region = False
     inside_function = False
     code_injected_in_function = False
+    print("initial code injection:", asm_file)
     with open(asm_file, "r", encoding='latin1') as f:
         lines = f.readlines()
 
     injected_lines = []
-    for line in lines:
+    for index, line in enumerate(lines):
         if "hip-amdgcn-amd-amdhsa" in line:
             if "__CLANG_OFFLOAD_BUNDLE____START__" in line:
                 inside_hip_region = True
             elif "__CLANG_OFFLOAD_BUNDLE____END__" in line:
                 inside_hip_region = False
         elif inside_hip_region:
-            if line.startswith(".Lfunc_begin"):
+            func_m = re.search("^([A-Za-z0-9_]+):", line)
+            if not inside_function and func_m and lines[index-1].strip().endswith("@function"):
                 inside_function = True
                 code_injected_in_function = False
+                print("find function begin 1")                
+            elif not inside_function and line.startswith(".Lfunc_begin"):
+                inside_function = True
+                code_injected_in_function = False
+                print("find function begin 2")
             elif "s_endpgm" in line or line.startswith(".Lfunc_end"):
                 inside_function = False
                 code_injected_in_function = False
+                print("find function end")
             elif inside_function:
                 if not code_injected_in_function and line.strip() != "" and not line.strip().startswith(";") and not line.strip().startswith("."):                    
                     injected_lines.append("\ts_mov_b32 s31, s0\n")
                     injected_lines.append("\ts_mov_b32 s0, 0x5F2F0\n")
                     injected_lines.append("\ts_setreg_b32 hwreg(HW_REG_MODE), s0\n")
                     injected_lines.append("\ts_mov_b32 s0, s31\n")
-                    #injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 0, 16), " + exp_flag_low + "\n")
-                    #injected_lines.append("\ts_setreg_imm32_b32 hwreg(HW_REG_MODE, 16, 16), " + exp_flag_high + "\n")  
                     code_injected_in_function = True                                      
         injected_lines.append(line)
 
@@ -95,20 +101,26 @@ if __name__ == "__main__":
     has_link_param = 0
     argv = sys.argv
     fg_work_dir = os.getenv("FG_WORKDIR", default=os.getcwd())
+    hip_clang_path = os.getenv("HIP_CLANG_PATH", default="/opt/rocm/llvm/bin")
+    copy_argv = []
     for arg in argv:
+        if arg == hip_clang_path:
+            continue
         # determine link time
         if arg == "--hip-link":
             link_time = True
             has_link_param += 1
         if arg == "-fgpu-rdc":
             has_link_param += 2
-        if "emit-llvm" in arg:
+        if "emit-llvm" in arg or "-M" in arg:
             clang_pass = True
         # find EXP_FLAG_TOTAL flag
         if arg.startswith("-DEXP_FLAG_TOTAL="):
             exp_flag_str = arg.strip().split("=")[1]
         if arg == "-c":
             compile_time = True
+        copy_argv.append(arg)
+    argv = copy_argv
 
     if link_time == False and compile_time == False:
         link_time = True

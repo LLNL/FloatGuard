@@ -227,6 +227,16 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     filename = match.group(1)
                     line_number = match.group(2)
                     print(f"File: {filename}, Line: {line_number}")
+                # math library, get upper level
+                while "/opt/rocm" in filename:
+                    up_outlines = send(gdb, "up").splitlines()
+                    for line in up_outlines:
+                        pattern = r'at\s+([\w\.\/\-]+):(\d+)'
+                        match = re.search(pattern, line)
+                        if match:
+                            filename = match.group(1)
+                            line_number = match.group(2)
+                            print(f"File: {filename}, Line: {line_number}")
 
                 match = re.search(r'=>\s+(0x[0-9a-fA-F]+)', line)
                 if match:

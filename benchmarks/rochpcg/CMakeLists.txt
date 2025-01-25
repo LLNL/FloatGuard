@@ -98,5 +98,8 @@ endif()
 # Setup version
 rocm_setup_version(VERSION 0.8.5)
 
+set(HIP_HIPCC_EXECUTABLE /home/doloresmiao/FloatGuard/gdb_script/hipcc_wrapper.sh)
+set(HIP_HIPCC_CMAKE_LINKER_HELPER /home/doloresmiao/FloatGuard/gdb_script/hipcc_wrapper.sh)
+
 # rocHPCG source directory
 add_subdirectory(src)
