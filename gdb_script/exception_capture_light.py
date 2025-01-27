@@ -229,7 +229,10 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
                     print(f"File: {filename}, Line: {line_number}")
                 # math library, get upper level
                 while "/opt/rocm" in filename:
-                    up_outlines = send(gdb, "up").splitlines()
+                    up_text = send(gdb, "up")
+                    if "you cannot go up" in up_text:
+                        break
+                    up_outlines = up_text.splitlines()
                     for line in up_outlines:
                         pattern = r'at\s+([\w\.\/\-]+):(\d+)'
                         match = re.search(pattern, line)
