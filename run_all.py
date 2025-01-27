@@ -15,6 +15,10 @@ Rodinia_Path = "benchmarks/rodinia_3.1/cuda"
 PolyBench_Path = "benchmarks/PolyBench-ACC-0.1/CUDA"
 NPB_Path = "benchmarks/NPB-GPU/CUDA"
 Varity_Path = "benchmarks/cuda_examples/src"
+Parboil_Path = "benchmarks/parboil"
+shoc_level1_path = "benchmarks/shoc/src/cuda/level1"
+shoc_level2_path = "benchmarks/shoc/src/cuda/level2"
+GPGPU_SIM_path = "benchmarks/GPGPU_SIM"
 
 Rodinia_Tests = ["backprop", "cfd", "gaussian", "heartwall", "hotspot", "hotspot3D", \
                 "lavaMD", "lud", "myocyte", "nn", "nw", "particlefilter", "streamcluster"]
@@ -29,6 +33,14 @@ PolyBench_Tests_stencils = ["adi", "convolution-2d", "convolution-3d", "fdtd-2d"
 
 all_paths = []
 
+Parboil_tests = ["cutcp", "histo", "lbm", "mri-q", "sad", "sgemm", "spmv", "stencil", "tpacf"]
+
+shoc_level1_tests = ["bfs", "fft", "gemm", "md", "md5hash", "reduction", "scan", "sort", "spmv", "stencil2d", "triad"]
+
+shoc_level2_tests = ["s3d", "qtclustering"]
+
+GPGPU_SIM_tests = ["cp", "libor", "lps", "mum", "rayTracing", "wp"]
+
 def test_path(full_path):
     if os.path.exists(full_path):
         all_paths.append(full_path)
@@ -40,12 +52,23 @@ for i in range(1, 501):
     full_path = os.path.join(".", Varity_Path, "case_" + str(i))
     test_path(full_path)
 
-for test in Rodinia_Tests:
-    full_path = os.path.join(".", Rodinia_Path, test)
+for test in GPGPU_SIM_tests:
+    full_path = os.path.join(".", GPGPU_SIM_path, test)
     test_path(full_path)
 
 for test in NPB_Tests:
     full_path = os.path.join(".", NPB_Path, test)
+    test_path(full_path)
+
+for test in shoc_level1_tests:
+    full_path = os.path.join(".", shoc_level1_path, test)
+    test_path(full_path)
+
+for test in shoc_level2_tests:
+    full_path = os.path.join(".", shoc_level2_path, test)
+    test_path(full_path)
+for test in Rodinia_Tests:
+    full_path = os.path.join(".", Rodinia_Path, test)
     test_path(full_path)
 
 for test in PolyBench_Tests_datamining:
@@ -63,6 +86,17 @@ for test in PolyBench_Tests_la_solvers:
 for test in PolyBench_Tests_stencils:
     full_path = os.path.join(".", PolyBench_Path, "stencils", test)
     test_path(full_path)
+
+for test in Parboil_tests:
+    full_path = os.path.join(".", Parboil_Path)
+    print("testing", full_path, test)
+    current_path = os.getcwd()
+    os.chdir(Parboil_Path)
+    #os.system("make clean")
+    #os.system("make cleanall")
+    os.system("python3 -u ~/FloatGuard/gdb_script/time_measure.py -s setup_" + test + ".ini")
+    os.chdir(current_path)
+    #input("continue...")
 
 for exp_path in all_paths:
     print("testing", exp_path)

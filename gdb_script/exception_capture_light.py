@@ -184,7 +184,7 @@ def test_program(program_name, kernel_names, orig_kernel_seq, saved_rips, saved_
         # NEW: rerun the linker only
         if os.path.exists("asm_info/link_command.txt"):
             with open("asm_info/link_command.txt", "r") as f:
-                linker_command = f.readline()
+                linker_command = f.readline().replace("${HOME}", os.path.expanduser("~"))
                 linker_dir = f.readline()
                 subprocess.run(linker_command.strip().split(), cwd=linker_dir.strip(), env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})
                 #os.system(linker_command.strip())

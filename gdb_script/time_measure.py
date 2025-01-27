@@ -169,30 +169,26 @@ if __name__ == "__main__":
     else:
         prog_input = "(multiple)"
 
-    with open(os.path.join(home, "FloatGuard", prog_name + "_output.txt"), "w") as f:
+    with open(os.path.join(home, "FloatGuard/results", prog_name + "_output.txt"), "w") as f:
         f.write(capture_output + "\n")
 
     num_exceptions = 0
-    num_inf = 0
-    num_nan = 0
-    num_sub = 0
-    num_div0 = 0
+    num_exception_arr = [0,0,0,0,0,0,0]
+    in_exception = False
     for line in capture_output.splitlines():
-        if "exception type: " in line:
+        if "----------------- EXCEPTION CAPTURED -----------------" in line:
+            in_exception = True
+        elif "----------------- EXCEPTION CAPTURE END -----------------" in line:
             num_exceptions += 1
+            in_exception = False
+        if in_exception and "exception type: " in line:
             exp_type = int(line.strip().split(":")[1].strip().split()[0])
-            if exp_type == 0:
-                num_nan += 1
-            elif exp_type == 1 or exp_type == 4:
-                num_sub += 1
-            elif exp_type == 2 or exp_type == 6:
-                num_div0 += 1
-            elif exp_type == 3:
-                num_inf += 1
+            num_exception_arr[exp_type] += 1
     print("Total number of exceptions:", num_exceptions)
     output_array = [prog_name, prog_input, str(runs)]
     output_array.extend(time_array)
-    output_array.extend([str(num_exceptions), str(num_div0), str(num_inf), str(num_nan), str(num_sub)])
+    output_array.extend([str(num_exceptions)])
+    output_array.extend([str(i) for i in num_exception_arr])
     with open(os.path.join(home, "FloatGuard", "results.csv"), "a") as f:
         f.write(",".join(output_array) + "\n")
 
