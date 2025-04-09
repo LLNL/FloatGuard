@@ -23,8 +23,6 @@ GPGPU_SIM_path = "benchmarks/GPGPU_SIM"
 Rodinia_Tests = ["backprop", "cfd", "gaussian", "heartwall", "hotspot", "hotspot3D", \
                 "lavaMD", "lud", "myocyte", "nn", "nw", "particlefilter", "streamcluster"]
 
-NPB_Tests = ["BT", "CG", "EP", "FT", "LU", "MG", "SP"]
-
 PolyBench_Tests_datamining = ["correlation", "covariance"]
 PolyBench_Tests_la_kernels = ["2mm", "3mm", "atax", "bicg", "doitgen", "gemm", "gemver", \
                               "gesummv", "mvt", "syr2k", "syrk"]
@@ -54,10 +52,6 @@ for i in range(1, 501):
 
 for test in GPGPU_SIM_tests:
     full_path = os.path.join(".", GPGPU_SIM_path, test)
-    test_path(full_path)
-
-for test in NPB_Tests:
-    full_path = os.path.join(".", NPB_Path, test)
     test_path(full_path)
 
 for test in shoc_level1_tests:
