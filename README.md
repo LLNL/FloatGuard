@@ -23,10 +23,10 @@ information on how to install AMD ROCm. Specifically, make sure both `rocm` and
 
 ### Deploy FloatGuard
 
-1. Clone this GitHub repository with the following command.
+Clone this GitHub repository with the following command.
 
 ```
-git clone https://github.com/LLNL/FloatGuard $HOME/FloatGuard
+git clone https://github.com/LLNL/FloatGuard [FloatGuard Directory]
 ```
 
 ## Running FloatGuard on a benchmark program
@@ -82,12 +82,10 @@ benchmarks/PolyBench-ACC-0.1/CUDA/stencils/jacobi-2d-imper
 ```
 
 To run a benchmark program, change current directory to one of them,
-then run the following command. The `time_measure.py` script automatically
-runs the shell commands as described in the prevous section for these benchmark
-programs, 
+then run the following command.
 
 ```
-python3 $HOME/FloatGuard/gdb_script/time_measure.py
+python3 [FloatGuard Directory]/gdb_script/time_measure.py
 ```
 
 Log files containing details on the floating-point exceptions found are
@@ -97,74 +95,37 @@ exceptions found.
 
 ## How to Use FloatGuard to capture floating-point exceptions
 
-FloatGuard supports using Clang plugin or LLVM pass to inject code into the
-target program to capture floating-point exceptions. The following are
-instructions for both methods.
+The following are instructions for setting up the AMD HIP code project of your own to use FloatGuard.
 
-### Prerequisites for both methods
-
-1. Create a RANDINT macro in your build system with the following shell command,
-which is required for FloatGuard to differentiate between different source files.
-The following is example code for Makefiles:
+1. Replace the compiler in your code project with our wrapper. For example, if your
+code project uses the HIPCC macro in a Makefile to indicate compiler command, you should replace
+it with this:
 
 ```
-RANDINT = $(shell python3 -c 'from random import randint; print(randint(1000000000, 9999999999));')
+HIPCC = ${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh
 ```
 
-2. Add the following command line options to the regular compilation
-options of each source file in the build script,
+2. If your code project has multiple source files, but you use a single compiler command
+to compile and link the sources, please separate the compile and link commands into two.
+For example:
 
 ```
--include ${HOME}/FloatGuard/inst_pass/Inst/InstStub.h 
+${HIPCC} ${HIPFLAGS} -c main.cpp -o main.o
+${HIPCC} ${HIPFLAGS} -c other.cpp -o other.o
+${HIPCC} ${LINKFLAGS} main.o other.o -o main
 ```
 
-### Clang plugin
-
-1. Create a configuration in the build script of the target program that appends
-the following command line options to the C++ compilation command of each source file.
+3. Enter the root directory of your project, then call the `time_measure.py` script to run 
+the FloatGuard tool. After it is done,
 
 ```
--emit-llvm -Xclang -load -Xclang [FloatGuard directory]/clang-examples/FloatGuard-plugin/FloatGuard-plugin.so -Xclang -plugin -Xclang inject-fp-exception 
+[FloatGuard Directory]/gdb_script/time_measure.py
 ```
 
-3. Also, add the following object file name to the link command of the targeted
-program, so that the code library is linked.
-
-```
-${HOME}/FloatGuard/inst_pass/Inst/InstStub.o
-```
-
-4. Run the build script of the target program with the configuration you just
-created.
-
-5. Build the targeted program normally. In the sample program, this is done by
-simply calling `make`.
-
-6. Run the following command to capture floating-point exceptions on the injected
-target program.
-
-```
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p [program binary] -a [arguments]
-```
-
-### LLVM pass
-
-1. Create a configuration in the build script of the target program that appends
-the following command line options to the C++ compilation command of each source file.
-
-```
--fpass-plugin=${HOME}/FloatGuard/inst_pass/libInstPass.so
-```
-
-2. Run the build script of the target program with the configuration you just
-created, so that executable binary is created with 
-
-3. Run the following command to capture floating-point exceptions on the injected
-target program.
-
-```
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p [program binary] -a [arguments]
-```
+Log files containing details on the floating-point exceptions found are
+outputted as `[code project directory name]_output.txt` file in the FloatGuard code repo directory.
+Also `result.csv` updates the running time statistics and the number of
+exceptions found.
 
 ### Samples for make and CMake projects
 
@@ -173,48 +134,6 @@ to try out and learn what is required for your own HIP code to work with FloatGu
 You can refer to `samples/div0/Makefile` and `samples/div0_cmake/CMakeLists.txt` for examples
 of the steps described in previous sections. The following are instructions on how to
 capture floating-point exceptions for these sample programs, starting from each diretory:
-
-#### samples/div0
-
-Clang plugin:
-
-```
-make INJECT_CODE_CLANG=1
-make clean
-make
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
-```
-
-LLVM pass:
-```
-make INJECT_CODE_LLVM=1
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
-```
-
-#### samples/div0_cmake
-
-Clang plugin:
-
-```
-mkdir build
-cd build
-cmake -DINJECT_CODE_CLANG=1 ..
-make
-rm -r *
-cmake ..
-make
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
-```
-
-LLVM pass:
-
-```
-mkdir build
-cd build
-cmake -DINJECT_CODE_LLVM=1 ..
-make
-$HOME/FloatGuard/gdb_script/exception_capture_rerun.py -p div0
-```
 
 ## Try out our demo in a Docker container 
 
