@@ -82,10 +82,10 @@ def code_injection_top(asm_file):
                 print("find function end")
             elif inside_function:
                 if not code_injected_in_function and line.strip() != "" and not line.strip().startswith(";") and not line.strip().startswith("."):                    
-                    injected_lines.append("\ts_mov_b32 s31, s0\n")
-                    injected_lines.append("\ts_mov_b32 s0, 0x5F2F0\n")
-                    injected_lines.append("\ts_setreg_b32 hwreg(HW_REG_MODE), s0\n")
-                    injected_lines.append("\ts_mov_b32 s0, s31\n")
+                    #injected_lines.append("\ts_mov_b32 s31, s0\n")
+                    injected_lines.append("\ts_mov_b32 s31, 0x5F2F0\n")
+                    injected_lines.append("\ts_setreg_b32 hwreg(HW_REG_MODE), s31\n")
+                    #injected_lines.append("\ts_mov_b32 s0, s31\n")
                     code_injected_in_function = True                                      
         injected_lines.append(line)
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         subprocess.run(extra_compile_argv)
 
         # replace argv with a link-only version
-        extra_compile_argv = ["${HOME}/FloatGuard/gdb_script/hipcc_wrapper.sh"]
+        extra_compile_argv = [os.path.abspath(__file__)]
         first_object = True
         for arg in argv[1:]:
             if arg in source_files:

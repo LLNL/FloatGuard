@@ -21,26 +21,12 @@ Follow https://rocm.docs.amd.com/projects/install-on-linux/en/latest/ for more
 information on how to install AMD ROCm. Specifically, make sure both `rocm` and 
 `rocm-llvm-dev` packages are installed.
 
-### Build FloatGuard
+### Deploy FloatGuard
 
 1. Clone this GitHub repository with the following command.
 
 ```
 git clone https://github.com/LLNL/FloatGuard $HOME/FloatGuard
-```
-
-2. Run the following commands to build the Clang plugin used in the tool.
-
-```
-cd $HOME/FloatGuard/clang-examples/FloatGuard-plugin
-make
-```
-
-3. Run the following commands to build the library and LLVM pass used in the tool.
-
-```
-cd $HOME/FloatGuard/inst_pass
-make
 ```
 
 ## Running FloatGuard on a benchmark program
