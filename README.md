@@ -10,6 +10,7 @@ exceptions, overcoming the limitations of AMD’s built-in trapping mechanisms
 through a novel algorithm that combines assembly- and source-level
 instrumentation with debugger-guided execution. 
 
+The details of the tool and how it evaluates can be found in [[1]](#1).
 The workflow of FloatGuard is shown below:
 
 ![FloatGuard workflow.](./overview_2.svg)
@@ -22,7 +23,6 @@ to prevent them from being triggered in subsequent iterations; and (2) a testing
 framework, which runs the instrumented HIP program with a custom ROCgdb debugger
 that detects and records floating- point exceptions as they occur. Both modules
 are run iteratively until all floating-point exceptions have been reported.
-
 
 ## Download and Run FloatGuard
 
@@ -64,7 +64,7 @@ exceptions found.
 
 The following are instructions for setting up the AMD HIP code project of your own to use FloatGuard.
 
-1. Replace the compiler in your code project with our wrapper. For example, if your
+1. Replace the compiler in your code project with our wrapper script. For example, if your
 code project uses the HIPCC macro in a Makefile to indicate compiler command, you should replace
 it with this:
 
@@ -93,6 +93,13 @@ Log files containing details on the floating-point exceptions found are
 outputted as `[code project directory name]_output.txt` file in the FloatGuard code repo directory.
 Also `result.csv` updates the running time statistics and the number of
 exceptions found.
+
+## References
+
+<a id="1">[1]</a> 
+[Dolores Miao, Ignacio Laguna, Cindy Rubio-González, FloatGuard: Efficient Whole-Program Detection of
+Floating-Point Exceptions in AMD GPUs, To Appear In Proceedings of the 34th International Symposium 
+on High-Performance Parallel and Distributed Computing (HPDC '25).](FloatGuard.bib)
 
 ## License
 
