@@ -1,0 +1,4 @@
+#!/bin/sh
+
+perl ${HOME}/FloatGuard/benchmarks/shoc/shoc/libexec/driver.pl -bindir ${HOME}/FloatGuard/benchmarks/shoc/shoc/bin $*
+

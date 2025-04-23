@@ -1,0 +1,6 @@
+HIP version: 6.1.40091-a8dbc0c19
+AMD clang version 17.0.0 (https://github.com/RadeonOpenCompute/llvm-project roc-6.1.0 24103 7db7f5e49612030319346f900c08f474b1f9023a)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /opt/rocm-6.1.0/llvm/bin
+Configuration file: /opt/rocm-6.1.0/lib/llvm/bin/clang++.cfg
