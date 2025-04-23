@@ -8,9 +8,11 @@ runtime floating-point exception information in AMD HIP programs running on AMD
 GPUs. FloatGuard does this by injecting code that controls exception capture
 registers, and a novel algorithm that adapts to the hardware properties of AMD
 GPUs, in order to detect as many source code locations that cause floating-point
-exceptions as possible. 
+exceptions as possible. The workflow of FloatGuard is shown below:
 
-## Build FloatGuard
+![FloatGuard workflow.](./overview_2.svg)
+
+## Run FloatGuard
 
 ### Prerequisites
 
