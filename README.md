@@ -83,13 +83,22 @@ ${HIPCC} ${LINKFLAGS} main.o other.o -o main
 ```
 
 3. Create a `setup.ini` file in the root directory of your code project. This file must contain
-the following content:
+three key-value pairs, as shown below:
 
 ```
 [DEFAULT]
-compile = make                  # the command line to compile the executable
-run = ./div0                    # the command line to run the executable
-clean = make clean_base         # the command line to clean the executable
+compile = # the command line to compile the executable
+run =     # the command line to run the executable
+clean =   # the command line to clean the executable
+```
+
+An example `setup.ini` can be found in `samples/div0` directory:
+
+```
+[DEFAULT]
+compile = make
+run = ./div0
+clean = make clean_base
 ```
 
 4. Enter the root directory of your project, then call the `time_measure.py` script to run 
