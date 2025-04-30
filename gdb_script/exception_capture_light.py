@@ -343,13 +343,13 @@ if __name__ == "__main__":
         PrintCurInst = False
    
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--interactive", dest='interactive', action='store_true', help='interactive mode')
-    parser.add_argument("-d", "--directory", type=str, help="the directory to be tested")
-    parser.add_argument("-s", "--setup", dest="setup", type=str, help="setup file path")
-    parser.add_argument("-p", "--program", type=str, help="the program to be tested", required=True)
+    parser.add_argument("-i", "--interactive", dest='interactive', action='store_true', help='Interactive mode')
+    parser.add_argument("-d", "--directory", type=str, help="Directory to be tested")
+    parser.add_argument("-s", "--setup", dest="setup", type=str, help="Setup file path")
+    parser.add_argument("-p", "--program", type=str, help="Program to be tested", required=True)
     parser.add_argument("-a", "--args", nargs='*', help="Program arguments")
-    parser.add_argument("-u", "--useclang", dest='useclang', action='store_true', help='use clang instead of llvm pass')
-    parser.add_argument("-v", "--verbose", type=int, choices=[0, 1, 2, 3], default=2, help="set output verbosity (0=error, 1=warning, 2=info, 3=low priority info)")
+    parser.add_argument("-u", "--useclang", dest='useclang', action='store_true', help='Use clang instead of llvm pass')
+    parser.add_argument("-v", "--verbose", type=int, choices=[0, 1, 2, 3], default=2, help="Set output verbosity (0=error, 1=warning, 2=info, 3=low priority info)")
     stripped_argv = []
     remaining = []
     reached_args = False
