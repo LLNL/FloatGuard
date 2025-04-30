@@ -2,10 +2,8 @@
 
 ## Overview
 
-FloatGuard is a tool that captures floating-point exceptions in your AMD HIP
-kernels. It is as of now the first publicly available tool that detects and
-captures runtime floating-point exceptions in AMD HIP programs running on AMD
-GPUs. FloatGuard leverages AMD GPU hardware registers to detect floating-point
+FloatGuard is a tool that captures floating-point exceptions in AMD HIP
+kernels. FloatGuard leverages AMD GPU hardware registers to detect floating-point
 exceptions, overcoming the limitations of AMD’s built-in trapping mechanisms
 through a novel algorithm that combines assembly- and source-level
 instrumentation with debugger-guided execution. 
