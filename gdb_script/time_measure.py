@@ -105,29 +105,9 @@ if __name__ == "__main__":
 
     os.system(clean_command)
 
-    # 2. detect to use Clang plugin or LLVM pass
-    use_clang = config['DEFAULT'].getboolean('use_clang_plugin')
-    asm_inject = True
-
-    if asm_inject:
-        # 3. if using ASM inject, compile and run program with code injection; measure time
-        print("Compiling code with ASM code injection...")
-        subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})      
-    elif use_clang:
-        # 2a. if using Clang plugin, convert code with the plugin
-        print("Injecting code to original program with Clang plugin...")
-        convert_command = config['DEFAULT']['clang_convert'].split()
-        os.system(clean_command)
-
-        # 2b. if using Clang plugin, compile and run program with code injection; measure time
-        print("Compiling injected program...")
-
-        subprocess.run(compile_command, stdout=subprocess.PIPE)
-    else:
-        # 3. if using LLVM pass, compile and run program with code injection; measure time
-        print("Compiling code with LLVM pass code injection...")
-        llvm_pass_command = config['DEFAULT']['llvm_pass'].split()
-        subprocess.run(llvm_pass_command, stdout=subprocess.PIPE)
+    # 3. if using ASM inject, compile and run program with code injection; measure time
+    print("Compiling code with ASM code injection...")
+    subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})      
 
     # 4. run program with code injection with control script; measure time
     print("Running exception capture for the injected program...")
@@ -135,8 +115,6 @@ if __name__ == "__main__":
     capture_output = ""
     for run_command in run_command_list:
         capture_command = ['python3', '-u', os.path.join(home, "FloatGuard", "gdb_script", "exception_capture_light.py")]
-        if use_clang:
-            capture_command.append('-u')    
         capture_command.append("-s")
         capture_command.append(setup_file)    
         capture_command.append("-d")
