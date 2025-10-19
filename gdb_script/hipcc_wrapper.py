@@ -96,7 +96,6 @@ def code_injection_top(asm_file):
 if __name__ == "__main__":
     link_time = False
     compile_time = False
-    clang_pass = False
     exp_flag_str = None
     has_link_param = 0
     argv = sys.argv
@@ -112,8 +111,6 @@ if __name__ == "__main__":
             has_link_param += 1
         if arg == "-fgpu-rdc":
             has_link_param += 2
-        if "emit-llvm" in arg or "-M" in arg:
-            clang_pass = True
         # find EXP_FLAG_TOTAL flag
         if arg.startswith("-DEXP_FLAG_TOTAL="):
             exp_flag_str = arg.strip().split("=")[1]
@@ -126,8 +123,6 @@ if __name__ == "__main__":
         link_time = True
 
     disable_all = False
-    if clang_pass:
-        disable_all = True
 
     single_source_link_time, source_files = is_executable_compilation(argv[1:])
     
@@ -135,16 +130,15 @@ if __name__ == "__main__":
         extra_compile_argv = ["hipcc", "-c", "-S"]
         prev_is_object = False
         for arg in argv[1:]:
-            if not "InstStub.o" in arg:
-                if arg == "-o":
-                    prev_is_object = True
-                    #extra_compile_argv.append(arg)
-                elif prev_is_object:
-                    prev_is_object = False
-                    #arg_s = arg.split(".")[0] + ".s"
-                    #extra_compile_argv.append(arg_s)
-                elif not "fgpu-rdc" in arg and not "hip-link" in arg:
-                    extra_compile_argv.append(arg)
+            if arg == "-o":
+                prev_is_object = True
+                #extra_compile_argv.append(arg)
+            elif prev_is_object:
+                prev_is_object = False
+                #arg_s = arg.split(".")[0] + ".s"
+                #extra_compile_argv.append(arg_s)
+            elif not "fgpu-rdc" in arg and not "hip-link" in arg:
+                extra_compile_argv.append(arg)
 
         print("initial run:", " ".join(extra_compile_argv))
         subprocess.run(extra_compile_argv)
@@ -155,7 +149,6 @@ if __name__ == "__main__":
         for arg in argv[1:]:
             if arg in source_files:
                 if first_object:
-                    #extra_compile_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
                     first_object = False
                 arg_s = arg.split(".")[0] + ".o"
                 extra_compile_argv.append(arg_s)
@@ -209,11 +202,8 @@ if __name__ == "__main__":
     assembly_list = []
     first_object = True
     for arg in argv[1:]:
-        if "InstStub.cpp" in arg:
-            build_lib = True
-        if not disable_all and arg.endswith(".o") and not "InstStub.o" in arg:
+        if not disable_all and arg.endswith(".o"):
             if link_time and first_object:
-                #replaced_argv.append(os.path.join(os.path.expanduser("~"), "FloatGuard/inst_pass/Inst/InstStub.o"))
                 first_object = False
             arg_s = arg[:-2] + ".s"
             if not link_time:

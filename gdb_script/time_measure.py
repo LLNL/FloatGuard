@@ -53,6 +53,7 @@ def run_commands(commands):
     return totaltime, output
     
 if __name__ == "__main__":
+    pipe = subprocess.PIPE
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--directory", type=str, help="the directory to be tested")
     parser.add_argument("-s", "--setup", type=str, help="setup file")
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     for cmd in run_command_str:
         run_command_list.append(cmd.split())
 
-    subprocess.run(compile_command, stdout=subprocess.PIPE)
+    subprocess.run(compile_command, stdout=pipe)
     print("Running original program...")
     if not 'runtime_method' in config['DEFAULT']:
         totaltime, output = run_commands(run_command_list)
@@ -107,7 +108,7 @@ if __name__ == "__main__":
 
     # 3. if using ASM inject, compile and run program with code injection; measure time
     print("Compiling code with ASM code injection...")
-    subprocess.run(compile_command, stdout=subprocess.PIPE, env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})      
+    subprocess.run(compile_command, stdout=pipe, env={**os.environ, 'INJECT_FG_CODE': '1', 'FG_WORKDIR': dir})      
 
     # 4. run program with code injection with control script; measure time
     print("Running exception capture for the injected program...")
