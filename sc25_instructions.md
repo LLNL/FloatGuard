@@ -29,3 +29,19 @@ c
 ```
 
 5. Exception occurs
+
+# Live Demo 2/3 - Running FloatGuard on Sample & Benchmarks
+
+1. Go to [sample/benchmark] directory
+
+```
+cd samples/div0
+```
+   
+3. Run the tool while inside the directory
+
+```  
+python3 [FloatGuard dir]/gdb_script/time_measure.py
+```
+
+5. Inspect results in the results/ directory
